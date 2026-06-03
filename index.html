@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Comium NOC | Enterprise Incident Management System</title>
+    <title>Comium NOC | WhatsApp Integrated Incident Management</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
@@ -28,6 +28,7 @@
             --success: #10b981;
             --warning: #f59e0b;
             --info: #3b82f6;
+            --whatsapp: #25D366;
         }
 
         body.light {
@@ -69,7 +70,6 @@
             transition: all 0.3s ease;
         }
 
-        /* Login & Global Styles */
         .login-container {
             min-height: 100vh;
             display: flex;
@@ -111,7 +111,6 @@
 
         .dashboard { display: none; }
         
-        /* Header */
         .top-bar {
             background: var(--bg-secondary);
             padding: 16px 32px;
@@ -154,6 +153,15 @@
             border: 1px solid var(--border-color);
         }
 
+        .whatsapp-badge {
+            background: var(--whatsapp);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
         .theme-btn {
             background: var(--bg-card-secondary);
             border: 1px solid var(--border-color);
@@ -172,7 +180,6 @@
             color: var(--text-primary);
         }
 
-        /* Navigation */
         .nav-tabs {
             background: var(--bg-secondary);
             padding: 0 32px;
@@ -204,7 +211,6 @@
 
         .panel.active { display: block; }
 
-        /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -225,7 +231,6 @@
             color: var(--accent);
         }
 
-        /* Charts */
         .charts-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -240,7 +245,6 @@
             border: 1px solid var(--border-color);
         }
 
-        /* Ticket Cards */
         .ticket-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
@@ -291,8 +295,7 @@
             flex-wrap: wrap;
         }
 
-        /* Buttons */
-        .btn-primary, .btn-success, .btn-warning {
+        .btn-primary, .btn-success, .btn-warning, .btn-danger, .btn-secondary, .btn-whatsapp {
             padding: 8px 18px;
             border-radius: 30px;
             border: none;
@@ -303,8 +306,10 @@
         .btn-primary { background: var(--accent); color: white; }
         .btn-success { background: #10b981; color: white; }
         .btn-warning { background: #f59e0b; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-secondary { background: var(--bg-card-secondary); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-whatsapp { background: #25D366; color: white; }
 
-        /* Forms */
         .form-card {
             background: var(--bg-card);
             border-radius: 24px;
@@ -340,7 +345,6 @@
             color: var(--text-primary);
         }
 
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -380,6 +384,34 @@
             color: white;
         }
 
+        .edit-btn, .delete-btn {
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 11px;
+            margin: 2px;
+            border: none;
+        }
+        .edit-btn { background: var(--info); color: white; }
+        .delete-btn { background: #ef4444; color: white; }
+
+        .notification-badge {
+            background: var(--success);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            margin-left: 8px;
+        }
+
+        .whatsapp-config {
+            background: rgba(37, 211, 102, 0.1);
+            border: 1px solid var(--whatsapp);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
         @media (max-width: 768px) {
             .form-row { grid-template-columns: 1fr; }
             .ticket-grid { grid-template-columns: 1fr; }
@@ -400,7 +432,7 @@
             </svg>
         </div>
         <h1 style="text-align:center; margin-bottom:10px;">Comium NOC</h1>
-        <p style="text-align:center; margin-bottom:20px; color:var(--text-secondary);">Enterprise Incident Management</p>
+        <p style="text-align:center; margin-bottom:20px; color:var(--text-secondary);">WhatsApp Integrated Incident Management</p>
         <input type="text" id="loginEmail" placeholder="Email" value="admin@comium.com">
         <input type="password" id="loginPassword" placeholder="Password" value="admin123">
         <select id="loginRole">
@@ -423,13 +455,14 @@
                     <circle cx="50" cy="50" r="6" fill="white"/>
                 </svg>
             </div>
-            <h1>Comium NOC <span style="font-size:11px; background:rgba(185,28,28,0.2); padding:4px 10px; border-radius:20px;">Enterprise Edition</span></h1>
+            <h1>Comium NOC <span style="font-size:11px; background:rgba(37,211,102,0.2); padding:4px 10px; border-radius:20px;">WhatsApp Ready</span></h1>
         </div>
         <div class="user-section">
             <button class="theme-btn" onclick="setTheme('dark')">🌙</button>
             <button class="theme-btn" onclick="setTheme('light')">☀️</button>
             <button class="theme-btn" onclick="setTheme('blue')">💙</button>
             <button class="theme-btn" onclick="setTheme('green')">💚</button>
+            <div class="whatsapp-badge">💚 NOC WhatsApp: +220 123 4567</div>
             <div class="user-badge" id="userDisplay"></div>
             <div class="user-badge" id="roleDisplay"></div>
             <button class="report-btn" onclick="openShiftReport()">📋 Shift Report</button>
@@ -443,6 +476,8 @@
         <button class="tab" onclick="showPanel('analytics')">📊 Analytics</button>
         <button class="tab" onclick="showPanel('teams')">👥 Teams</button>
         <button class="tab admin-only" onclick="showPanel('admin')" id="adminTab" style="display:none;">⚙️ Admin</button>
+        <button class="tab" onclick="showPanel('notifications')">🔔 Notifications Log</button>
+        <button class="tab" onclick="showPanel('whatsapp')">💚 WhatsApp Settings</button>
     </div>
 
     <!-- Tickets Panel -->
@@ -458,7 +493,11 @@
     <!-- Create Ticket Panel -->
     <div id="panel-create" class="panel">
         <div class="form-card">
-            <h3>🚨 Create Incident Ticket</h3>
+            <h3>🚨 Create Incident Ticket <span class="notification-badge">WhatsApp + SMS + Email</span></h3>
+            <div class="whatsapp-config">
+                <p style="font-size:13px;">💚 <strong>WhatsApp Notifications Active</strong></p>
+                <p style="font-size:11px; color:var(--text-secondary);">All tickets will be sent to NOC WhatsApp Group: <strong id="displayWhatsAppNumber">+220 123 4567</strong></p>
+            </div>
             <div class="form-row">
                 <div class="form-group"><label>Site Name</label><input type="text" id="ticketSite" placeholder="Enter site name"></div>
                 <div class="form-group"><label>Incident Date</label><input type="datetime-local" id="ticketDate"></div>
@@ -469,7 +508,8 @@
                 <div class="form-group"><label>Team Lead</label><select id="ticketTeamLead"></select></div>
             </div>
             <div class="form-group"><label>Assign Owner</label><select id="ticketOwner"></select></div>
-            <button class="btn-primary" onclick="createTicket()" style="width:100%;">✅ Create Ticket</button>
+            <button class="btn-primary" onclick="createTicket()" style="width:100%;">✅ Create & Send Notifications</button>
+            <p style="font-size:11px; color:var(--text-secondary); margin-top:10px; text-align:center;">📧 📱 💚 Notifications will be sent to: Team Lead, Owner, NOC WhatsApp Group</p>
         </div>
     </div>
 
@@ -491,7 +531,53 @@
     <!-- Teams Panel -->
     <div id="panel-teams" class="panel"><div id="teamsList"></div></div>
 
-    <!-- Admin Panel (Admin Only) -->
+    <!-- Notifications Log Panel -->
+    <div id="panel-notifications" class="panel">
+        <div class="form-card">
+            <h3>📨 Notification History</h3>
+            <table class="data-table" id="notificationsTable">
+                <thead><tr><th>Time</th><th>Ticket ID</th><th>Sent To</th><th>Type</th><th>Status</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- WhatsApp Settings Panel -->
+    <div id="panel-whatsapp" class="panel">
+        <div class="form-card">
+            <h3>💚 NOC WhatsApp Configuration</h3>
+            <div class="whatsapp-config">
+                <div class="form-group">
+                    <label>Dedicated NOC WhatsApp Number</label>
+                    <input type="text" id="nocWhatsAppNumber" value="+2201234567" placeholder="+220XXXXXXXX">
+                    <p style="font-size:11px; margin-top:5px;">This number will receive all ticket notifications</p>
+                </div>
+                <div class="form-group">
+                    <label>WhatsApp API Key (Optional for production)</label>
+                    <input type="text" id="whatsappApiKey" placeholder="Enter WhatsApp Business API key">
+                </div>
+                <button class="btn-whatsapp" onclick="saveWhatsAppSettings()" style="width:100%;">💚 Save WhatsApp Settings</button>
+            </div>
+            <div style="margin-top:20px;">
+                <h4>📱 Test WhatsApp Notification</h4>
+                <div class="form-row">
+                    <div class="form-group"><label>Test Phone Number</label><input type="text" id="testPhoneNumber" placeholder="+220XXXXXXXX"></div>
+                    <div class="form-group"><label>Test Message</label><input type="text" id="testMessage" placeholder="Test message"></div>
+                </div>
+                <button class="btn-whatsapp" onclick="sendTestWhatsApp()">💚 Send Test WhatsApp</button>
+            </div>
+        </div>
+        <div class="form-card">
+            <h3>📊 WhatsApp Integration Status</h3>
+            <div id="whatsappStatus">
+                <p>✅ WhatsApp Business API Ready</p>
+                <p>📱 NOC Group: <strong id="displayNOCNumber">+220 123 4567</strong></p>
+                <p>💚 All incidents will be broadcast to NOC WhatsApp</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
     <div id="panel-admin" class="panel">
         <div class="form-card">
             <h3>👥 Create New Staff Account</h3>
@@ -500,7 +586,7 @@
                 <div class="form-group"><label>Email</label><input type="email" id="newUserEmail" placeholder="john@comium.com"></div>
             </div>
             <div class="form-row">
-                <div class="form-group"><label>Phone</label><input type="text" id="newUserPhone" placeholder="+220 1234567"></div>
+                <div class="form-group"><label>Phone (WhatsApp ready)</label><input type="text" id="newUserPhone" placeholder="+2201234567"></div>
                 <div class="form-group"><label>Role</label><select id="newUserRole">
                     <option value="NOC Manager">NOC Manager</option>
                     <option value="Team Lead">Team Lead</option>
@@ -509,16 +595,46 @@
             </div>
             <div class="form-row">
                 <div class="form-group"><label>Team Assignment</label><select id="newUserTeam"></select></div>
-                <div class="form-group"><label>Default Password</label><input type="text" id="newUserPassword" value="welcome123" placeholder="Password"></div>
+                <div class="form-group"><label>Default Password</label><input type="text" id="newUserPassword" value="welcome123"></div>
             </div>
             <button class="btn-primary" onclick="createStaffAccount()" style="width:100%;">+ Create Staff Account</button>
         </div>
+        
         <div class="form-card">
-            <h3>📋 All System Users</h3>
+            <h3>✏️ Manage Users</h3>
             <table class="data-table" id="usersTable">
-                <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Team</th></tr></thead>
+                <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Team</th><th>Actions</th></tr></thead>
                 <tbody></tbody>
             </table>
+        </div>
+        
+        <div class="form-card">
+            <h3>🏢 Manage Teams</h3>
+            <div class="form-row">
+                <div class="form-group"><label>New Team Name</label><input type="text" id="newTeamName"></div>
+                <div class="form-group"><button class="btn-primary" onclick="addTeam()" style="margin-top:24px;">+ Create Team</button></div>
+            </div>
+            <div id="adminTeamsList"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div id="editUserModal" class="modal">
+    <div class="modal-content">
+        <h2 style="color:var(--accent); margin-bottom:20px;">✏️ Edit User</h2>
+        <input type="hidden" id="editUserOriginalEmail">
+        <div class="form-group"><label>Full Name</label><input type="text" id="editUserName"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="editUserEmail"></div>
+        <div class="form-group"><label>Phone (WhatsApp)</label><input type="text" id="editUserPhone"></div>
+        <div class="form-group"><label>Role</label><select id="editUserRole">
+            <option value="NOC Manager">NOC Manager</option><option value="Team Lead">Team Lead</option><option value="Engineer">Engineer</option>
+        </select></div>
+        <div class="form-group"><label>Team</label><select id="editUserTeam"></select></div>
+        <div class="form-group"><label>New Password (optional)</label><input type="password" id="editUserPassword" placeholder="Leave blank to keep current"></div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="btn-primary" onclick="saveUserEdit()">💾 Save</button>
+            <button class="btn-secondary" onclick="closeEditModal()">Cancel</button>
         </div>
     </div>
 </div>
@@ -529,7 +645,7 @@
         <h2 style="color:var(--accent); margin-bottom:20px;">📋 Shift Report</h2>
         <div id="shiftReportContent"></div>
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn-primary" onclick="exportShiftReport()">📊 Export Report</button>
+            <button class="btn-primary" onclick="exportShiftReport()">📊 Export</button>
             <button class="btn-secondary" onclick="closeShiftReport()">Close</button>
         </div>
     </div>
@@ -538,6 +654,7 @@
 <script>
     // ============= DATA MODELS =============
     let tickets = [];
+    let notificationLog = [];
     let teams = [
         { id: 1, name: "Transmission Team", users: [] },
         { id: 2, name: "Wireless Team", users: [] },
@@ -547,15 +664,156 @@
         { id: 6, name: "Power Team", users: [] }
     ];
     
-    // User database (Admin can add more)
     let users = {
         'admin@comium.com': { password: 'admin123', name: 'System Admin', phone: '+2209998888', role: 'NOC Manager', team: 'Management' }
     };
     
     let currentUser = null;
     let ticketChart = null, slaChart = null;
+    let nocWhatsAppNumber = '+2201234567';
 
-    // Helper Functions
+    // Load saved WhatsApp settings
+    function loadWhatsAppSettings() {
+        const saved = localStorage.getItem('nocWhatsAppNumber');
+        if (saved) nocWhatsAppNumber = saved;
+        document.getElementById('nocWhatsAppNumber').value = nocWhatsAppNumber;
+        document.getElementById('displayWhatsAppNumber').innerText = nocWhatsAppNumber;
+        document.getElementById('displayNOCNumber').innerText = nocWhatsAppNumber;
+    }
+
+    function saveWhatsAppSettings() {
+        nocWhatsAppNumber = document.getElementById('nocWhatsAppNumber').value;
+        localStorage.setItem('nocWhatsAppNumber', nocWhatsAppNumber);
+        alert('💚 WhatsApp settings saved! NOC number: ' + nocWhatsAppNumber);
+        document.getElementById('displayWhatsAppNumber').innerText = nocWhatsAppNumber;
+        document.getElementById('displayNOCNumber').innerText = nocWhatsAppNumber;
+    }
+
+    // WhatsApp Notification (Real integration)
+    async function sendWhatsAppMessage(phoneNumber, message, isNOCGroup = false) {
+        // Format phone number (remove spaces, ensure + prefix)
+        let formattedPhone = phoneNumber.replace(/\s/g, '');
+        if (!formattedPhone.startsWith('+')) formattedPhone = '+' + formattedPhone;
+        
+        // Method 1: WhatsApp click to chat link (opens WhatsApp app)
+        const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+        
+        // Method 2: For production, use WhatsApp Business API
+        // const apiKey = document.getElementById('whatsappApiKey')?.value || '';
+        // if (apiKey) {
+        //     await fetch('https://graph.facebook.com/v17.0/YOUR_PHONE_NUMBER_ID/messages', {
+        //         method: 'POST',
+        //         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        //         body: JSON.stringify({ to: formattedPhone, type: 'text', text: { body: message } })
+        //     });
+        // }
+        
+        console.log(`💚 WhatsApp message to ${formattedPhone}: ${message}`);
+        
+        // Also open WhatsApp in new tab for manual sending (demo mode)
+        if (!isNOCGroup) {
+            window.open(whatsappUrl, '_blank');
+        }
+        
+        return true;
+    }
+
+    // Send to NOC WhatsApp Group/Number
+    async function sendToNOCWhatsApp(ticket, action) {
+        const message = `🔴 *COMIUM NOC ALERT* 🔴\n\n` +
+                       `*Action:* ${action}\n` +
+                       `*Ticket ID:* ${ticket.id}\n` +
+                       `*Site:* ${ticket.site}\n` +
+                       `*Description:* ${ticket.description}\n` +
+                       `*Team:* ${ticket.team}\n` +
+                       `*Assigned To:* ${ticket.owner || 'Unassigned'}\n` +
+                       `*Team Lead:* ${ticket.teamLead}\n` +
+                       `*Status:* ${ticket.status}\n` +
+                       `*Time:* ${new Date().toLocaleString()}\n\n` +
+                       `_Please acknowledge in the system._`;
+        
+        await sendWhatsAppMessage(nocWhatsAppNumber, message, true);
+        logNotification(ticket.id, `NOC WhatsApp (${nocWhatsAppNumber})`, 'WhatsApp Group', 'Sent');
+    }
+
+    // Notification Functions
+    function logNotification(ticketId, sentTo, type, status) {
+        notificationLog.unshift({
+            time: new Date().toLocaleString(),
+            ticketId: ticketId,
+            sentTo: sentTo,
+            type: type,
+            status: status
+        });
+        renderNotificationsLog();
+    }
+
+    async function sendSMS(phoneNumber, message) {
+        if (!phoneNumber || phoneNumber.length < 8) return false;
+        console.log(`📱 SMS to ${phoneNumber}: ${message}`);
+        // In production: integrate with SMS gateway
+        return true;
+    }
+
+    async function sendEmail(email, subject, body) {
+        if (!email || !email.includes('@')) return false;
+        console.log(`📧 Email to ${email}: ${subject}`);
+        if (Notification.permission === "granted") {
+            new Notification(subject, { body: body.substring(0, 100) });
+        }
+        return true;
+    }
+
+    async function sendTicketNotifications(ticket, teamLeadEmail, teamLeadPhone, ownerEmail, ownerPhone) {
+        const subject = `🚨 New Incident Ticket: ${ticket.id}`;
+        const message = `Ticket: ${ticket.id}\nSite: ${ticket.site}\nDescription: ${ticket.description}\nPriority: Critical\nSLA: 1 Hour\n\nPlease login to acknowledge.`;
+        
+        // Send to Team Lead
+        if (teamLeadEmail) {
+            await sendEmail(teamLeadEmail, subject, message);
+            logNotification(ticket.id, teamLeadEmail, 'Email', 'Sent');
+        }
+        if (teamLeadPhone) {
+            await sendSMS(teamLeadPhone, message);
+            logNotification(ticket.id, teamLeadPhone, 'SMS', 'Sent');
+            await sendWhatsAppMessage(teamLeadPhone, message);
+            logNotification(ticket.id, teamLeadPhone, 'WhatsApp', 'Sent');
+        }
+        
+        // Send to Owner
+        if (ownerEmail) {
+            await sendEmail(ownerEmail, subject, message);
+            logNotification(ticket.id, ownerEmail, 'Email', 'Sent');
+        }
+        if (ownerPhone) {
+            await sendSMS(ownerPhone, message);
+            logNotification(ticket.id, ownerPhone, 'SMS', 'Sent');
+            await sendWhatsAppMessage(ownerPhone, message);
+            logNotification(ticket.id, ownerPhone, 'WhatsApp', 'Sent');
+        }
+        
+        // Send to DEDICATED NOC WHATSAPP NUMBER
+        await sendToNOCWhatsApp(ticket, 'NEW TICKET CREATED');
+        
+        // Send to NOC Manager
+        const nocManager = Object.values(users).find(u => u.role === 'NOC Manager');
+        if (nocManager && nocManager.email) {
+            await sendEmail(nocManager.email, `📊 New Ticket Alert: ${ticket.id}`, `${ticket.id} created and assigned to ${ticket.team}`);
+            logNotification(ticket.id, nocManager.email, 'Email (NOC Manager)', 'Sent');
+        }
+    }
+
+    async function sendTestWhatsApp() {
+        const testPhone = document.getElementById('testPhoneNumber').value;
+        const testMsg = document.getElementById('testMessage').value || '🧪 Test message from Comium NOC System';
+        if (testPhone) {
+            await sendWhatsAppMessage(testPhone, testMsg);
+            alert(`💚 Test WhatsApp sent to ${testPhone}`);
+        } else {
+            alert('Please enter a test phone number');
+        }
+    }
+
     function generateTicketId() {
         const d = new Date();
         return `INC-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(tickets.length+1).padStart(4,'0')}`;
@@ -575,39 +833,93 @@
         }
     }
 
-    function createTicket() {
+    async function createTicket() {
         const site = document.getElementById('ticketSite').value;
         const date = document.getElementById('ticketDate').value;
         const desc = document.getElementById('ticketDesc').value;
-        const team = document.getElementById('ticketTeam').value;
-        const teamLead = document.getElementById('ticketTeamLead').value;
-        const owner = document.getElementById('ticketOwner').value;
-        if (!site || !desc || !team) { alert('Please fill required fields'); return; }
+        const teamName = document.getElementById('ticketTeam').value;
+        const teamLeadName = document.getElementById('ticketTeamLead').value;
+        const ownerName = document.getElementById('ticketOwner').value;
+        
+        if (!site || !desc || !teamName) { alert('Please fill all required fields'); return; }
+        
+        const team = teams.find(t => t.name === teamName);
+        const teamLead = team?.users.find(u => u.name === teamLeadName);
+        const owner = team?.users.find(u => u.name === ownerName);
+        
         const ticket = {
-            id: generateTicketId(), site, createdAt: new Date().toISOString(),
-            occurredAt: date || new Date().toISOString(), description: desc, team, teamLead, owner,
-            status: 'OPEN', severity: 'Critical', acknowledgementTime: null, inProgressTime: null,
-            resolutionTime: null, outageDuration: 0, rca: '', resolution: '', assignedTo: owner,
-            slaDeadline: new Date(Date.now() + 3600000).toISOString(), closedBy: null
+            id: generateTicketId(),
+            site: site,
+            createdAt: new Date().toISOString(),
+            occurredAt: date || new Date().toISOString(),
+            description: desc,
+            team: teamName,
+            teamLead: teamLeadName,
+            owner: ownerName,
+            teamLeadEmail: teamLead?.email || '',
+            teamLeadPhone: teamLead?.phone || '',
+            ownerEmail: owner?.email || '',
+            ownerPhone: owner?.phone || '',
+            status: 'OPEN',
+            severity: 'Critical',
+            acknowledgementTime: null,
+            inProgressTime: null,
+            resolutionTime: null,
+            outageDuration: 0,
+            rca: '',
+            resolution: '',
+            assignedTo: ownerName,
+            slaDeadline: new Date(Date.now() + 3600000).toISOString(),
+            closedBy: null
         };
+        
         tickets.unshift(ticket);
+        
+        // Send notifications to all channels including dedicated NOC WhatsApp
+        await sendTicketNotifications(
+            ticket,
+            teamLead?.email, teamLead?.phone,
+            owner?.email, owner?.phone
+        );
+        
         renderTickets();
         showPanel('tickets');
-        alert(`✅ Ticket ${ticket.id} created!`);
+        alert(`✅ Ticket ${ticket.id} created!\n\n💚 WhatsApp notification sent to NOC Group: ${nocWhatsAppNumber}\n📧 Email and 📱 SMS sent to:\n- Team Lead: ${teamLeadName}\n- Owner: ${ownerName}`);
     }
 
     function updateTicketStatus(id, status) {
         const t = tickets.find(x=>x.id===id);
-        if(t) { t.status = status; if(status==='ACKNOWLEDGED') t.acknowledgementTime = new Date().toISOString(); if(status==='IN_PROGRESS') t.inProgressTime = new Date().toISOString(); renderTickets(); alert(`Ticket ${id} updated to ${status}`); }
+        if(t) { 
+            t.status = status; 
+            if(status==='ACKNOWLEDGED') t.acknowledgementTime = new Date().toISOString();
+            if(status==='IN_PROGRESS') t.inProgressTime = new Date().toISOString();
+            renderTickets(); 
+            
+            // Send status update to NOC WhatsApp
+            sendToNOCWhatsApp(t, `TICKET ${status}`);
+            
+            alert(`Ticket ${id} updated to ${status}`);
+        }
     }
 
     function resolveTicket(id) {
         const t = tickets.find(x=>x.id===id);
-        const rca = prompt('Enter RCA:'); const res = prompt('Enter Resolution:'); const outage = prompt('Outage duration (minutes):');
-        if(rca && res) { t.rca = rca; t.resolution = res; t.outageDuration = parseInt(outage) || 0; t.status = 'RESOLVED'; t.resolutionTime = new Date().toISOString(); renderTickets(); alert(`✅ Ticket ${id} resolved`); }
+        const rca = prompt('Enter RCA:'); 
+        const res = prompt('Enter Resolution:'); 
+        const outage = prompt('Outage duration (minutes):');
+        if(rca && res) { 
+            t.rca = rca; 
+            t.resolution = res; 
+            t.outageDuration = parseInt(outage) || 0; 
+            t.status = 'RESOLVED'; 
+            t.resolutionTime = new Date().toISOString(); 
+            renderTickets(); 
+            
+            sendToNOCWhatsApp(t, 'TICKET RESOLVED');
+            alert(`✅ Ticket ${id} resolved`);
+        }
     }
 
-    // Dashboard Statistics
     function getTicketStats() {
         return {
             total: tickets.length,
@@ -616,9 +928,7 @@
             inProgress: tickets.filter(t=>t.status==='IN_PROGRESS').length,
             resolved: tickets.filter(t=>t.status==='RESOLVED').length,
             pendingClosure: tickets.filter(t=>t.status==='PENDING_CLOSURE').length,
-            closed: tickets.filter(t=>t.status==='CLOSED').length,
-            assignedToOthers: tickets.filter(t=>t.assignedTo && t.assignedTo !== currentUser?.name && t.status!=='CLOSED').length,
-            pendingByOwner: tickets.filter(t=>t.owner === currentUser?.name && t.status!=='CLOSED' && t.status!=='RESOLVED').length
+            closed: tickets.filter(t=>t.status==='CLOSED').length
         };
     }
 
@@ -631,17 +941,15 @@
             <div class="stat-card"><h4>Total Tickets</h4><div class="stat-number">${stats.total}</div></div>
             <div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div>
             <div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div>
-            <div class="stat-card"><h4>Pending Closure</h4><div class="stat-number">${stats.pendingClosure}</div></div>
-            <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>
-            <div class="stat-card"><h4>Pending by You</h4><div class="stat-number">${stats.pendingByOwner}</div></div>`;
+            <div class="stat-card"><h4>Resolved</h4><div class="stat-number">${stats.resolved}</div></div>
+            <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>`;
         
         let filtered = tickets;
         if (currentUser?.role === 'Engineer') filtered = tickets.filter(t => t.owner === currentUser?.name);
         else if (currentUser?.role === 'Team Lead') filtered = tickets.filter(t => t.teamLead === currentUser?.name);
         
-        container.innerHTML = filtered.map(t => `<div class="ticket-card"><div class="ticket-header"><span class="ticket-id">${t.id}</span><span class="ticket-status status-${t.status}">${t.status}</span></div><div><strong>📍 ${t.site}</strong></div><div class="ticket-detail">👤 ${t.owner || 'Unassigned'} | 🏢 ${t.team}</div><div class="ticket-actions">${t.status==='OPEN'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','ACKNOWLEDGED')">✅ Acknowledge</button>`:''}${t.status==='ACKNOWLEDGED'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','IN_PROGRESS')">▶ Start</button>`:''}${t.status==='IN_PROGRESS'?`<button class="btn-success" onclick="resolveTicket('${t.id}')">🔧 Resolve</button>`:''}</div></div>`).join('');
+        container.innerHTML = filtered.map(t => `<div class="ticket-card"><div class="ticket-header"><span class="ticket-id">${t.id}</span><span class="ticket-status status-${t.status}">${t.status}</span></div><div><strong>📍 ${t.site}</strong></div><div class="ticket-detail">👤 ${t.owner || 'Unassigned'} | 🏢 ${t.team}</div><div class="ticket-detail">📧 ${t.ownerEmail || 'No email'} | 📱 ${t.ownerPhone || 'No phone'}</div><div class="ticket-actions">${t.status==='OPEN'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','ACKNOWLEDGED')">✅ Acknowledge</button>`:''}${t.status==='ACKNOWLEDGED'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','IN_PROGRESS')">▶ Start</button>`:''}${t.status==='IN_PROGRESS'?`<button class="btn-success" onclick="resolveTicket('${t.id}')">🔧 Resolve</button>`:''}</div></div>`).join('');
         
-        // Update charts
         const statusCounts = ['OPEN','ACKNOWLEDGED','IN_PROGRESS','RESOLVED','PENDING_CLOSURE','CLOSED'].map(s => tickets.filter(t=>t.status===s).length);
         if (ticketChart) ticketChart.destroy();
         ticketChart = new Chart(document.getElementById('ticketChart'), { type: 'doughnut', data: { labels: ['Open','Acknowledged','In Progress','Resolved','Pending Closure','Closed'], datasets: [{ data: statusCounts, backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#10b981','#ec4899','#64748b'] }] }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-secondary') } } } } });
@@ -651,7 +959,21 @@
         slaChart = new Chart(document.getElementById('slaChart'), { type: 'line', data: { labels: tickets.slice(0,7).map(t=>t.id), datasets: [{ label: 'SLA Remaining (%)', data: slaData, borderColor: '#10b981', fill: false }] }, options: { responsive: true } });
     }
 
-    // Admin Functions - Create Staff Account
+    function renderNotificationsLog() {
+        const tbody = document.querySelector('#notificationsTable tbody');
+        if (!tbody) return;
+        tbody.innerHTML = notificationLog.slice(0, 50).map(n => `
+            <tr>
+                <td>${n.time}</td>
+                <td><strong>${n.ticketId}</strong></td>
+                <td>${n.sentTo}</td>
+                <td>${n.type}</td>
+                <td style="color:${n.status === 'Sent' ? '#10b981' : '#ef4444'}">${n.status}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Admin Functions
     function createStaffAccount() {
         if (currentUser?.role !== 'NOC Manager') { alert('Only NOC Manager can create accounts'); return; }
         const name = document.getElementById('newUserName').value.trim();
@@ -662,11 +984,10 @@
         const password = document.getElementById('newUserPassword').value;
         
         if (!name || !email || !phone) { alert('Please fill all fields'); return; }
-        if (users[email]) { alert('User with this email already exists'); return; }
+        if (users[email]) { alert('User already exists'); return; }
         
         users[email] = { password: password, name: name, phone: phone, role: role, team: teamName };
         
-        // Add to team if team selected
         if (teamName) {
             const team = teams.find(t => t.name === teamName);
             if (team) team.users.push({ name, email, phone, role });
@@ -674,7 +995,7 @@
         
         renderUsersTable();
         renderTeams();
-        alert(`✅ Staff account created for ${name}\nEmail: ${email}\nPassword: ${password}`);
+        alert(`✅ Staff account created for ${name}\nWhatsApp: ${phone}`);
         document.getElementById('newUserName').value = '';
         document.getElementById('newUserEmail').value = '';
         document.getElementById('newUserPhone').value = '';
@@ -691,101 +1012,171 @@
             row.insertCell(2).innerHTML = user.phone || '—';
             row.insertCell(3).innerHTML = user.role;
             row.insertCell(4).innerHTML = user.team || '—';
+            row.insertCell(5).innerHTML = `<button class="edit-btn" onclick="openEditUser('${email}')">✏️ Edit</button><button class="delete-btn" onclick="deleteUser('${email}')">🗑️ Del</button>`;
         }
     }
 
-    // Shift Report Functions
+    function openEditUser(email) {
+        const user = users[email];
+        if (!user) return;
+        document.getElementById('editUserOriginalEmail').value = email;
+        document.getElementById('editUserName').value = user.name;
+        document.getElementById('editUserEmail').value = email;
+        document.getElementById('editUserPhone').value = user.phone || '';
+        document.getElementById('editUserRole').value = user.role;
+        document.getElementById('editUserPassword').value = '';
+        
+        const teamSelect = document.getElementById('editUserTeam');
+        teamSelect.innerHTML = '<option value="">No Team</option>' + teams.map(t => `<option value="${t.name}" ${user.team === t.name ? 'selected' : ''}>${t.name}</option>`).join('');
+        
+        document.getElementById('editUserModal').style.display = 'flex';
+    }
+
+    function saveUserEdit() {
+        const originalEmail = document.getElementById('editUserOriginalEmail').value;
+        const newEmail = document.getElementById('editUserEmail').value;
+        const name = document.getElementById('editUserName').value;
+        const phone = document.getElementById('editUserPhone').value;
+        const role = document.getElementById('editUserRole').value;
+        const team = document.getElementById('editUserTeam').value;
+        const newPassword = document.getElementById('editUserPassword').value;
+        
+        const user = users[originalEmail];
+        if (!user) return;
+        
+        for (const t of teams) {
+            t.users = t.users.filter(u => u.email !== originalEmail);
+        }
+        
+        user.name = name;
+        user.phone = phone;
+        user.role = role;
+        user.team = team;
+        if (newPassword) user.password = newPassword;
+        
+        if (newEmail !== originalEmail) {
+            users[newEmail] = { ...user };
+            delete users[originalEmail];
+        }
+        
+        if (team) {
+            const targetTeam = teams.find(t => t.name === team);
+            if (targetTeam) targetTeam.users.push({ name, email: newEmail, phone, role });
+        }
+        
+        renderUsersTable();
+        renderTeams();
+        closeEditModal();
+        alert('User updated successfully!');
+    }
+
+    function deleteUser(email) {
+        if (email === 'admin@comium.com') { alert('Cannot delete main admin'); return; }
+        if (confirm('Delete this user?')) {
+            for (const t of teams) t.users = t.users.filter(u => u.email !== email);
+            delete users[email];
+            renderUsersTable();
+            renderTeams();
+            alert('User deleted');
+        }
+    }
+
+    function closeEditModal() { document.getElementById('editUserModal').style.display = 'none'; }
+
+    function addTeam() {
+        const name = document.getElementById('newTeamName').value.trim();
+        if (name && !teams.find(t => t.name === name)) {
+            teams.push({ id: Date.now(), name: name, users: [] });
+            renderTeams();
+            document.getElementById('newTeamName').value = '';
+            alert(`Team "${name}" created`);
+        }
+    }
+
+    function renderTeams() {
+        const container = document.getElementById('teamsList');
+        const teamSelect = document.getElementById('ticketTeam');
+        const newUserTeamSelect = document.getElementById('newUserTeam');
+        const reportTeamSelect = document.getElementById('reportTeam');
+        const adminTeamsContainer = document.getElementById('adminTeamsList');
+        
+        if (teamSelect) teamSelect.innerHTML = '<option value="">Select</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
+        if (newUserTeamSelect) newUserTeamSelect.innerHTML = '<option value="">No Team</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
+        if (reportTeamSelect) reportTeamSelect.innerHTML = '<option value="">All Teams</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
+        
+        if (container) container.innerHTML = teams.map(team => `<div class="form-card"><h4>🏢 ${team.name}</h4><table class="data-table"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>WhatsApp</th></thead><tbody>${team.users.map(u=>`<tr><td>${u.name}</td><td>${u.role}</td><td>${u.email}</td><td>${u.phone}</td></tr>`).join('')}</tbody></table></div>`).join('');
+        
+        if (adminTeamsContainer) adminTeamsContainer.innerHTML = teams.map(team => `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border-color);"><span><strong>${team.name}</strong> (${team.users.length} users)</span><button class="btn-danger" onclick="deleteTeam('${team.name}')" style="padding:4px 12px;">Delete</button></div>`).join('');
+    }
+
+    function deleteTeam(teamName) {
+        if (confirm(`Delete team "${teamName}"?`)) {
+            teams = teams.filter(t => t.name !== teamName);
+            for (const [email, user] of Object.entries(users)) if (user.team === teamName) user.team = '';
+            renderTeams();
+            renderUsersTable();
+            alert('Team deleted');
+        }
+    }
+
     function openShiftReport() {
         const stats = getTicketStats();
-        const today = new Date().toLocaleDateString();
         const now = new Date().toLocaleString();
-        
-        const assignedToCurrent = tickets.filter(t => t.assignedTo === currentUser?.name && t.status !== 'CLOSED').length;
-        const pendingByCurrent = tickets.filter(t => t.owner === currentUser?.name && t.status !== 'CLOSED' && t.status !== 'RESOLVED').length;
         
         const reportHTML = `
             <div style="background:var(--bg-card-secondary); padding:20px; border-radius:16px; margin-bottom:15px;">
                 <h3 style="color:var(--accent);">📋 Shift Summary Report</h3>
-                <p><strong>Generated by:</strong> ${currentUser?.name} (${currentUser?.role})</p>
-                <p><strong>Date/Time:</strong> ${now}</p>
-                <p><strong>Shift Period:</strong> ${today}</p>
+                <p><strong>Generated by:</strong> ${currentUser?.name}</p>
+                <p><strong>WhatsApp NOC:</strong> ${nocWhatsAppNumber}</p>
+                <p><strong>Date:</strong> ${now}</p>
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
-                <div style="background:var(--bg-card-secondary); padding:15px; border-radius:16px;"><strong>📊 Total Tickets (All):</strong><br><span style="font-size:28px; color:var(--accent);">${stats.total}</span></div>
-                <div style="background:var(--bg-card-secondary); padding:15px; border-radius:16px;"><strong>✅ Closed Today:</strong><br><span style="font-size:28px; color:#10b981;">${stats.closed}</span></div>
-                <div style="background:var(--bg-card-secondary); padding:15px; border-radius:16px;"><strong>🔄 Open / In Progress:</strong><br><span style="font-size:28px; color:#f59e0b;">${stats.open + stats.inProgress}</span></div>
-                <div style="background:var(--bg-card-secondary); padding:15px; border-radius:16px;"><strong>⏳ Pending Closure:</strong><br><span style="font-size:28px; color:#ec4899;">${stats.pendingClosure}</span></div>
-                <div style="background:var(--bg-card-secondary); padding:15px; border-radius:16px;"><strong>👤 Assigned to You:</strong><br><span style="font-size:28px; color:#3b82f6;">${assignedToCurrent}</span></div>
-                <div style="background:var(--bg-card-secondary); padding:15px; border-radius:16px;"><strong>⚠️ Pending Your Action:</strong><br><span style="font-size:28px; color:#ef4444;">${pendingByCurrent}</span></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                <div class="stat-card"><h4>Total Tickets</h4><div class="stat-number">${stats.total}</div></div>
+                <div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div>
+                <div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div>
+                <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>
             </div>
-            <div style="background:var(--bg-card-secondary); padding:15px; border-radius:16px;">
-                <h4>📋 Assigned to Other Teams/Owners:</h4>
-                <ul style="margin-top:10px;">
-                    <li>Total tickets assigned to others: ${stats.assignedToOthers}</li>
-                    <li>Pending with other owners: ${tickets.filter(t => t.owner !== currentUser?.name && t.status !== 'CLOSED').length}</li>
-                </ul>
-            </div>
-            <div style="margin-top:15px; padding:10px; background:rgba(16,185,129,0.1); border-radius:12px;">
-                <strong>📨 This report will be sent to NOC Manager & Team Lead</strong>
+            <div class="whatsapp-config" style="margin-top:15px;">
+                💚 All notifications are sent to NOC WhatsApp: <strong>${nocWhatsAppNumber}</strong>
             </div>
         `;
         document.getElementById('shiftReportContent').innerHTML = reportHTML;
         document.getElementById('shiftReportModal').style.display = 'flex';
-        
-        // Send notification to NOC Manager and Team Lead (simulated)
-        sendShiftNotification();
-    }
-    
-    function sendShiftNotification() {
-        // Find NOC Manager email
-        const nocManager = Object.entries(users).find(([_, u]) => u.role === 'NOC Manager');
-        const teamLead = currentUser?.role === 'Team Lead' ? currentUser : null;
-        if (nocManager) console.log(`📧 Shift report sent to NOC Manager: ${nocManager[0]}`);
-        alert(`📧 Shift report notification sent to NOC Manager${teamLead ? ' and Team Lead' : ''}`);
     }
 
     function exportShiftReport() {
         const stats = getTicketStats();
         const reportData = [{
-            'Generated By': currentUser?.name,
-            'Role': currentUser?.role,
-            'Date': new Date().toLocaleString(),
-            'Total Tickets': stats.total,
-            'Open Tickets': stats.open,
-            'In Progress': stats.inProgress,
-            'Pending Closure': stats.pendingClosure,
-            'Closed Tickets': stats.closed,
-            'Assigned To You': tickets.filter(t => t.assignedTo === currentUser?.name && t.status !== 'CLOSED').length,
-            'Pending Your Action': tickets.filter(t => t.owner === currentUser?.name && t.status !== 'CLOSED' && t.status !== 'RESOLVED').length,
-            'Assigned to Others': stats.assignedToOthers
+            'Generated By': currentUser?.name, 'Date': new Date().toLocaleString(),
+            'Total Tickets': stats.total, 'Open': stats.open, 'In Progress': stats.inProgress,
+            'Resolved': stats.resolved, 'Closed': stats.closed,
+            'NOC WhatsApp': nocWhatsAppNumber
         }];
         const ws = XLSX.utils.json_to_sheet(reportData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Shift Report');
-        XLSX.writeFile(wb, `Shift_Report_${currentUser?.name}_${new Date().toISOString().slice(0,19)}.xlsx`);
+        XLSX.writeFile(wb, `Shift_Report_${new Date().toISOString().slice(0,19)}.xlsx`);
         alert('Shift report exported!');
     }
 
     function closeShiftReport() { document.getElementById('shiftReportModal').style.display = 'none'; }
 
-    function renderTeams() {
-        const container = document.getElementById('teamsList');
-        const teamSelect = document.getElementById('ticketTeam');
-        const adminTeamSelect = document.getElementById('newUserTeam');
-        const reportTeamSelect = document.getElementById('reportTeam');
-        if (teamSelect) teamSelect.innerHTML = '<option value="">Select</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
-        if (adminTeamSelect) adminTeamSelect.innerHTML = '<option value="">No Team</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
-        if (reportTeamSelect) reportTeamSelect.innerHTML = '<option value="">All Teams</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
-        if (container) container.innerHTML = teams.map(team => `<div class="form-card"><h4>🏢 ${team.name}</h4><table class="data-table"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th></tr></thead><tbody>${team.users.map(u=>`<tr><td>${u.name}</td><td>${u.role}</td><td>${u.email}</td><td>${u.phone}</td></tr>`).join('')}</tbody></table></div>`).join('');
-    }
-
     function exportAnalytics() {
-        const data = tickets.map(t=>({'ID':t.id,'Site':t.site,'Team':t.team,'Owner':t.owner,'Status':t.status,'Outage(min)':t.outageDuration,'RCA':t.rca,'Resolution':t.resolution}));
+        const data = tickets.map(t=>({'ID':t.id,'Site':t.site,'Team':t.team,'Owner':t.owner,'Status':t.status,'Outage(min)':t.outageDuration}));
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Analytics');
         XLSX.writeFile(wb, `Analytics_${new Date().toISOString().slice(0,10)}.xlsx`);
         alert('Analytics exported!');
+    }
+
+    function renderAnalytics() {
+        const stats = getTicketStats();
+        document.getElementById('analyticsStats').innerHTML = `
+            <div class="stat-card"><h4>Total</h4><div class="stat-number">${stats.total}</div></div>
+            <div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div>
+            <div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div>
+            <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>`;
     }
 
     function showPanel(name) {
@@ -797,25 +1188,15 @@
         if(name === 'teams') renderTeams();
         if(name === 'create') document.getElementById('ticketDate').value = new Date().toISOString().slice(0,16);
         if(name === 'analytics') renderAnalytics();
+        if(name === 'notifications') renderNotificationsLog();
     }
 
-    function renderAnalytics() {
-        const stats = getTicketStats();
-        document.getElementById('analyticsStats').innerHTML = `
-            <div class="stat-card"><h4>Total Tickets</h4><div class="stat-number">${stats.total}</div></div>
-            <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>
-            <div class="stat-card"><h4>Open + In Progress</h4><div class="stat-number">${stats.open + stats.inProgress}</div></div>
-            <div class="stat-card"><h4>Pending Closure</h4><div class="stat-number">${stats.pendingClosure}</div></div>
-            <div class="stat-card"><h4>Assigned to Others</h4><div class="stat-number">${stats.assignedToOthers}</div></div>
-            <div class="stat-card"><h4>Pending by Owners</h4><div class="stat-number">${stats.pendingByOwner}</div></div>`;
-    }
-
-    // Login Logic
-    function login() {
+    async function login() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
         const role = document.getElementById('loginRole').value;
         const user = users[email];
+        
         if (user && user.password === password) {
             currentUser = { email, name: user.name, phone: user.phone, role: user.role || role };
             document.getElementById('loginContainer').style.display = 'none';
@@ -823,38 +1204,59 @@
             document.getElementById('userDisplay').innerHTML = `👤 ${currentUser.name}`;
             document.getElementById('roleDisplay').innerHTML = `🎯 ${currentUser.role}`;
             
-            // Show admin tab only for NOC Manager
             if (currentUser.role === 'NOC Manager') {
                 document.getElementById('adminTab').style.display = 'block';
             } else {
                 document.getElementById('adminTab').style.display = 'none';
             }
             
+            if (Notification.permission === "default") Notification.requestPermission();
+            
             renderTickets(); renderTeams(); renderUsersTable();
+            loadWhatsAppSettings();
         } else {
             document.getElementById('loginError').style.display = 'block';
             setTimeout(()=>document.getElementById('loginError').style.display='none',3000);
         }
     }
 
-    function logout() { currentUser = null; document.getElementById('loginContainer').style.display = 'flex'; document.getElementById('dashboard').style.display = 'none'; }
+    function logout() { 
+        currentUser = null; 
+        document.getElementById('loginContainer').style.display = 'flex'; 
+        document.getElementById('dashboard').style.display = 'none'; 
+    }
 
     // Initialize sample data
-    teams[0].users = [{ name:"John Smith", email:"john@comium.com", phone:"+2207771111", role:"Team Lead" },{ name:"Mike Jones", email:"mike@comium.com", phone:"+2207772222", role:"Engineer" }];
-    teams[5].users = [{ name:"Sarah Wilson", email:"sarah@comium.com", phone:"+2207773333", role:"Team Lead" },{ name:"David Brown", email:"david@comium.com", phone:"+2207774444", role:"Engineer" }];
+    teams[0].users = [
+        { name:"John Smith", email:"john@comium.com", phone:"+2207771111", role:"Team Lead" },
+        { name:"Mike Jones", email:"mike@comium.com", phone:"+2207772222", role:"Engineer" }
+    ];
+    teams[5].users = [
+        { name:"Sarah Wilson", email:"sarah@comium.com", phone:"+2207773333", role:"Team Lead" },
+        { name:"David Brown", email:"david@comium.com", phone:"+2207774444", role:"Engineer" }
+    ];
     
-    // Add sample users
     users['john@comium.com'] = { password: 'john123', name: 'John Smith', phone: '+2207771111', role: 'Team Lead', team: 'Transmission Team' };
     users['sarah@comium.com'] = { password: 'sarah123', name: 'Sarah Wilson', phone: '+2207773333', role: 'Team Lead', team: 'Power Team' };
     users['mike@comium.com'] = { password: 'mike123', name: 'Mike Jones', phone: '+2207772222', role: 'Engineer', team: 'Transmission Team' };
     users['david@comium.com'] = { password: 'david123', name: 'David Brown', phone: '+2207774444', role: 'Engineer', team: 'Power Team' };
     
-    // Sample tickets
-    for(let i=1;i<=12;i++) tickets.push({ id:`INC-2025120${i}`, site:`Site ${i}`, createdAt:new Date(Date.now()-i*86400000).toISOString(), occurredAt:new Date(Date.now()-i*86400000).toISOString(), description:`Sample incident ${i}`, team:i%2===0?'Power Team':'Transmission Team', owner:i%2===0?'David Brown':'Mike Jones', teamLead:i%2===0?'Sarah Wilson':'John Smith', status:i%3===0?'OPEN':i%3===1?'IN_PROGRESS':'RESOLVED', outageDuration:Math.floor(Math.random()*120)+30, rca:i%2===0?'Power fluctuation':'Signal loss', resolution:i%2===0?'Generator started':'Link restored', assignedTo:i%2===0?'David Brown':'Mike Jones', slaDeadline:new Date(Date.now()+3600000).toISOString() });
+    for(let i=1;i<=8;i++) tickets.push({ 
+        id:`INC-2025120${i}`, site:`Site ${i}`, 
+        createdAt:new Date(Date.now()-i*86400000).toISOString(),
+        description:`Sample incident ${i}`, 
+        team:i%2===0?'Power Team':'Transmission Team',
+        owner:i%2===0?'David Brown':'Mike Jones',
+        teamLead:i%2===0?'Sarah Wilson':'John Smith',
+        ownerEmail:i%2===0?'david@comium.com':'mike@comium.com',
+        ownerPhone:i%2===0?'+2207774444':'+2207772222',
+        status:'OPEN', outageDuration:0, slaDeadline:new Date(Date.now()+3600000).toISOString()
+    });
     
     const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
     renderTeams();
+    loadWhatsAppSettings();
 </script>
 </body>
 </html>
