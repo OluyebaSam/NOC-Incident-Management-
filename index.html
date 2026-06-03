@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Comium NOC Incident Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #7a1f1f 0%, #5c0e0e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .login-card h1 {
+            color: #b91c1c;
+            margin-bottom: 10px;
+        }
+        .login-card input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #f0c5c5;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        .login-card button {
+            width: 100%;
+            padding: 12px;
+            background: #b91c1c;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .error {
+            color: #b91c1c;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1>🔴 COMIUM NOC</h1>
+        <h2>Incident Manager</h2>
+        <input type="text" id="username" placeholder="Username" value="admin">
+        <input type="password" id="password" placeholder="Password" value="noc2025">
+        <button onclick="login()">Sign In</button>
+        <div class="error" id="errorMsg">Invalid credentials</div>
+    </div>
+
+    <script>
+        const USERS = {
+            'admin': 'noc2025',
+            'sanusi': 'sanusi2025',
+            'maansu': 'maansu2025',
+            'dawda': 'dawda2025',
+            'maimuna': 'maimuna2025'
+        };
+        
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (USERS[username] && USERS[username] === password) {
+                alert('Login successful! Welcome ' + username);
+                document.body.innerHTML = '<div style="background:#fff8f6; min-height:100vh; padding:20px;"><h1 style="color:#b91c1c;">✅ Welcome to Comium NOC Dashboard</h1><p style="color:#333;">You are logged in as: ' + username + '</p><button onclick="logout()" style="background:#b91c1c; color:white; padding:10px 20px; border:none; border-radius:10px; cursor:pointer;">Logout</button></div>';
+            } else {
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        }
+        
+        function logout() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>
