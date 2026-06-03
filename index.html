@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comium NOC Incident Manager</title>
+    <title>COMIUM NOC | OWS Advanced Ticketing System</title>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- html2canvas for PDF rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
 
         body {
@@ -17,13 +23,13 @@
             min-height: 100vh;
         }
 
-        /* Login Page */
         .login-container {
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            background: linear-gradient(135deg, #7a1f1f 0%, #5c0e0e 100%);
         }
 
         .login-card {
@@ -42,27 +48,13 @@
             margin-bottom: 8px;
         }
 
-        .login-card h2 {
-            color: #666;
-            font-size: 18px;
-            font-weight: normal;
-            margin-bottom: 30px;
-        }
-
-        .login-card input {
+        .login-card input, .login-card select {
             width: 100%;
             padding: 14px 16px;
             margin: 10px 0;
             border: 2px solid #e5e7eb;
             border-radius: 12px;
-            font-size: 16px;
-            transition: all 0.2s;
-        }
-
-        .login-card input:focus {
-            outline: none;
-            border-color: #b91c1c;
-            box-shadow: 0 0 0 3px rgba(185,28,28,0.1);
+            font-size: 14px;
         }
 
         .login-card button {
@@ -76,11 +68,6 @@
             font-weight: 600;
             cursor: pointer;
             margin-top: 20px;
-            transition: background 0.2s;
-        }
-
-        .login-card button:hover {
-            background: #7f1d1d;
         }
 
         .error-msg {
@@ -90,45 +77,40 @@
             background: #fee2e2;
             border-radius: 10px;
             display: none;
-            font-size: 14px;
         }
 
-        /* Dashboard Styles */
-        .dashboard-container {
+        .dashboard {
             display: none;
-            background: #fefcf9;
-            min-height: 100vh;
         }
 
-        /* Header */
-        .header {
+        .top-bar {
             background: white;
-            padding: 16px 24px;
+            padding: 15px 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 3px solid #b91c1c;
             flex-wrap: wrap;
-            gap: 15px;
         }
 
-        .header h1 {
+        .top-bar h1 {
             color: #b91c1c;
-            font-size: 24px;
+            font-size: 22px;
         }
 
-        .header h1 span {
-            font-size: 12px;
+        .top-bar h1 span {
+            font-size: 11px;
             background: #fee2e2;
             padding: 4px 10px;
             border-radius: 20px;
             margin-left: 10px;
         }
 
-        .user-info {
+        .user-section {
             display: flex;
-            align-items: center;
             gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .user-badge {
@@ -137,198 +119,261 @@
             border-radius: 30px;
             color: #b91c1c;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
         }
 
-        .logout-btn {
+        .logout-btn, .nav-btn {
             background: none;
             border: 1px solid #fecaca;
-            padding: 8px 20px;
+            padding: 8px 18px;
             border-radius: 30px;
             color: #b91c1c;
             font-weight: 600;
             cursor: pointer;
+        }
+
+        .nav-tabs {
+            background: white;
+            padding: 0 25px;
+            display: flex;
+            gap: 5px;
+            border-bottom: 1px solid #e5e7eb;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-weight: 600;
+            color: #666;
             transition: all 0.2s;
         }
 
-        .logout-btn:hover {
-            background: #fee2e2;
-            border-color: #b91c1c;
+        .tab.active {
+            color: #b91c1c;
+            border-bottom: 3px solid #b91c1c;
         }
 
-        /* Stats Cards */
-        .stats-container {
+        .panel {
+            display: none;
+            padding: 25px;
+            background: #fefcf9;
+            min-height: calc(100vh - 130px);
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        .ticket-grid, .report-tickets {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-            padding: 24px;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .ticket-card {
             background: white;
-            border-bottom: 1px solid #f3e0e0;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #b91c1c;
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .ticket-id {
+            font-weight: 700;
+            color: #b91c1c;
+            font-size: 14px;
+        }
+
+        .ticket-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-OPEN { background: #fee2e2; color: #b91c1c; }
+        .status-ACKNOWLEDGED { background: #fef3c7; color: #d97706; }
+        .status-IN_PROGRESS { background: #dbeafe; color: #2563eb; }
+        .status-RESOLVED { background: #d1fae5; color: #065f46; }
+        .status-PENDING_CLOSURE { background: #fce7f3; color: #db2777; }
+        .status-CLOSED { background: #e5e7eb; color: #374151; }
+        .status-ESCALATED { background: #ffedd5; color: #ea580c; }
+
+        .ticket-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary, .btn-secondary, .btn-success, .btn-danger, .btn-warning {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .btn-primary { background: #b91c1c; color: white; }
+        .btn-secondary { background: #e5e7eb; color: #333; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+
+        .form-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
         }
 
         .stat-card {
-            background: #fef7f7;
-            padding: 16px 20px;
+            background: white;
+            padding: 18px;
             border-radius: 16px;
-            border: 1px solid #fce5e5;
-        }
-
-        .stat-card h3 {
-            color: #b91c1c;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
+            text-align: center;
         }
 
         .stat-number {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 800;
-            color: #7f1d1d;
+            color: #b91c1c;
         }
 
-        /* Filters */
-        .filters-container {
-            padding: 16px 24px;
+        .data-table {
+            width: 100%;
             background: white;
+            border-radius: 16px;
+            overflow-x: auto;
+            display: block;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 13px;
+        }
+
+        .data-table th {
+            background: #fef2f2;
+            color: #b91c1c;
+            font-weight: 600;
+        }
+
+        .file-list {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .filter-bar {
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
-            align-items: center;
-            border-bottom: 1px solid #f3e0e0;
-        }
-
-        .filter-group {
-            background: #fef7f7;
-            padding: 8px 16px;
-            border-radius: 40px;
-            border: 1px solid #fce5e5;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .filter-group label {
-            font-weight: 600;
-            color: #b91c1c;
-            font-size: 13px;
-        }
-
-        .filter-group select, .filter-group input {
-            border: none;
-            background: transparent;
-            padding: 6px;
-            font-size: 13px;
-            outline: none;
-            color: #333;
-        }
-
-        .search-input {
-            background: #fef7f7;
-            padding: 8px 16px;
-            border-radius: 40px;
-            border: 1px solid #fce5e5;
-        }
-
-        .search-input input {
-            border: none;
-            background: transparent;
-            padding: 6px;
-            width: 150px;
-            outline: none;
-        }
-
-        .reset-btn {
-            background: #fef2f2;
-            border: 1px solid #fce5e5;
-            padding: 8px 20px;
-            border-radius: 40px;
-            color: #b91c1c;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        /* Table */
-        .table-wrapper {
-            padding: 20px 24px;
-            overflow-x: auto;
-        }
-
-        .incident-table {
-            width: 100%;
-            border-collapse: collapse;
+            margin-bottom: 20px;
+            padding: 15px;
             background: white;
             border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            align-items: flex-end;
         }
 
-        .incident-table th {
-            background: #fef7f7;
-            padding: 14px 12px;
-            text-align: left;
-            font-weight: 700;
+        .closure-warning {
+            background: #fef2f2;
+            border-left: 4px solid #b91c1c;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
             font-size: 12px;
             color: #b91c1c;
-            border-bottom: 2px solid #fce5e5;
-        }
-
-        .incident-table td {
-            padding: 12px;
-            font-size: 13px;
-            border-bottom: 1px solid #fdf0f0;
-            color: #4a2a2a;
-        }
-
-        .incident-table tr:hover td {
-            background: #fefbfb;
-        }
-
-        .status-cleared {
-            background: #d1fae5;
-            color: #065f46;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .status-open {
-            background: #fee2e2;
-            color: #b91c1c;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .severity-critical {
-            background: #fef2f2;
-            color: #b91c1c;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            display: inline-block;
         }
 
         @media (max-width: 768px) {
-            .stats-container {
-                grid-template-columns: 1fr 1fr;
-            }
-            .filters-container {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .table-wrapper {
-                padding: 12px;
-            }
-            .incident-table th, .incident-table td {
-                padding: 8px;
-                font-size: 11px;
-            }
+            .form-row, .form-row-3 { grid-template-columns: 1fr; }
+            .ticket-grid { grid-template-columns: 1fr; }
+            .nav-tabs { overflow-x: auto; }
         }
     </style>
 </head>
@@ -338,242 +383,770 @@
 <div class="login-container" id="loginContainer">
     <div class="login-card">
         <h1>🔴 COMIUM NOC</h1>
-        <h2>Incident Management System</h2>
-        <input type="text" id="username" placeholder="Username" value="admin">
-        <input type="password" id="password" placeholder="Password" value="noc2025">
+        <h2>OWS Advanced Ticketing System</h2>
+        <input type="text" id="username" placeholder="Username / Email" value="admin@comium.com">
+        <input type="password" id="password" placeholder="Password" value="admin123">
+        <select id="loginRole">
+            <option value="NOC Manager">NOC Manager</option>
+            <option value="Team Lead">Team Lead</option>
+            <option value="Engineer">Engineer</option>
+        </select>
         <button onclick="login()">Sign In</button>
-        <div class="error-msg" id="errorMsg">Invalid username or password</div>
+        <div class="error-msg" id="errorMsg">Invalid credentials or insufficient privileges</div>
     </div>
 </div>
 
-<!-- Dashboard -->
-<div class="dashboard-container" id="dashboardContainer">
-    <div class="header">
-        <h1>📡 COMIUM NOC <span>Incident Manager</span></h1>
-        <div class="user-info">
+<!-- Main Dashboard -->
+<div class="dashboard" id="dashboard">
+    <div class="top-bar">
+        <h1>🔴 COMIUM NOC <span>OWS Workflow Engine</span></h1>
+        <div class="user-section">
             <div class="user-badge" id="userNameDisplay">admin</div>
-            <div class="user-badge" id="userRoleDisplay">Administrator</div>
+            <div class="user-badge" id="userEmailDisplay">admin@comium.com</div>
+            <div class="user-badge" id="userRoleDisplay">NOC Manager</div>
+            <div class="user-badge" id="userPhoneDisplay">+220 999 8888</div>
             <button class="logout-btn" onclick="logout()">Sign Out</button>
         </div>
     </div>
 
-    <div class="stats-container">
-        <div class="stat-card">
-            <h3>📋 Total Incidents</h3>
-            <div class="stat-number" id="totalCount">0</div>
+    <div class="nav-tabs">
+        <button class="tab active" onclick="showPanel('tickets')">🎫 Tickets</button>
+        <button class="tab" onclick="showPanel('create')">➕ Auto Create</button>
+        <button class="tab" onclick="showPanel('teams')">👥 Teams & Users</button>
+        <button class="tab" onclick="showPanel('reports')">📊 Reports & Export</button>
+        <button class="tab" onclick="showPanel('admin')">⚙️ Admin</button>
+        <button class="tab" onclick="showPanel('audit')">📜 Audit Log</button>
+    </div>
+
+    <!-- Tickets Panel -->
+    <div id="panel-tickets" class="panel active">
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="ticket-grid" id="ticketGrid"></div>
+    </div>
+
+    <!-- Auto Create Ticket Panel -->
+    <div id="panel-create" class="panel">
+        <div class="form-card">
+            <h3 style="color:#b91c1c; margin-bottom:20px;">🚨 Auto-Generate Incident from NMS/OSS Alarm</h3>
+            <div id="alarmPreview" style="background:#fef2f2; padding:15px; border-radius:12px; margin-bottom:20px;">
+                <p>🟡 <strong>New Alarm Received:</strong> NE Is Disconnected</p>
+                <p>📍 Source: Huawei NMS / OSS Monitoring</p>
+                <p>⏰ Timestamp: <span id="alarmTime"></span></p>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Site Name *</label>
+                    <input type="text" id="ticketSite" placeholder="Select or type site" list="siteList">
+                    <datalist id="siteList">
+                        <option>Old Yundum 4</option><option>Latriya</option><option>Bwiam</option>
+                        <option>Brufut TAF Estate</option><option>Sukuta 2</option><option>Jalambang</option>
+                        <option>Kerewan</option><option>Banjul Tower</option><option>Farafenni</option>
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label>Incident Date *</label>
+                    <input type="datetime-local" id="ticketDate">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Alarm Description *</label>
+                <textarea id="ticketDesc" rows="3" placeholder="NE Is Disconnected - Loss of connectivity to network element"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Select Team *</label>
+                    <select id="ticketTeam" onchange="updateTeamMembers()">
+                        <option value="">Select Team</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Assign Team Lead *</label>
+                    <select id="ticketTeamLead"></select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Assign Owner (Engineer) *</label>
+                <select id="ticketOwner"></select>
+            </div>
+            <div class="form-group">
+                <label>Attach Files (Optional)</label>
+                <input type="file" id="ticketFiles" multiple accept=".jpg,.jpeg,.png,.pdf,.docx,.xlsx,.txt,.log">
+                <div id="filePreview" class="file-list"></div>
+            </div>
+            <button class="btn-primary" onclick="createTicket()" style="width:100%; padding:12px;">✅ Generate Incident Ticket</button>
         </div>
-        <div class="stat-card">
-            <h3>⚠️ Open</h3>
-            <div class="stat-number" id="openCount">0</div>
-        </div>
-        <div class="stat-card">
-            <h3>✅ Cleared</h3>
-            <div class="stat-number" id="clearedCount">0</div>
-        </div>
-        <div class="stat-card">
-            <h3>🔥 Critical</h3>
-            <div class="stat-number" id="criticalCount">0</div>
+        
+        <div class="form-card">
+            <h3 style="color:#b91c1c;">🔄 Simulate Auto Alarm (NMS Integration)</h3>
+            <div class="form-row-3">
+                <div class="form-group"><label>Alarm Type</label><select id="simAlarmType"><option>NE Is Disconnected</option><option>LOS Alarm</option><option>Power Failure</option><option>High CPU Usage</option></select></div>
+                <div class="form-group"><label>Site</label><input id="simSite" placeholder="Site name"></div>
+                <div class="form-group"><button class="btn-warning" onclick="simulateAlarm()" style="margin-top:24px;">⚡ Trigger Auto Ticket</button></div>
+            </div>
         </div>
     </div>
 
-    <div class="filters-container">
-        <div class="filter-group">
-            <label>RCA:</label>
-            <select id="filterRCA">
-                <option value="ALL">All</option>
-                <option value="Power Failure">Power Failure</option>
-                <option value="Transmission Fault">Transmission Fault</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <label>Status:</label>
-            <select id="filterStatus">
-                <option value="ALL">All</option>
-                <option value="Cleared">Cleared</option>
-                <option value="Open">Open</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <label>Team:</label>
-            <select id="filterTeam">
-                <option value="ALL">All Teams</option>
-                <option value="HQ">HQ</option>
-                <option value="Brikama House">Brikama House</option>
-                <option value="Barra House">Barra House</option>
-                <option value="Mansakonko House">Mansakonko House</option>
-            </select>
-        </div>
-        <div class="search-input">
-            🔍 <input type="text" id="searchInput" placeholder="Search site...">
-        </div>
-        <button class="reset-btn" onclick="resetFilters()">Reset</button>
+    <!-- Teams Panel -->
+    <div id="panel-teams" class="panel">
+        <div id="teamsList"></div>
     </div>
 
-    <div class="table-wrapper">
-        <table class="incident-table">
-            <thead>
-                <tr><th>ID</th><th>Site Name</th><th>Region</th><th>Team</th><th>Occurred</th><th>Cleared</th><th>RCA</th><th>Status</th><th>Severity</th><th>Closed By</th></tr>
-            </thead>
-            <tbody id="incidentTableBody"></tbody>
-        </table>
+    <!-- Reports Panel -->
+    <div id="panel-reports" class="panel">
+        <div class="form-card">
+            <h3 style="color:#b91c1c;">📊 Filter Reports</h3>
+            <div class="filter-bar">
+                <div class="form-group"><label>From Date</label><input type="date" id="reportFromDate"></div>
+                <div class="form-group"><label>To Date</label><input type="date" id="reportToDate"></div>
+                <div class="form-group"><label>Team</label><select id="reportTeam"><option value="">All Teams</option></select></div>
+                <div class="form-group"><label>Status</label><select id="reportStatus"><option value="">All</option><option>OPEN</option><option>ACKNOWLEDGED</option><option>IN_PROGRESS</option><option>RESOLVED</option><option>PENDING_CLOSURE</option><option>CLOSED</option></select></div>
+                <div class="form-group"><label>Site</label><input type="text" id="reportSite" placeholder="Site name"></div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn-primary" onclick="exportToExcel()">📊 Export to Excel (.xlsx)</button>
+                <button class="btn-success" onclick="exportToPDF()">📄 Export to PDF</button>
+            </div>
+        </div>
+        <div class="stats-grid" id="reportStats"></div>
+        <div class="report-tickets" id="reportTicketsList"></div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="panel-admin" class="panel">
+        <div class="form-card">
+            <h3 style="color:#b91c1c;">🏢 Create New Team</h3>
+            <div class="form-row">
+                <div class="form-group"><label>Team Name</label><input type="text" id="newTeamName" placeholder="e.g., Microwave Team"></div>
+                <div class="form-group"><button class="btn-primary" onclick="addTeam()" style="margin-top:24px;">+ Create Team</button></div>
+            </div>
+        </div>
+        <div class="form-card">
+            <h3 style="color:#b91c1c;">👤 Add User to Team</h3>
+            <div class="form-row">
+                <div class="form-group"><label>Select Team</label><select id="adminUserTeam"></select></div>
+                <div class="form-group"><label>Full Name</label><input type="text" id="adminUserName" placeholder="John Doe"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Email *</label><input type="email" id="adminUserEmail" placeholder="john@comium.com"></div>
+                <div class="form-group"><label>Phone *</label><input type="text" id="adminUserPhone" placeholder="+220 1234567"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Role</label><select id="adminUserRole"><option>Engineer</option><option>Team Lead</option><option>NOC Manager</option></select></div>
+                <div class="form-group"><button class="btn-primary" onclick="addUserToTeam()" style="margin-top:24px;">+ Add User</button></div>
+            </div>
+            <div class="closure-warning">
+                ⚠️ <strong>Closure Privileges:</strong> Only users with <strong>Team Lead</strong> or <strong>NOC Manager</strong> role AND valid Email/Phone can close tickets.
+            </div>
+        </div>
+        <div id="adminTeamsList"></div>
+    </div>
+
+    <!-- Audit Log Panel -->
+    <div id="panel-audit" class="panel">
+        <div class="form-card">
+            <h3 style="color:#b91c1c;">📜 System Audit Trail</h3>
+            <table class="data-table" id="auditTable">
+                <thead><tr><th>Timestamp</th><th>User</th><th>Email</th><th>Action</th><th>Details</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
-    // ============= USER DATABASE =============
-    const USERS = {
-        'admin': { password: 'noc2025', role: 'Administrator', team: 'HQ' },
-        'sanusi': { password: 'sanusi2025', role: 'NOC Engineer', team: 'HQ' },
-        'maansu': { password: 'maansu2025', role: 'Field Tech', team: 'Brikama House' },
-        'dawda': { password: 'dawda2025', role: 'NOC Engineer', team: 'HQ' },
-        'maimuna': { password: 'maimuna2025', role: 'NOC Engineer', team: 'HQ' },
-        'tabally': { password: 'tabally2025', role: 'Transmission Eng', team: 'Barra House' },
-        'bubacarr': { password: 'bubacarr2025', role: 'Field Tech', team: 'Brikama House' },
-        'jack': { password: 'jack2025', role: 'Power Tech', team: 'HQ' },
-        'ahmadou': { password: 'ahmadou2025', role: 'NOC Engineer', team: 'HQ' },
-        'bruno': { password: 'bruno2025', role: 'Field Tech', team: 'Brikama House' }
-    };
-
-    // ============= INCIDENT DATA (from your Excel) =============
-    const incidentsData = [
-        { id: "0603_1074", site: "SIFO", region: "West Coast", team: "HQ", occurred: "2026-06-03 06:49:37", cleared: "2026-06-03 07:41:00", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Maimuna" },
-        { id: "0601_996", site: "Old Yundum 4", region: "West Coast", team: "HQ", occurred: "2026-06-01 00:17:09", cleared: "2026-06-01 10:50:49", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
-        { id: "0601_997", site: "Latriya", region: "West Coast", team: "HQ", occurred: "2026-06-01 00:17:09", cleared: "2026-06-01 08:51:53", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
-        { id: "0601_998", site: "Bwiam", region: "West Coast", team: "Brikama House", occurred: "2026-06-01 00:39:09", cleared: "2026-06-01 02:31:09", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Ma Ansu" },
-        { id: "0601_999", site: "Tawto", region: "West Coast", team: "HQ", occurred: "2026-06-01 00:52:37", cleared: "2026-06-01 11:55:53", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
-        { id: "0601_1000", site: "Brufut TAF Estate", region: "West Coast", team: "HQ", occurred: "2026-06-01 00:58:37", cleared: "2026-06-01 01:50:41", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Ma Ansu" },
-        { id: "0601_1001", site: "Pirang", region: "West Coast", team: "Brikama House", occurred: "2026-06-01 01:01:37", cleared: "2026-06-01 08:54:49", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
-        { id: "0601_1002", site: "Tallinding II", region: "Kanifing", team: "HQ", occurred: "2026-06-01 01:01:37", cleared: "2026-06-01 08:46:17", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
-        { id: "0601_1003", site: "Brufut Medina", region: "West Coast", team: "HQ", occurred: "2026-06-01 01:02:09", cleared: "2026-06-01 11:11:21", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
-        { id: "0601_1004", site: "Brusubi 2", region: "West Coast", team: "HQ", occurred: "2026-06-01 01:03:09", cleared: "2026-06-01 10:50:49", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
-        { id: "0602_1057", site: "Brufut TAF Estate", region: "West Coast", team: "HQ", occurred: "2026-06-02 18:38:09", cleared: "", rca: "Power Failure", status: "Open", severity: "Critical", closedBy: "" },
-        { id: "0602_1062", site: "Sukuta 2", region: "West Coast", team: "HQ", occurred: "2026-06-02 21:45:13", cleared: "", rca: "Power Failure", status: "Open", severity: "Critical", closedBy: "" },
-        { id: "0603_1068", site: "Jalambang", region: "West Coast", team: "HQ", occurred: "2026-06-02 23:58:45", cleared: "", rca: "Power Failure", status: "Open", severity: "Critical", closedBy: "" },
-        { id: "0603_1075", site: "Latriya", region: "West Coast", team: "HQ", occurred: "2026-06-03 02:13:45", cleared: "", rca: "Power Failure", status: "Open", severity: "Critical", closedBy: "" },
-        { id: "0603_1082", site: "Darsilarmi", region: "West Coast", team: "HQ", occurred: "2026-06-03 04:16:18", cleared: "", rca: "Power Failure", status: "Open", severity: "Critical", closedBy: "" },
-        { id: "0603_1092", site: "Kerewan", region: "North Bank", team: "Barra House", occurred: "2026-06-03 06:42:21", cleared: "2026-06-03 08:00:00", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Ahmadou" },
-        { id: "0602_1055", site: "Kununku", region: "Central River", team: "Mansakonko House", occurred: "2026-06-02 16:00:37", cleared: "2026-06-02 17:31:41", rca: "Transmission Fault", status: "Cleared", severity: "Critical", closedBy: "Sanusi" }
+    // ============= DATA MODELS =============
+    let tickets = [];
+    let teams = [
+        { id: 1, name: "Transmission Team", users: [] },
+        { id: 2, name: "Wireless Team", users: [] },
+        { id: 3, name: "IPRAN Team", users: [] },
+        { id: 4, name: "Core Network Team", users: [] },
+        { id: 5, name: "OCS Team", users: [] },
+        { id: 6, name: "Power Team", users: [] }
     ];
-
+    let auditLog = [];
     let currentUser = null;
-    let incidentsList = [...incidentsData];
+    let fileAttachments = {};
 
-    // Dashboard Functions
-    function renderDashboard() {
-        const filterRCA = document.getElementById('filterRCA').value;
-        const filterStatus = document.getElementById('filterStatus').value;
-        const filterTeam = document.getElementById('filterTeam').value;
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    // Helper Functions
+    function generateTicketId() {
+        const date = new Date();
+        return `INC-${date.getFullYear()}${String(date.getMonth()+1).padStart(2,'0')}${String(date.getDate()).padStart(2,'0')}-${String(tickets.length+1).padStart(4,'0')}`;
+    }
 
-        let filtered = incidentsList.filter(inc => {
-            if (filterRCA !== 'ALL' && inc.rca !== filterRCA) return false;
-            if (filterStatus !== 'ALL' && inc.status !== filterStatus) return false;
-            if (filterTeam !== 'ALL' && inc.team !== filterTeam) return false;
-            if (searchTerm && !inc.site.toLowerCase().includes(searchTerm)) return false;
-            return true;
+    function logAction(action, details) {
+        auditLog.unshift({ 
+            timestamp: new Date().toISOString(), 
+            user: currentUser?.name || 'system', 
+            email: currentUser?.email || 'system@comium.com',
+            action, 
+            details 
         });
+        renderAuditLog();
+    }
 
-        // Update stats
-        document.getElementById('totalCount').innerText = filtered.length;
-        document.getElementById('openCount').innerText = filtered.filter(i => i.status === 'Open').length;
-        document.getElementById('clearedCount').innerText = filtered.filter(i => i.status === 'Cleared').length;
-        document.getElementById('criticalCount').innerText = filtered.filter(i => i.severity === 'Critical').length;
+    // Function to check if user has closure privileges (Team Lead OR NOC Manager with verified email/phone)
+    function canCloseTicket() {
+        if (!currentUser) return false;
+        const hasClosureRole = currentUser.role === 'Team Lead' || currentUser.role === 'NOC Manager';
+        const hasValidEmail = currentUser.email && currentUser.email.includes('@');
+        const hasValidPhone = currentUser.phone && currentUser.phone.length >= 8;
+        
+        const canClose = hasClosureRole && hasValidEmail && hasValidPhone;
+        
+        if (!canClose) {
+            console.log('Closure restricted: Need Team Lead/NOC Manager role with valid email & phone');
+        }
+        return canClose;
+    }
 
-        // Update table
-        const tbody = document.getElementById('incidentTableBody');
-        if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:40px;">No incidents found</td></tr>';
+    function sendNotification(email, phone, subject, message) {
+        console.log(`📧 NOTIFICATION: To: ${email} | ${phone} | Subject: ${subject}`);
+        if (Notification.permission === "granted") {
+            new Notification(subject, { body: message });
+        }
+    }
+
+    function updateTeamMembers() {
+        const teamName = document.getElementById('ticketTeam').value;
+        const team = teams.find(t => t.name === teamName);
+        if (team) {
+            const leads = team.users.filter(u => u.role === 'Team Lead');
+            const engineers = team.users.filter(u => u.role === 'Engineer');
+            document.getElementById('ticketTeamLead').innerHTML = '<option value="">Select Team Lead</option>' + leads.map(u => `<option value="${u.name}">${u.name} (${u.email})</option>`).join('');
+            document.getElementById('ticketOwner').innerHTML = '<option value="">Select Owner</option>' + engineers.map(u => `<option value="${u.name}">${u.name} (${u.email})</option>`).join('');
+        }
+    }
+
+    function handleFileUpload() {
+        const files = document.getElementById('ticketFiles').files;
+        const preview = document.getElementById('filePreview');
+        preview.innerHTML = '';
+        const fileList = [];
+        for (let i = 0; i < files.length; i++) {
+            fileList.push({ name: files[i].name, size: files[i].size, type: files[i].type });
+            preview.innerHTML += `<div class="file-item">📎 ${files[i].name} (${(files[i].size/1024).toFixed(1)} KB)</div>`;
+        }
+        return fileList;
+    }
+
+    function simulateAlarm() {
+        const alarmType = document.getElementById('simAlarmType').value;
+        const site = document.getElementById('simSite').value || "Unknown Site";
+        document.getElementById('ticketSite').value = site;
+        document.getElementById('ticketDesc').value = `${alarmType} - Automatic alarm from NMS/OSS system`;
+        document.getElementById('alarmTime').innerText = new Date().toLocaleString();
+        document.getElementById('ticketDate').value = new Date().toISOString().slice(0,16);
+        showPanel('create');
+        alert(`🚨 AUTO INCIDENT TRIGGERED!\nAlarm: ${alarmType}\nSite: ${site}\nPlease complete assignment.`);
+    }
+
+    function createTicket() {
+        const site = document.getElementById('ticketSite').value;
+        const date = document.getElementById('ticketDate').value;
+        const desc = document.getElementById('ticketDesc').value;
+        const team = document.getElementById('ticketTeam').value;
+        const teamLead = document.getElementById('ticketTeamLead').value;
+        const owner = document.getElementById('ticketOwner').value;
+        const files = handleFileUpload();
+
+        if (!site || !desc || !team || !teamLead || !owner) {
+            alert('Please fill all required fields');
             return;
         }
 
-        tbody.innerHTML = filtered.map(inc => `
-            <tr>
-                <td><strong>${inc.id}</strong></td>
-                <td>${inc.site}</td>
-                <td>${inc.region}</td>
-                <td>${inc.team}</td>
-                <td>${inc.occurred}</td>
-                <td>${inc.cleared || '—'}</td>
-                <td>${inc.rca}</td>
-                <td><span class="status-${inc.status === 'Cleared' ? 'cleared' : 'open'}">${inc.status}</span></td>
-                <td><span class="severity-critical">${inc.severity}</span></td>
-                <td>${inc.closedBy || '—'}</td>
-            </tr>
-        `).join('');
-    }
+        const newTicket = {
+            id: generateTicketId(),
+            site: site,
+            createdAt: new Date().toISOString(),
+            occurredAt: date,
+            description: desc,
+            team: team,
+            teamLead: teamLead,
+            owner: owner,
+            status: 'OPEN',
+            severity: 'Critical',
+            acknowledgementTime: null,
+            inProgressTime: null,
+            resolutionTime: null,
+            closureTime: null,
+            rca: '',
+            resolution: '',
+            actions: [],
+            attachments: files,
+            slaDeadline: new Date(Date.now() + 3600000).toISOString()
+        };
 
-    function resetFilters() {
-        document.getElementById('filterRCA').value = 'ALL';
-        document.getElementById('filterStatus').value = 'ALL';
-        document.getElementById('filterTeam').value = 'ALL';
-        document.getElementById('searchInput').value = '';
-        renderDashboard();
-    }
-
-    // Attach event listeners
-    function bindEvents() {
-        document.getElementById('filterRCA').addEventListener('change', renderDashboard);
-        document.getElementById('filterStatus').addEventListener('change', renderDashboard);
-        document.getElementById('filterTeam').addEventListener('change', renderDashboard);
-        document.getElementById('searchInput').addEventListener('input', renderDashboard);
-    }
-
-    // Login/Logout Functions
-    function login() {
-        const username = document.getElementById('username').value.trim().toLowerCase();
-        const password = document.getElementById('password').value;
-
-        const user = USERS[username];
+        tickets.unshift(newTicket);
+        fileAttachments[newTicket.id] = files;
+        logAction('TICKET_CREATED', `${newTicket.id} - ${desc} | Assigned to ${owner} (${team})`);
         
-        if (user && user.password === password) {
-            currentUser = { username, ...user };
-            localStorage.setItem('noc_user', JSON.stringify(currentUser));
+        sendNotification(`${owner.split(' ')[0].toLowerCase()}@comium.com`, '+2201234567', `New Ticket: ${newTicket.id}`, `You have been assigned ticket ${newTicket.id}\nSite: ${site}\nSLA: 1 hour`);
+        
+        alert(`✅ Ticket ${newTicket.id} created!`);
+        renderTickets();
+        showPanel('tickets');
+        
+        document.getElementById('ticketFiles').value = '';
+        document.getElementById('filePreview').innerHTML = '';
+    }
+
+    function acknowledgeTicket(ticketId) {
+        const ticket = tickets.find(t => t.id === ticketId);
+        if (ticket && ticket.status === 'OPEN' && ticket.owner.split(' ')[0].toLowerCase() === currentUser?.name.split(' ')[0].toLowerCase()) {
+            ticket.status = 'ACKNOWLEDGED';
+            ticket.acknowledgementTime = new Date().toISOString();
+            logAction('TICKET_ACKNOWLEDGED', `${ticketId} by ${currentUser?.name} (${currentUser?.email})`);
+            renderTickets();
+            alert(`✅ Ticket ${ticketId} acknowledged at ${new Date().toLocaleTimeString()}`);
+        } else {
+            alert('Only assigned owner can acknowledge this ticket');
+        }
+    }
+
+    function startProgress(ticketId) {
+        const ticket = tickets.find(t => t.id === ticketId);
+        if (ticket && ticket.status === 'ACKNOWLEDGED') {
+            const action = prompt('Log troubleshooting action:');
+            if (action) {
+                ticket.actions.push({ timestamp: new Date().toISOString(), action: action, user: currentUser?.name });
+                ticket.status = 'IN_PROGRESS';
+                ticket.inProgressTime = new Date().toISOString();
+                logAction('TICKET_IN_PROGRESS', `${ticketId} - Action: ${action} by ${currentUser?.name}`);
+                renderTickets();
+                alert(`🔄 Ticket ${ticketId} is now IN PROGRESS`);
+            }
+        }
+    }
+
+    function resolveTicket(ticketId) {
+        const ticket = tickets.find(t => t.id === ticketId);
+        const rca = prompt('Enter Root Cause Analysis (RCA):');
+        const resolution = prompt('Enter Resolution Details:');
+        if (rca && resolution && ticket && ticket.status === 'IN_PROGRESS') {
+            ticket.rca = rca;
+            ticket.resolution = resolution;
+            ticket.status = 'RESOLVED';
+            ticket.resolutionTime = new Date().toISOString();
+            logAction('TICKET_RESOLVED', `${ticketId} - RCA: ${rca} | Resolution: ${resolution} by ${currentUser?.name}`);
+            renderTickets();
+            alert(`✅ Ticket ${ticketId} resolved. Reassigned to NOC for validation.`);
+        }
+    }
+
+    function validateTicket(ticketId, isValid) {
+        const ticket = tickets.find(t => t.id === ticketId);
+        if (ticket && ticket.status === 'RESOLVED' && currentUser?.role === 'NOC Manager') {
+            if (isValid) {
+                ticket.status = 'PENDING_CLOSURE';
+                logAction('TICKET_VALIDATED', `${ticketId} - NOC validation passed by ${currentUser?.name} (${currentUser?.email})`);
+                alert(`✅ Ticket ${ticketId} validated. Ready for closure.`);
+            } else {
+                ticket.status = 'IN_PROGRESS';
+                logAction('TICKET_REJECTED', `${ticketId} - NOC rejected, reassigned by ${currentUser?.name}`);
+                alert(`❌ Ticket ${ticketId} rejected. Reassigned to owner.`);
+            }
+            renderTickets();
+        }
+    }
+
+    // RESTRICTED CLOSURE FUNCTION - Only Team Lead or NOC Manager with valid Email/Phone
+    function closeTicket(ticketId) {
+        const ticket = tickets.find(t => t.id === ticketId);
+        
+        // STRICT CLOSURE VERIFICATION
+        if (!ticket || ticket.status !== 'PENDING_CLOSURE') {
+            alert('Ticket must be in PENDING_CLOSURE status');
+            return;
+        }
+        
+        // Check if user has closure privileges
+        if (!canCloseTicket()) {
+            alert(`⛔ CLOSURE RESTRICTED!\n\nOnly Team Lead or NOC Manager with registered Email and Phone can close tickets.\n\nYour Details:\nRole: ${currentUser?.role}\nEmail: ${currentUser?.email || 'Not registered'}\nPhone: ${currentUser?.phone || 'Not registered'}\n\nPlease contact Admin to update your profile.`);
+            logAction('CLOSURE_ATTEMPT_DENIED', `${ticketId} - User ${currentUser?.name} (${currentUser?.email}) attempted closure without privileges`);
+            return;
+        }
+        
+        // Verify closure role
+        if (currentUser.role !== 'Team Lead' && currentUser.role !== 'NOC Manager') {
+            alert('Only Team Lead or NOC Manager can close tickets');
+            return;
+        }
+        
+        // Final closure
+        ticket.status = 'CLOSED';
+        ticket.closureTime = new Date().toISOString();
+        ticket.closedBy = `${currentUser.name} (${currentUser.email}) - ${currentUser.role}`;
+        logAction('TICKET_CLOSED', `${ticketId} by ${currentUser?.name} (${currentUser?.email}) - ${currentUser?.role}`);
+        renderTickets();
+        alert(`✅ Ticket ${ticketId} CLOSED by ${currentUser.name} (${currentUser.role})`);
+    }
+
+    function renderTickets() {
+        const container = document.getElementById('ticketGrid');
+        if (!container) return;
+        
+        // SLA Escalation Check
+        tickets.forEach(ticket => {
+            if (!['CLOSED', 'RESOLVED', 'PENDING_CLOSURE'].includes(ticket.status)) {
+                const slaTime = new Date(ticket.slaDeadline);
+                if (new Date() > slaTime && ticket.status !== 'ESCALATED') {
+                    ticket.status = 'ESCALATED';
+                    sendNotification(ticket.teamLead, '+2201234567', `SLA Violation: ${ticket.id}`, `Ticket exceeded SLA. Immediate action required.`);
+                    logAction('SLA_ESCALATED', `${ticket.id} - SLA breached`);
+                }
+            }
+        });
+
+        let filtered = tickets;
+        if (currentUser?.role === 'Engineer') {
+            filtered = tickets.filter(t => t.owner === currentUser?.name);
+        } else if (currentUser?.role === 'Team Lead') {
+            filtered = tickets.filter(t => t.teamLead === currentUser?.name);
+        }
+
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card"><h4>Total Tickets</h4><div class="stat-number">${tickets.length}</div></div>
+            <div class="stat-card"><h4>Open</h4><div class="stat-number">${tickets.filter(t => t.status === 'OPEN').length}</div></div>
+            <div class="stat-card"><h4>In Progress</h4><div class="stat-number">${tickets.filter(t => t.status === 'IN_PROGRESS').length}</div></div>
+            <div class="stat-card"><h4>Pending Closure</h4><div class="stat-number">${tickets.filter(t => t.status === 'PENDING_CLOSURE').length}</div></div>
+            <div class="stat-card"><h4>Closed</h4><div class="stat-number">${tickets.filter(t => t.status === 'CLOSED').length}</div></div>
+            <div class="stat-card"><h4>SLA Met</h4><div class="stat-number">${Math.round((tickets.filter(t => new Date(t.slaDeadline) > new Date(t.resolutionTime || t.createdAt)).length / (tickets.length || 1)) * 100)}%</div></div>
+        `;
+
+        container.innerHTML = filtered.map(ticket => {
+            const userCanClose = canCloseTicket();
+            const showCloseButton = ticket.status === 'PENDING_CLOSURE' && userCanClose;
+            
+            return `
+            <div class="ticket-card">
+                <div class="ticket-header">
+                    <span class="ticket-id">${ticket.id}</span>
+                    <span class="ticket-status status-${ticket.status}">${ticket.status}</span>
+                </div>
+                <div><strong>📍 ${ticket.site}</strong></div>
+                <div class="ticket-detail">👤 Owner: ${ticket.owner} | 🏢 ${ticket.team}</div>
+                <div class="ticket-detail">📅 Created: ${new Date(ticket.createdAt).toLocaleString()}</div>
+                <div class="ticket-detail">⏰ SLA: ${new Date(ticket.slaDeadline).toLocaleTimeString()}</div>
+                <div class="ticket-detail">📝 ${ticket.description.substring(0, 80)}...</div>
+                ${ticket.attachments?.length ? `<div class="ticket-detail">📎 ${ticket.attachments.length} file(s) attached</div>` : ''}
+                <div class="ticket-actions">
+                    ${ticket.status === 'OPEN' && ticket.owner === currentUser?.name ? `<button class="btn-primary" onclick="acknowledgeTicket('${ticket.id}')">✅ Acknowledge</button>` : ''}
+                    ${ticket.status === 'ACKNOWLEDGED' ? `<button class="btn-primary" onclick="startProgress('${ticket.id}')">▶ Start Progress</button>` : ''}
+                    ${ticket.status === 'IN_PROGRESS' ? `<button class="btn-success" onclick="resolveTicket('${ticket.id}')">🔧 Resolve</button>` : ''}
+                    ${ticket.status === 'RESOLVED' && currentUser?.role === 'NOC Manager' ? `<button class="btn-success" onclick="validateTicket('${ticket.id}', true)">✅ Validate</button><button class="btn-danger" onclick="validateTicket('${ticket.id}', false)">❌ Reject</button>` : ''}
+                    ${showCloseButton ? `<button class="btn-primary" onclick="closeTicket('${ticket.id}')">🔒 Close Ticket</button>` : ''}
+                </div>
+                ${!showCloseButton && ticket.status === 'PENDING_CLOSURE' ? `<div class="closure-warning">🔒 Closure restricted to Team Lead/NOC Manager with valid Email & Phone</div>` : ''}
+                ${ticket.closedBy ? `<div class="ticket-detail">🔒 Closed by: ${ticket.closedBy}</div>` : ''}
+                ${ticket.rca ? `<div class="ticket-detail"><strong>🔍 RCA:</strong> ${ticket.rca}</div>` : ''}
+                ${ticket.resolution ? `<div class="ticket-detail"><strong>📝 Resolution:</strong> ${ticket.resolution}</div>` : ''}
+            </div>
+        `}).join('');
+    }
+
+    function renderTeams() {
+        const container = document.getElementById('teamsList');
+        const teamSelect = document.getElementById('ticketTeam');
+        const adminTeamSelect = document.getElementById('adminUserTeam');
+        const reportTeamSelect = document.getElementById('reportTeam');
+        
+        if (teamSelect) {
+            teamSelect.innerHTML = '<option value="">Select Team</option>' + teams.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+        }
+        if (adminTeamSelect) {
+            adminTeamSelect.innerHTML = teams.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+        }
+        if (reportTeamSelect) {
+            reportTeamSelect.innerHTML = '<option value="">All Teams</option>' + teams.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+        }
+        
+        if (container) {
+            container.innerHTML = teams.map(team => `
+                <div class="form-card">
+                    <h4 style="color:#b91c1c;">🏢 ${team.name}</h4>
+                    <table class="data-table">
+                        <thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th></thead>
+                        <tbody>${team.users.map(u => `<tr><td>${u.name}</td><td>${u.role}</td><td>${u.email}</td><td>${u.phone}</td></tr>`).join('')}</tbody>
+                    </table>
+                </div>
+            `).join('');
+        }
+        
+        const adminContainer = document.getElementById('adminTeamsList');
+        if (adminContainer) {
+            adminContainer.innerHTML = teams.map(team => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #e5e7eb;">
+                    <span><strong>${team.name}</strong> (${team.users.length} users)</span>
+                    <button class="btn-secondary" onclick="deleteTeam(${team.id})">Delete Team</button>
+                </div>
+            `).join('');
+        }
+    }
+
+    function addTeam() {
+        const name = document.getElementById('newTeamName').value.trim();
+        if (name) {
+            teams.push({ id: Date.now(), name: name, users: [] });
+            renderTeams();
+            document.getElementById('newTeamName').value = '';
+            logAction('TEAM_CREATED', `${name}`);
+            alert(`Team "${name}" created`);
+        }
+    }
+
+    function deleteTeam(teamId) {
+        if (confirm('Delete this team? All users will be removed.')) {
+            teams = teams.filter(t => t.id !== teamId);
+            renderTeams();
+            renderTickets();
+            alert('Team deleted');
+        }
+    }
+
+    function addUserToTeam() {
+        const teamName = document.getElementById('adminUserTeam').value;
+        const name = document.getElementById('adminUserName').value.trim();
+        const email = document.getElementById('adminUserEmail').value;
+        const phone = document.getElementById('adminUserPhone').value;
+        const role = document.getElementById('adminUserRole').value;
+        
+        if (!email || !phone) {
+            alert('Email and Phone are required for closure privileges');
+            return;
+        }
+        
+        const team = teams.find(t => t.name === teamName);
+        if (team && name) {
+            team.users.push({ name, email, phone, role });
+            renderTeams();
+            logAction('USER_ADDED', `${name} (${email}) added to ${teamName} as ${role}`);
+            document.getElementById('adminUserName').value = '';
+            document.getElementById('adminUserEmail').value = '';
+            document.getElementById('adminUserPhone').value = '';
+            alert(`User ${name} added to ${teamName}\n${role}s with email/phone can close tickets.`);
+        }
+    }
+
+    function renderReportFilters() {
+        const fromDate = document.getElementById('reportFromDate').value;
+        const toDate = document.getElementById('reportToDate').value;
+        const team = document.getElementById('reportTeam').value;
+        const status = document.getElementById('reportStatus').value;
+        const site = document.getElementById('reportSite').value.toLowerCase();
+        
+        let filtered = tickets.filter(t => {
+            if (fromDate && new Date(t.createdAt) < new Date(fromDate)) return false;
+            if (toDate && new Date(t.createdAt) > new Date(toDate)) return false;
+            if (team && t.team !== team) return false;
+            if (status && t.status !== status) return false;
+            if (site && !t.site.toLowerCase().includes(site)) return false;
+            return true;
+        });
+        
+        const avgAck = filtered.filter(t => t.acknowledgementTime).reduce((acc, t) => acc + (new Date(t.acknowledgementTime) - new Date(t.createdAt)), 0) / (filtered.filter(t => t.acknowledgementTime).length || 1);
+        const avgRes = filtered.filter(t => t.resolutionTime).reduce((acc, t) => acc + (new Date(t.resolutionTime) - new Date(t.createdAt)), 0) / (filtered.filter(t => t.resolutionTime).length || 1);
+        
+        document.getElementById('reportStats').innerHTML = `
+            <div class="stat-card"><h4>Filtered Tickets</h4><div class="stat-number">${filtered.length}</div></div>
+            <div class="stat-card"><h4>Avg Acknowledgement</h4><div class="stat-number">${Math.round(avgAck / 60000)} min</div></div>
+            <div class="stat-card"><h4>Avg Resolution (MTTR)</h4><div class="stat-number">${Math.round(avgRes / 60000)} min</div></div>
+            <div class="stat-card"><h4>SLA Compliance</h4><div class="stat-number">${Math.round((filtered.filter(t => new Date(t.slaDeadline) > new Date(t.resolutionTime || t.createdAt)).length / (filtered.length || 1)) * 100)}%</div></div>
+        `;
+        
+        const reportContainer = document.getElementById('reportTicketsList');
+        reportContainer.innerHTML = filtered.map(ticket => `
+            <div class="ticket-card">
+                <div class="ticket-header"><span class="ticket-id">${ticket.id}</span><span class="ticket-status status-${ticket.status}">${ticket.status}</span></div>
+                <div><strong>📍 ${ticket.site}</strong> | 👤 ${ticket.owner} | 🏢 ${ticket.team}</div>
+                <div>📅 Created: ${new Date(ticket.createdAt).toLocaleString()}</div>
+                <div>✅ Acknowledged: ${ticket.acknowledgementTime ? new Date(ticket.acknowledgementTime).toLocaleString() : '—'}</div>
+                <div>🔧 Resolved: ${ticket.resolutionTime ? new Date(ticket.resolutionTime).toLocaleString() : '—'}</div>
+                <div>🔒 Closed by: ${ticket.closedBy || '—'}</div>
+                ${ticket.rca ? `<div><strong>RCA:</strong> ${ticket.rca}</div>` : ''}
+            </div>
+        `).join('');
+        
+        return filtered;
+    }
+
+    function exportToExcel() {
+        const filtered = renderReportFilters();
+        const exportData = filtered.map(t => ({
+            'Ticket ID': t.id,
+            'Site Name': t.site,
+            'Team': t.team,
+            'Owner': t.owner,
+            'Team Lead': t.teamLead,
+            'Created At': t.createdAt,
+            'Acknowledged At': t.acknowledgementTime || '—',
+            'Resolved At': t.resolutionTime || '—',
+            'Closed At': t.closureTime || '—',
+            'Closed By': t.closedBy || '—',
+            'Status': t.status,
+            'RCA': t.rca,
+            'Resolution': t.resolution
+        }));
+        
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Incident Reports');
+        XLSX.writeFile(wb, `COMIUM_NOC_Report_${new Date().toISOString().slice(0,19)}.xlsx`);
+        alert('Excel report downloaded successfully!');
+    }
+
+    async function exportToPDF() {
+        const element = document.getElementById('reportTicketsList');
+        const originalDisplay = element.style.display;
+        element.style.display = 'block';
+        
+        try {
+            const canvas = await html2canvas(element, { scale: 2 });
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = 190;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+            pdf.save(`COMIUM_NOC_Report_${new Date().toISOString().slice(0,19)}.pdf`);
+            alert('PDF report downloaded successfully!');
+        } catch (error) {
+            alert('PDF generation failed. Using print fallback...');
+            window.print();
+        }
+        element.style.display = originalDisplay;
+    }
+
+    function renderAuditLog() {
+        const container = document.getElementById('auditTable')?.querySelector('tbody');
+        if (container) {
+            container.innerHTML = auditLog.slice(0, 100).map(log => `
+                <tr><td>${new Date(log.timestamp).toLocaleString()}</td><td>${log.user}</td><td>${log.email}</td><td>${log.action}</td><td>${log.details}</td></tr>
+            `).join('');
+        }
+    }
+
+    function showPanel(panelName) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(`panel-${panelName}`).classList.add('active');
+        if (event?.target) event.target.classList.add('active');
+        
+        if (panelName === 'tickets') renderTickets();
+        if (panelName === 'teams') renderTeams();
+        if (panelName === 'reports') renderReportFilters();
+        if (panelName === 'audit') renderAuditLog();
+        
+        if (panelName === 'create') {
+            document.getElementById('alarmTime').innerText = new Date().toLocaleString();
+            if (!document.getElementById('ticketDate').value) {
+                document.getElementById('ticketDate').value = new Date().toISOString().slice(0,16);
+            }
+        }
+    }
+
+    // Login Logic with Email/Phone verification
+    function login() {
+        const email = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const role = document.getElementById('loginRole').value;
+        
+        // Find user in teams by email
+        let foundUser = null;
+        let userTeam = null;
+        
+        for (const team of teams) {
+            const user = team.users.find(u => u.email === email);
+            if (user) {
+                foundUser = user;
+                userTeam = team.name;
+                break;
+            }
+        }
+        
+        // Default admin if no user found
+        if (!foundUser && email === 'admin@comium.com' && password === 'admin123') {
+            foundUser = { name: 'Admin User', email: 'admin@comium.com', phone: '+220 999 8888', role: 'NOC Manager' };
+            userTeam = 'Management';
+        }
+        
+        if (foundUser && password === 'admin123') {
+            currentUser = { 
+                name: foundUser.name, 
+                email: foundUser.email, 
+                phone: foundUser.phone, 
+                role: foundUser.role,
+                team: userTeam
+            };
             
             document.getElementById('loginContainer').style.display = 'none';
-            document.getElementById('dashboardContainer').style.display = 'block';
-            document.getElementById('userNameDisplay').innerHTML = `👤 ${username}`;
-            document.getElementById('userRoleDisplay').innerHTML = `🎯 ${user.role}`;
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('userNameDisplay').innerHTML = `👤 ${currentUser.name}`;
+            document.getElementById('userEmailDisplay').innerHTML = `📧 ${currentUser.email}`;
+            document.getElementById('userRoleDisplay').innerHTML = `🎯 ${currentUser.role}`;
+            document.getElementById('userPhoneDisplay').innerHTML = `📞 ${currentUser.phone || 'Not registered'}`;
             
-            renderDashboard();
-            bindEvents();
+            // Show closure privilege status
+            if (canCloseTicket()) {
+                console.log('✅ User has CLOSURE privileges (Team Lead/NOC Manager with valid email/phone)');
+            } else {
+                console.log('⚠️ User does NOT have closure privileges');
+            }
+            
+            if (Notification.permission === "default") Notification.requestPermission();
+            
+            renderTickets();
+            renderTeams();
         } else {
             document.getElementById('errorMsg').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('errorMsg').style.display = 'none';
-            }, 3000);
+            setTimeout(() => { document.getElementById('errorMsg').style.display = 'none'; }, 3000);
         }
     }
 
     function logout() {
         currentUser = null;
-        localStorage.removeItem('noc_user');
         document.getElementById('loginContainer').style.display = 'flex';
-        document.getElementById('dashboardContainer').style.display = 'none';
-        document.getElementById('username').value = 'admin';
-        document.getElementById('password').value = 'noc2025';
+        document.getElementById('dashboard').style.display = 'none';
     }
 
-    // Check for existing session
-    const savedUser = localStorage.getItem('noc_user');
-    if (savedUser) {
-        try {
-            const user = JSON.parse(savedUser);
-            if (USERS[user.username] && USERS[user.username].password === user.password) {
-                currentUser = user;
-                document.getElementById('loginContainer').style.display = 'none';
-                document.getElementById('dashboardContainer').style.display = 'block';
-                document.getElementById('userNameDisplay').innerHTML = `👤 ${user.username}`;
-                document.getElementById('userRoleDisplay').innerHTML = `🎯 ${user.role}`;
-                renderDashboard();
-                bindEvents();
-            }
-        } catch(e) {}
+    // Initialize sample data with proper email/phone for Team Leads and NOC Managers
+    function initSampleData() {
+        teams[0].users = [
+            { name: "John Smith", email: "john.smith@comium.com", phone: "+220 777 1111", role: "Team Lead" },
+            { name: "Mike Jones", email: "mike.jones@comium.com", phone: "+220 777 2222", role: "Engineer" }
+        ];
+        teams[5].users = [
+            { name: "Sarah Wilson", email: "sarah.wilson@comium.com", phone: "+220 777 3333", role: "Team Lead" },
+            { name: "David Brown", email: "david.brown@comium.com", phone: "+220 777 4444", role: "Engineer" }
+        ];
+        
+        const sampleTicket = {
+            id: "INC-20251201-0001",
+            site: "Old Yundum 4",
+            createdAt: new Date().toISOString(),
+            occurredAt: new Date().toISOString(),
+            description: "NE Is Disconnected - Power failure detected",
+            team: "Power Team",
+            teamLead: "Sarah Wilson",
+            owner: "David Brown",
+            status: "PENDING_CLOSURE",
+            severity: "Critical",
+            acknowledgementTime: new Date(Date.now() - 1800000).toISOString(),
+            inProgressTime: new Date(Date.now() - 900000).toISOString(),
+            resolutionTime: new Date(Date.now() - 600000).toISOString(),
+            closureTime: null,
+            rca: "Power outage at substation",
+            resolution: "Generator started, mains restored",
+            actions: [],
+            attachments: [],
+            slaDeadline: new Date(Date.now() + 1800000).toISOString(),
+            closedBy: null
+        };
+        tickets.push(sampleTicket);
     }
-
-    // Enter key login
-    document.getElementById('password')?.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') login();
-    });
+    
+    initSampleData();
+    renderTeams();
 </script>
 </body>
 </html>
