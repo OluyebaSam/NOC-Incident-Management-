@@ -2,96 +2,578 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Comium NOC Incident Manager</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
         }
+
         body {
             background: linear-gradient(135deg, #7a1f1f 0%, #5c0e0e 100%);
+            min-height: 100vh;
+        }
+
+        /* Login Page */
+        .login-container {
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
         }
+
         .login-card {
             background: white;
-            border-radius: 20px;
+            border-radius: 24px;
             padding: 40px;
-            max-width: 400px;
+            max-width: 420px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
         }
+
         .login-card h1 {
             color: #b91c1c;
-            margin-bottom: 10px;
+            font-size: 28px;
+            margin-bottom: 8px;
         }
+
+        .login-card h2 {
+            color: #666;
+            font-size: 18px;
+            font-weight: normal;
+            margin-bottom: 30px;
+        }
+
         .login-card input {
             width: 100%;
-            padding: 12px;
+            padding: 14px 16px;
             margin: 10px 0;
-            border: 2px solid #f0c5c5;
-            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
             font-size: 16px;
+            transition: all 0.2s;
         }
+
+        .login-card input:focus {
+            outline: none;
+            border-color: #b91c1c;
+            box-shadow: 0 0 0 3px rgba(185,28,28,0.1);
+        }
+
         .login-card button {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             background: #b91c1c;
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 20px;
+            transition: background 0.2s;
         }
-        .error {
+
+        .login-card button:hover {
+            background: #7f1d1d;
+        }
+
+        .error-msg {
             color: #b91c1c;
-            margin-top: 10px;
+            margin-top: 15px;
+            padding: 10px;
+            background: #fee2e2;
+            border-radius: 10px;
             display: none;
+            font-size: 14px;
+        }
+
+        /* Dashboard Styles */
+        .dashboard-container {
+            display: none;
+            background: #fefcf9;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #b91c1c;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            color: #b91c1c;
+            font-size: 24px;
+        }
+
+        .header h1 span {
+            font-size: 12px;
+            background: #fee2e2;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-left: 10px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-badge {
+            background: #fef2f2;
+            padding: 8px 16px;
+            border-radius: 30px;
+            color: #b91c1c;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            background: none;
+            border: 1px solid #fecaca;
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #b91c1c;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #fee2e2;
+            border-color: #b91c1c;
+        }
+
+        /* Stats Cards */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            padding: 24px;
+            background: white;
+            border-bottom: 1px solid #f3e0e0;
+        }
+
+        .stat-card {
+            background: #fef7f7;
+            padding: 16px 20px;
+            border-radius: 16px;
+            border: 1px solid #fce5e5;
+        }
+
+        .stat-card h3 {
+            color: #b91c1c;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #7f1d1d;
+        }
+
+        /* Filters */
+        .filters-container {
+            padding: 16px 24px;
+            background: white;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            border-bottom: 1px solid #f3e0e0;
+        }
+
+        .filter-group {
+            background: #fef7f7;
+            padding: 8px 16px;
+            border-radius: 40px;
+            border: 1px solid #fce5e5;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #b91c1c;
+            font-size: 13px;
+        }
+
+        .filter-group select, .filter-group input {
+            border: none;
+            background: transparent;
+            padding: 6px;
+            font-size: 13px;
+            outline: none;
+            color: #333;
+        }
+
+        .search-input {
+            background: #fef7f7;
+            padding: 8px 16px;
+            border-radius: 40px;
+            border: 1px solid #fce5e5;
+        }
+
+        .search-input input {
+            border: none;
+            background: transparent;
+            padding: 6px;
+            width: 150px;
+            outline: none;
+        }
+
+        .reset-btn {
+            background: #fef2f2;
+            border: 1px solid #fce5e5;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: #b91c1c;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Table */
+        .table-wrapper {
+            padding: 20px 24px;
+            overflow-x: auto;
+        }
+
+        .incident-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .incident-table th {
+            background: #fef7f7;
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 12px;
+            color: #b91c1c;
+            border-bottom: 2px solid #fce5e5;
+        }
+
+        .incident-table td {
+            padding: 12px;
+            font-size: 13px;
+            border-bottom: 1px solid #fdf0f0;
+            color: #4a2a2a;
+        }
+
+        .incident-table tr:hover td {
+            background: #fefbfb;
+        }
+
+        .status-cleared {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-open {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .severity-critical {
+            background: #fef2f2;
+            color: #b91c1c;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            .stats-container {
+                grid-template-columns: 1fr 1fr;
+            }
+            .filters-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .table-wrapper {
+                padding: 12px;
+            }
+            .incident-table th, .incident-table td {
+                padding: 8px;
+                font-size: 11px;
+            }
         }
     </style>
 </head>
 <body>
+
+<!-- Login Page -->
+<div class="login-container" id="loginContainer">
     <div class="login-card">
         <h1>🔴 COMIUM NOC</h1>
-        <h2>Incident Manager</h2>
+        <h2>Incident Management System</h2>
         <input type="text" id="username" placeholder="Username" value="admin">
         <input type="password" id="password" placeholder="Password" value="noc2025">
         <button onclick="login()">Sign In</button>
-        <div class="error" id="errorMsg">Invalid credentials</div>
+        <div class="error-msg" id="errorMsg">Invalid username or password</div>
+    </div>
+</div>
+
+<!-- Dashboard -->
+<div class="dashboard-container" id="dashboardContainer">
+    <div class="header">
+        <h1>📡 COMIUM NOC <span>Incident Manager</span></h1>
+        <div class="user-info">
+            <div class="user-badge" id="userNameDisplay">admin</div>
+            <div class="user-badge" id="userRoleDisplay">Administrator</div>
+            <button class="logout-btn" onclick="logout()">Sign Out</button>
+        </div>
     </div>
 
-    <script>
-        const USERS = {
-            'admin': 'noc2025',
-            'sanusi': 'sanusi2025',
-            'maansu': 'maansu2025',
-            'dawda': 'dawda2025',
-            'maimuna': 'maimuna2025'
-        };
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>📋 Total Incidents</h3>
+            <div class="stat-number" id="totalCount">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>⚠️ Open</h3>
+            <div class="stat-number" id="openCount">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>✅ Cleared</h3>
+            <div class="stat-number" id="clearedCount">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>🔥 Critical</h3>
+            <div class="stat-number" id="criticalCount">0</div>
+        </div>
+    </div>
+
+    <div class="filters-container">
+        <div class="filter-group">
+            <label>RCA:</label>
+            <select id="filterRCA">
+                <option value="ALL">All</option>
+                <option value="Power Failure">Power Failure</option>
+                <option value="Transmission Fault">Transmission Fault</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Status:</label>
+            <select id="filterStatus">
+                <option value="ALL">All</option>
+                <option value="Cleared">Cleared</option>
+                <option value="Open">Open</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Team:</label>
+            <select id="filterTeam">
+                <option value="ALL">All Teams</option>
+                <option value="HQ">HQ</option>
+                <option value="Brikama House">Brikama House</option>
+                <option value="Barra House">Barra House</option>
+                <option value="Mansakonko House">Mansakonko House</option>
+            </select>
+        </div>
+        <div class="search-input">
+            🔍 <input type="text" id="searchInput" placeholder="Search site...">
+        </div>
+        <button class="reset-btn" onclick="resetFilters()">Reset</button>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="incident-table">
+            <thead>
+                <tr><th>ID</th><th>Site Name</th><th>Region</th><th>Team</th><th>Occurred</th><th>Cleared</th><th>RCA</th><th>Status</th><th>Severity</th><th>Closed By</th></tr>
+            </thead>
+            <tbody id="incidentTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // ============= USER DATABASE =============
+    const USERS = {
+        'admin': { password: 'noc2025', role: 'Administrator', team: 'HQ' },
+        'sanusi': { password: 'sanusi2025', role: 'NOC Engineer', team: 'HQ' },
+        'maansu': { password: 'maansu2025', role: 'Field Tech', team: 'Brikama House' },
+        'dawda': { password: 'dawda2025', role: 'NOC Engineer', team: 'HQ' },
+        'maimuna': { password: 'maimuna2025', role: 'NOC Engineer', team: 'HQ' },
+        'tabally': { password: 'tabally2025', role: 'Transmission Eng', team: 'Barra House' },
+        'bubacarr': { password: 'bubacarr2025', role: 'Field Tech', team: 'Brikama House' },
+        'jack': { password: 'jack2025', role: 'Power Tech', team: 'HQ' },
+        'ahmadou': { password: 'ahmadou2025', role: 'NOC Engineer', team: 'HQ' },
+        'bruno': { password: 'bruno2025', role: 'Field Tech', team: 'Brikama House' }
+    };
+
+    // ============= INCIDENT DATA (from your Excel) =============
+    const incidentsData = [
+        { id: "0603_1074", site: "SIFO", region: "West Coast", team: "HQ", occurred: "2026-06-03 06:49:37", cleared: "2026-06-03 07:41:00", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Maimuna" },
+        { id: "0601_996", site: "Old Yundum 4", region: "West Coast", team: "HQ", occurred: "2026-06-01 00:17:09", cleared: "2026-06-01 10:50:49", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
+        { id: "0601_997", site: "Latriya", region: "West Coast", team: "HQ", occurred: "2026-06-01 00:17:09", cleared: "2026-06-01 08:51:53", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
+        { id: "0601_998", site: "Bwiam", region: "West Coast", team: "Brikama House", occurred: "2026-06-01 00:39:09", cleared: "2026-06-01 02:31:09", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Ma Ansu" },
+        { id: "0601_999", site: "Tawto", region: "West Coast", team: "HQ", occurred: "2026-06-01 00:52:37", cleared: "2026-06-01 11:55:53", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
+        { id: "0601_1000", site: "Brufut TAF Estate", region: "West Coast", team: "HQ", occurred: "2026-06-01 00:58:37", cleared: "2026-06-01 01:50:41", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Ma Ansu" },
+        { id: "0601_1001", site: "Pirang", region: "West Coast", team: "Brikama House", occurred: "2026-06-01 01:01:37", cleared: "2026-06-01 08:54:49", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
+        { id: "0601_1002", site: "Tallinding II", region: "Kanifing", team: "HQ", occurred: "2026-06-01 01:01:37", cleared: "2026-06-01 08:46:17", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
+        { id: "0601_1003", site: "Brufut Medina", region: "West Coast", team: "HQ", occurred: "2026-06-01 01:02:09", cleared: "2026-06-01 11:11:21", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
+        { id: "0601_1004", site: "Brusubi 2", region: "West Coast", team: "HQ", occurred: "2026-06-01 01:03:09", cleared: "2026-06-01 10:50:49", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Sanusi" },
+        { id: "0602_1057", site: "Brufut TAF Estate", region: "West Coast", team: "HQ", occurred: "2026-06-02 18:38:09", cleared: "", rca: "Power Failure", status: "Open", severity: "Critical", closedBy: "" },
+        { id: "0602_1062", site: "Sukuta 2", region: "West Coast", team: "HQ", occurred: "2026-06-02 21:45:13", cleared: "", rca: "Power Failure", status: "Open", severity: "Critical", closedBy: "" },
+        { id: "0603_1068", site: "Jalambang", region: "West Coast", team: "HQ", occurred: "2026-06-02 23:58:45", cleared: "", rca: "Power Failure", status: "Open", severity: "Critical", closedBy: "" },
+        { id: "0603_1075", site: "Latriya", region: "West Coast", team: "HQ", occurred: "2026-06-03 02:13:45", cleared: "", rca: "Power Failure", status: "Open", severity: "Critical", closedBy: "" },
+        { id: "0603_1082", site: "Darsilarmi", region: "West Coast", team: "HQ", occurred: "2026-06-03 04:16:18", cleared: "", rca: "Power Failure", status: "Open", severity: "Critical", closedBy: "" },
+        { id: "0603_1092", site: "Kerewan", region: "North Bank", team: "Barra House", occurred: "2026-06-03 06:42:21", cleared: "2026-06-03 08:00:00", rca: "Power Failure", status: "Cleared", severity: "Critical", closedBy: "Ahmadou" },
+        { id: "0602_1055", site: "Kununku", region: "Central River", team: "Mansakonko House", occurred: "2026-06-02 16:00:37", cleared: "2026-06-02 17:31:41", rca: "Transmission Fault", status: "Cleared", severity: "Critical", closedBy: "Sanusi" }
+    ];
+
+    let currentUser = null;
+    let incidentsList = [...incidentsData];
+
+    // Dashboard Functions
+    function renderDashboard() {
+        const filterRCA = document.getElementById('filterRCA').value;
+        const filterStatus = document.getElementById('filterStatus').value;
+        const filterTeam = document.getElementById('filterTeam').value;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+        let filtered = incidentsList.filter(inc => {
+            if (filterRCA !== 'ALL' && inc.rca !== filterRCA) return false;
+            if (filterStatus !== 'ALL' && inc.status !== filterStatus) return false;
+            if (filterTeam !== 'ALL' && inc.team !== filterTeam) return false;
+            if (searchTerm && !inc.site.toLowerCase().includes(searchTerm)) return false;
+            return true;
+        });
+
+        // Update stats
+        document.getElementById('totalCount').innerText = filtered.length;
+        document.getElementById('openCount').innerText = filtered.filter(i => i.status === 'Open').length;
+        document.getElementById('clearedCount').innerText = filtered.filter(i => i.status === 'Cleared').length;
+        document.getElementById('criticalCount').innerText = filtered.filter(i => i.severity === 'Critical').length;
+
+        // Update table
+        const tbody = document.getElementById('incidentTableBody');
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:40px;">No incidents found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(inc => `
+            <tr>
+                <td><strong>${inc.id}</strong></td>
+                <td>${inc.site}</td>
+                <td>${inc.region}</td>
+                <td>${inc.team}</td>
+                <td>${inc.occurred}</td>
+                <td>${inc.cleared || '—'}</td>
+                <td>${inc.rca}</td>
+                <td><span class="status-${inc.status === 'Cleared' ? 'cleared' : 'open'}">${inc.status}</span></td>
+                <td><span class="severity-critical">${inc.severity}</span></td>
+                <td>${inc.closedBy || '—'}</td>
+            </tr>
+        `).join('');
+    }
+
+    function resetFilters() {
+        document.getElementById('filterRCA').value = 'ALL';
+        document.getElementById('filterStatus').value = 'ALL';
+        document.getElementById('filterTeam').value = 'ALL';
+        document.getElementById('searchInput').value = '';
+        renderDashboard();
+    }
+
+    // Attach event listeners
+    function bindEvents() {
+        document.getElementById('filterRCA').addEventListener('change', renderDashboard);
+        document.getElementById('filterStatus').addEventListener('change', renderDashboard);
+        document.getElementById('filterTeam').addEventListener('change', renderDashboard);
+        document.getElementById('searchInput').addEventListener('input', renderDashboard);
+    }
+
+    // Login/Logout Functions
+    function login() {
+        const username = document.getElementById('username').value.trim().toLowerCase();
+        const password = document.getElementById('password').value;
+
+        const user = USERS[username];
         
-        function login() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+        if (user && user.password === password) {
+            currentUser = { username, ...user };
+            localStorage.setItem('noc_user', JSON.stringify(currentUser));
             
-            if (USERS[username] && USERS[username] === password) {
-                alert('Login successful! Welcome ' + username);
-                document.body.innerHTML = '<div style="background:#fff8f6; min-height:100vh; padding:20px;"><h1 style="color:#b91c1c;">✅ Welcome to Comium NOC Dashboard</h1><p style="color:#333;">You are logged in as: ' + username + '</p><button onclick="logout()" style="background:#b91c1c; color:white; padding:10px 20px; border:none; border-radius:10px; cursor:pointer;">Logout</button></div>';
-            } else {
-                document.getElementById('errorMsg').style.display = 'block';
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('dashboardContainer').style.display = 'block';
+            document.getElementById('userNameDisplay').innerHTML = `👤 ${username}`;
+            document.getElementById('userRoleDisplay').innerHTML = `🎯 ${user.role}`;
+            
+            renderDashboard();
+            bindEvents();
+        } else {
+            document.getElementById('errorMsg').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('errorMsg').style.display = 'none';
+            }, 3000);
+        }
+    }
+
+    function logout() {
+        currentUser = null;
+        localStorage.removeItem('noc_user');
+        document.getElementById('loginContainer').style.display = 'flex';
+        document.getElementById('dashboardContainer').style.display = 'none';
+        document.getElementById('username').value = 'admin';
+        document.getElementById('password').value = 'noc2025';
+    }
+
+    // Check for existing session
+    const savedUser = localStorage.getItem('noc_user');
+    if (savedUser) {
+        try {
+            const user = JSON.parse(savedUser);
+            if (USERS[user.username] && USERS[user.username].password === user.password) {
+                currentUser = user;
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('dashboardContainer').style.display = 'block';
+                document.getElementById('userNameDisplay').innerHTML = `👤 ${user.username}`;
+                document.getElementById('userRoleDisplay').innerHTML = `🎯 ${user.role}`;
+                renderDashboard();
+                bindEvents();
             }
-        }
-        
-        function logout() {
-            location.reload();
-        }
-    </script>
+        } catch(e) {}
+    }
+
+    // Enter key login
+    document.getElementById('password')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') login();
+    });
+</script>
 </body>
 </html>
