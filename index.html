@@ -2,11 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Comium NOC | Enterprise Incident Management</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comium NOC | Incident Management System</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -27,9 +26,6 @@
             --accent-hover: #7f1d1d;
             --input-bg: rgba(0,0,0,0.3);
             --success: #10b981;
-            --warning: #f59e0b;
-            --info: #3b82f6;
-            --whatsapp: #25D366;
         }
 
         body.light {
@@ -51,7 +47,6 @@
             --text-primary: #f8fafc;
             --text-secondary: #cbd5e1;
             --accent: #3b82f6;
-            --accent-hover: #2563eb;
         }
 
         body.green {
@@ -62,7 +57,6 @@
             --text-primary: #ecfdf5;
             --text-secondary: #a7f3d0;
             --accent: #10b981;
-            --accent-hover: #059669;
         }
 
         body {
@@ -77,7 +71,6 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
-            background: var(--bg-primary);
         }
 
         .login-card {
@@ -87,6 +80,17 @@
             max-width: 460px;
             width: 100%;
             border: 1px solid var(--border-color);
+        }
+
+        .login-card h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .login-card p {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--text-secondary);
         }
 
         .login-card input, .login-card select {
@@ -170,15 +174,6 @@
             border-radius: 30px;
             cursor: pointer;
             color: var(--text-primary);
-        }
-
-        .sync-status {
-            background: var(--success);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: bold;
         }
 
         .nav-tabs {
@@ -296,7 +291,7 @@
             flex-wrap: wrap;
         }
 
-        .btn-primary, .btn-success, .btn-warning, .btn-danger, .btn-secondary {
+        .btn-primary, .btn-success, .btn-secondary {
             padding: 8px 18px;
             border-radius: 30px;
             border: none;
@@ -306,8 +301,6 @@
         }
         .btn-primary { background: var(--accent); color: white; }
         .btn-success { background: #10b981; color: white; }
-        .btn-warning { background: #f59e0b; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
         .btn-secondary { background: var(--bg-card-secondary); color: var(--text-primary); border: 1px solid var(--border-color); }
 
         .form-card {
@@ -392,7 +385,7 @@
             margin: 2px;
             border: none;
         }
-        .edit-btn { background: var(--info); color: white; }
+        .edit-btn { background: #3b82f6; color: white; }
         .delete-btn { background: #ef4444; color: white; }
 
         @media (max-width: 768px) {
@@ -400,6 +393,7 @@
             .ticket-grid { grid-template-columns: 1fr; }
             .charts-row { grid-template-columns: 1fr; }
             .panel { padding: 20px 16px; }
+            .nav-tabs { padding: 0 16px; overflow-x: auto; }
         }
     </style>
 </head>
@@ -410,12 +404,12 @@
     <div class="login-card">
         <div class="small-logo" style="margin: 0 auto 20px; width: 80px; height: 80px;">
             <svg viewBox="0 0 100 100" width="45" height="45">
-                <circle cx="50" cy="50" r="40" stroke="white" stroke-width="3" fill="none"/>
-                <circle cx="50" cy="50" r="6" fill="white"/>
+                <circle cx="50" cy="50" r="40" stroke="var(--accent)" stroke-width="3" fill="none"/>
+                <circle cx="50" cy="50" r="6" fill="var(--accent)"/>
             </svg>
         </div>
-        <h1 style="text-align:center; margin-bottom:10px;">Comium NOC</h1>
-        <p style="text-align:center; margin-bottom:20px; color:var(--text-secondary);">Enterprise Incident Management</p>
+        <h1>Comium NOC</h1>
+        <p>Incident Management System</p>
         <input type="text" id="loginEmail" placeholder="Email" value="admin@comium.com">
         <input type="password" id="loginPassword" placeholder="Password" value="admin123">
         <select id="loginRole">
@@ -425,7 +419,6 @@
         </select>
         <button onclick="login()">Sign In →</button>
         <div id="loginError" style="color:#ef4444; text-align:center; margin-top:15px; display:none;">Invalid credentials</div>
-        <div id="connectionStatus" style="text-align:center; margin-top:10px; font-size:11px;"></div>
     </div>
 </div>
 
@@ -439,10 +432,9 @@
                     <circle cx="50" cy="50" r="6" fill="white"/>
                 </svg>
             </div>
-            <h1>Comium NOC <span style="font-size:11px; background:rgba(16,185,129,0.2); padding:4px 10px; border-radius:20px;">Cloud Sync</span></h1>
+            <h1>Comium NOC <span style="font-size:11px; background:rgba(16,185,129,0.2); padding:4px 10px; border-radius:20px;">Operational</span></h1>
         </div>
         <div class="user-section">
-            <div class="sync-status" id="syncStatus">🟢 Live</div>
             <button class="theme-btn" onclick="setTheme('dark')">🌙</button>
             <button class="theme-btn" onclick="setTheme('light')">☀️</button>
             <button class="theme-btn" onclick="setTheme('blue')">💙</button>
@@ -460,9 +452,9 @@
         <button class="tab" onclick="showPanel('analytics')">📊 Analytics</button>
         <button class="tab" onclick="showPanel('teams')">👥 Teams</button>
         <button class="tab admin-only" onclick="showPanel('admin')" id="adminTab" style="display:none;">⚙️ Admin</button>
-        <button class="tab" onclick="showPanel('notifications')">🔔 Notifications</button>
     </div>
 
+    <!-- Tickets Panel -->
     <div id="panel-tickets" class="panel active">
         <div class="stats-grid" id="statsGrid"></div>
         <div class="charts-row">
@@ -472,6 +464,7 @@
         <div class="ticket-grid" id="ticketGrid"></div>
     </div>
 
+    <!-- Create Ticket Panel -->
     <div id="panel-create" class="panel">
         <div class="form-card">
             <h3>🚨 Create Incident Ticket</h3>
@@ -486,14 +479,14 @@
             </div>
             <div class="form-group"><label>Assign Owner</label><select id="ticketOwner"></select></div>
             <button class="btn-primary" onclick="createTicket()" style="width:100%;">✅ Create Ticket</button>
-            <p style="font-size:11px; color:var(--text-secondary); margin-top:10px; text-align:center;">🌐 Synced to cloud - visible to all team members</p>
         </div>
     </div>
 
+    <!-- Analytics Panel -->
     <div id="panel-analytics" class="panel">
         <div class="form-card">
             <h3>📈 Performance Analytics</h3>
-            <div class="filter-bar" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px;">
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px;">
                 <input type="date" id="reportFromDate">
                 <input type="date" id="reportToDate">
                 <select id="reportTeam"><option value="">All Teams</option></select>
@@ -504,18 +497,10 @@
         <div id="reportTicketsList"></div>
     </div>
 
+    <!-- Teams Panel -->
     <div id="panel-teams" class="panel"><div id="teamsList"></div></div>
 
-    <div id="panel-notifications" class="panel">
-        <div class="form-card">
-            <h3>📨 Notification History</h3>
-            <table class="data-table" id="notificationsTable">
-                <thead><tr><th>Time</th><th>Ticket ID</th><th>Sent To</th><th>Type</th><th>Status</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
-
+    <!-- Admin Panel -->
     <div id="panel-admin" class="panel">
         <div class="form-card">
             <h3>👥 Create New Staff Account</h3>
@@ -590,14 +575,15 @@
 </div>
 
 <script>
-    // ============= SUPABASE CONFIGURATION =============
-    // ⚠️ IMPORTANT: Replace these with YOUR actual Supabase keys
-    const SUPABASE_URL = 'https://sytichlbyvsacrppukrm.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_j57-kq4_T_Wn-IcRodyUEA_M8XZM'; // ← PASTE YOUR FULL KEY HERE
-    
-    let supabase = null;
+    // ============= DATA MODELS =============
     let tickets = [];
-    let users = {};
+    let users = {
+        'admin@comium.com': { password: 'admin123', name: 'System Admin', phone: '+2209998888', role: 'NOC Manager', team: 'Management' },
+        'john@comium.com': { password: 'john123', name: 'John Smith', phone: '+2207771111', role: 'Team Lead', team: 'Transmission Team' },
+        'sarah@comium.com': { password: 'sarah123', name: 'Sarah Wilson', phone: '+2207773333', role: 'Team Lead', team: 'Power Team' },
+        'mike@comium.com': { password: 'mike123', name: 'Mike Jones', phone: '+2207772222', role: 'Engineer', team: 'Transmission Team' },
+        'david@comium.com': { password: 'david123', name: 'David Brown', phone: '+2207774444', role: 'Engineer', team: 'Power Team' }
+    };
     let teams = [
         { id: 1, name: "Transmission Team", users: [] },
         { id: 2, name: "Wireless Team", users: [] },
@@ -606,64 +592,25 @@
         { id: 5, name: "OCS Team", users: [] },
         { id: 6, name: "Power Team", users: [] }
     ];
-    let notificationLog = [];
     let currentUser = null;
     let ticketChart = null, slaChart = null;
 
-    // Initialize Supabase
-    function initSupabase() {
-        if (SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'sb_publishable_j57-kq4_T_Wn-IcRodyUEA_M8XZM') {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            document.getElementById('connectionStatus').innerHTML = '✅ Connected to cloud database';
-            document.getElementById('syncStatus').innerHTML = '🟢 Cloud Sync';
-            loadFromSupabase();
-        } else {
-            document.getElementById('connectionStatus').innerHTML = '⚠️ Enter your Supabase keys in the code';
-            document.getElementById('syncStatus').innerHTML = '⚠️ Local Only';
-            loadFromLocalStorage();
-        }
-    }
-
-    async function loadFromSupabase() {
-        try {
-            const { data: ticketsData } = await supabase.from('tickets').select('*');
-            if (ticketsData) tickets = ticketsData;
-            
-            const { data: usersData } = await supabase.from('users').select('*');
-            if (usersData) {
-                users = {};
-                usersData.forEach(u => { users[u.email] = u; });
-            }
-            
-            renderTickets();
-            renderTeams();
-            renderUsersTable();
-        } catch(e) {
-            console.log('Using local storage fallback');
-            loadFromLocalStorage();
-        }
-    }
-
-    function loadFromLocalStorage() {
+    // Load saved data from localStorage
+    function loadData() {
         const savedTickets = localStorage.getItem('comium_tickets');
         const savedUsers = localStorage.getItem('comium_users');
+        const savedTeams = localStorage.getItem('comium_teams');
+        
         if (savedTickets) tickets = JSON.parse(savedTickets);
         if (savedUsers) users = JSON.parse(savedUsers);
+        if (savedTeams) teams = JSON.parse(savedTeams);
         
-        if (Object.keys(users).length === 0) {
-            users = {
-                'admin@comium.com': { password: 'admin123', name: 'System Admin', phone: '+2209998888', role: 'NOC Manager', team: 'Management' },
-                'john@comium.com': { password: 'john123', name: 'John Smith', phone: '+2207771111', role: 'Team Lead', team: 'Transmission Team' },
-                'sarah@comium.com': { password: 'sarah123', name: 'Sarah Wilson', phone: '+2207773333', role: 'Team Lead', team: 'Power Team' },
-                'mike@comium.com': { password: 'mike123', name: 'Mike Jones', phone: '+2207772222', role: 'Engineer', team: 'Transmission Team' },
-                'david@comium.com': { password: 'david123', name: 'David Brown', phone: '+2207774444', role: 'Engineer', team: 'Power Team' }
-            };
-        }
-        
+        // Initialize sample tickets if empty
         if (tickets.length === 0) {
             for(let i=1;i<=8;i++) {
                 tickets.push({ 
-                    id: `INC-2025120${i}`, site: `Site ${i}`, 
+                    id: `INC-2025120${i}`, 
+                    site: `Site ${i}`, 
                     createdAt: new Date(Date.now()-i*86400000).toISOString(),
                     description: `Sample incident ${i}`, 
                     team: i%2===0?'Power Team':'Transmission Team',
@@ -671,24 +618,29 @@
                     teamLead: i%2===0?'Sarah Wilson':'John Smith',
                     ownerEmail: i%2===0?'david@comium.com':'mike@comium.com',
                     ownerPhone: i%2===0?'+2207774444':'+2207772222',
-                    status: 'OPEN', outageDuration: 0, 
+                    status: 'OPEN', 
+                    outageDuration: 0, 
                     slaDeadline: new Date(Date.now()+3600000).toISOString()
                 });
             }
+            saveData();
         }
-        renderTickets();
-        renderTeams();
-        renderUsersTable();
+        
+        // Setup team users
+        teams[0].users = [
+            { name: "John Smith", email: "john@comium.com", phone: "+2207771111", role: "Team Lead" },
+            { name: "Mike Jones", email: "mike@comium.com", phone: "+2207772222", role: "Engineer" }
+        ];
+        teams[5].users = [
+            { name: "Sarah Wilson", email: "sarah@comium.com", phone: "+2207773333", role: "Team Lead" },
+            { name: "David Brown", email: "david@comium.com", phone: "+2207774444", role: "Engineer" }
+        ];
     }
-
-    async function saveToSupabase(table, data) {
-        if (supabase) {
-            try {
-                await supabase.from(table).upsert(data);
-            } catch(e) { console.log('Save failed, using local'); }
-        }
-        if (table === 'tickets') localStorage.setItem('comium_tickets', JSON.stringify(tickets));
-        if (table === 'users') localStorage.setItem('comium_users', JSON.stringify(users));
+    
+    function saveData() {
+        localStorage.setItem('comium_tickets', JSON.stringify(tickets));
+        localStorage.setItem('comium_users', JSON.stringify(users));
+        localStorage.setItem('comium_teams', JSON.stringify(teams));
     }
 
     function generateTicketId() {
@@ -710,12 +662,7 @@
         }
     }
 
-    function logNotification(ticketId, sentTo, type, status) {
-        notificationLog.unshift({ time: new Date().toLocaleString(), ticketId, sentTo, type, status });
-        renderNotificationsLog();
-    }
-
-    async function createTicket() {
+    function createTicket() {
         const site = document.getElementById('ticketSite').value;
         const date = document.getElementById('ticketDate').value;
         const desc = document.getElementById('ticketDesc').value;
@@ -730,22 +677,36 @@
         const owner = team?.users.find(u => u.name === ownerName);
         
         const ticket = {
-            id: generateTicketId(), site, createdAt: new Date().toISOString(),
-            occurredAt: date || new Date().toISOString(), description: desc, team: teamName,
-            teamLead: teamLeadName, owner: ownerName,
-            teamLeadEmail: teamLead?.email || '', teamLeadPhone: teamLead?.phone || '',
-            ownerEmail: owner?.email || '', ownerPhone: owner?.phone || '',
-            status: 'OPEN', severity: 'Critical', acknowledgementTime: null,
-            inProgressTime: null, resolutionTime: null, outageDuration: 0,
-            rca: '', resolution: '', assignedTo: ownerName,
-            slaDeadline: new Date(Date.now() + 3600000).toISOString(), closedBy: null
+            id: generateTicketId(),
+            site: site,
+            createdAt: new Date().toISOString(),
+            occurredAt: date || new Date().toISOString(),
+            description: desc,
+            team: teamName,
+            teamLead: teamLeadName,
+            owner: ownerName,
+            teamLeadEmail: teamLead?.email || '',
+            teamLeadPhone: teamLead?.phone || '',
+            ownerEmail: owner?.email || '',
+            ownerPhone: owner?.phone || '',
+            status: 'OPEN',
+            severity: 'Critical',
+            acknowledgementTime: null,
+            inProgressTime: null,
+            resolutionTime: null,
+            outageDuration: 0,
+            rca: '',
+            resolution: '',
+            assignedTo: ownerName,
+            slaDeadline: new Date(Date.now() + 3600000).toISOString(),
+            closedBy: null
         };
         
         tickets.unshift(ticket);
-        await saveToSupabase('tickets', ticket);
+        saveData();
         renderTickets();
         showPanel('tickets');
-        alert(`✅ Ticket ${ticket.id} created and synced to cloud!\n\nAll team members can now see this ticket.`);
+        alert(`✅ Ticket ${ticket.id} created successfully!`);
     }
 
     function updateTicketStatus(id, status) {
@@ -754,7 +715,7 @@
             t.status = status; 
             if(status==='ACKNOWLEDGED') t.acknowledgementTime = new Date().toISOString();
             if(status==='IN_PROGRESS') t.inProgressTime = new Date().toISOString();
-            saveToSupabase('tickets', t);
+            saveData();
             renderTickets(); 
             alert(`Ticket ${id} updated to ${status}`);
         }
@@ -762,19 +723,25 @@
 
     function resolveTicket(id) {
         const t = tickets.find(x=>x.id===id);
-        const rca = prompt('Enter RCA:'); const res = prompt('Enter Resolution:'); const outage = prompt('Outage duration (minutes):');
+        const rca = prompt('Enter Root Cause Analysis (RCA):'); 
+        const res = prompt('Enter Resolution Details:'); 
+        const outage = prompt('Outage duration (minutes):');
         if(rca && res) { 
-            t.rca = rca; t.resolution = res; t.outageDuration = parseInt(outage) || 0; 
-            t.status = 'RESOLVED'; t.resolutionTime = new Date().toISOString(); 
-            saveToSupabase('tickets', t);
+            t.rca = rca; 
+            t.resolution = res; 
+            t.outageDuration = parseInt(outage) || 0; 
+            t.status = 'RESOLVED'; 
+            t.resolutionTime = new Date().toISOString(); 
+            saveData();
             renderTickets(); 
-            alert(`✅ Ticket ${id} resolved and saved to cloud`);
+            alert(`✅ Ticket ${id} resolved and reassigned to NOC for validation`);
         }
     }
 
     function getTicketStats() {
         return {
-            total: tickets.length, open: tickets.filter(t=>t.status==='OPEN').length,
+            total: tickets.length,
+            open: tickets.filter(t=>t.status==='OPEN').length,
             acknowledged: tickets.filter(t=>t.status==='ACKNOWLEDGED').length,
             inProgress: tickets.filter(t=>t.status==='IN_PROGRESS').length,
             resolved: tickets.filter(t=>t.status==='RESOLVED').length,
@@ -789,30 +756,31 @@
         
         const stats = getTicketStats();
         document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card"><h4>Total</h4><div class="stat-number">${stats.total}</div></div>
+            <div class="stat-card"><h4>Total Tickets</h4><div class="stat-number">${stats.total}</div></div>
             <div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div>
             <div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div>
             <div class="stat-card"><h4>Resolved</h4><div class="stat-number">${stats.resolved}</div></div>
+            <div class="stat-card"><h4>Pending Closure</h4><div class="stat-number">${stats.pendingClosure}</div></div>
             <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>`;
         
         let filtered = tickets;
         if (currentUser?.role === 'Engineer') filtered = tickets.filter(t => t.owner === currentUser?.name);
         else if (currentUser?.role === 'Team Lead') filtered = tickets.filter(t => t.teamLead === currentUser?.name);
         
-        container.innerHTML = filtered.map(t => `<div class="ticket-card"><div class="ticket-header"><span class="ticket-id">${t.id}</span><span class="ticket-status status-${t.status}">${t.status}</span></div><div><strong>📍 ${t.site}</strong></div><div class="ticket-detail">👤 ${t.owner || 'Unassigned'} | 🏢 ${t.team}</div><div class="ticket-actions">${t.status==='OPEN'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','ACKNOWLEDGED')">✅ Acknowledge</button>`:''}${t.status==='ACKNOWLEDGED'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','IN_PROGRESS')">▶ Start</button>`:''}${t.status==='IN_PROGRESS'?`<button class="btn-success" onclick="resolveTicket('${t.id}')">🔧 Resolve</button>`:''}</div></div>`).join('');
+        container.innerHTML = filtered.map(t => `<div class="ticket-card"><div class="ticket-header"><span class="ticket-id">${t.id}</span><span class="ticket-status status-${t.status}">${t.status}</span></div><div><strong>📍 ${t.site}</strong></div><div class="ticket-detail">👤 ${t.owner || 'Unassigned'} | 🏢 ${t.team}</div><div class="ticket-actions">${t.status==='OPEN'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','ACKNOWLEDGED')">✅ Acknowledge</button>`:''}${t.status==='ACKNOWLEDGED'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','IN_PROGRESS')">▶ Start Progress</button>`:''}${t.status==='IN_PROGRESS'?`<button class="btn-success" onclick="resolveTicket('${t.id}')">🔧 Resolve</button>`:''}</div></div>`).join('');
         
         const statusCounts = ['OPEN','ACKNOWLEDGED','IN_PROGRESS','RESOLVED','PENDING_CLOSURE','CLOSED'].map(s => tickets.filter(t=>t.status===s).length);
         if (ticketChart) ticketChart.destroy();
         const ctx = document.getElementById('ticketChart')?.getContext('2d');
-        if(ctx) ticketChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Open','Acknowledged','In Progress','Resolved','Pending Closure','Closed'], datasets: [{ data: statusCounts, backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#10b981','#ec4899','#64748b'] }] }, options: { responsive: true } });
+        if(ctx) ticketChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Open','Acknowledged','In Progress','Resolved','Pending Closure','Closed'], datasets: [{ data: statusCounts, backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#10b981','#ec4899','#64748b'] }] }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-secondary') } } } } });
+        
+        const slaData = tickets.slice(0,7).map(t => Math.min(100, Math.round(((new Date(t.slaDeadline) - new Date(t.createdAt)) / 36000))));
+        if (slaChart) slaChart.destroy();
+        const ctx2 = document.getElementById('slaChart')?.getContext('2d');
+        if(ctx2) slaChart = new Chart(ctx2, { type: 'line', data: { labels: tickets.slice(0,7).map(t=>t.id), datasets: [{ label: 'SLA Remaining (%)', data: slaData, borderColor: '#10b981', fill: false }] }, options: { responsive: true } });
     }
 
-    function renderNotificationsLog() {
-        const tbody = document.querySelector('#notificationsTable tbody');
-        if (tbody) tbody.innerHTML = notificationLog.slice(0, 50).map(n => `<tr><td>${n.time}</td><td><strong>${n.ticketId}</strong></td><td>${n.sentTo}</td><td>${n.type}</td><td style="color:${n.status === 'Sent' ? '#10b981' : '#ef4444'}">${n.status}</td></tr>`).join('');
-    }
-
-    async function createStaffAccount() {
+    function createStaffAccount() {
         if (currentUser?.role !== 'NOC Manager') { alert('Only NOC Manager can create accounts'); return; }
         const name = document.getElementById('newUserName').value.trim();
         const email = document.getElementById('newUserEmail').value.trim();
@@ -824,17 +792,20 @@
         if (!name || !email || !phone) { alert('Please fill all fields'); return; }
         if (users[email]) { alert('User already exists'); return; }
         
-        users[email] = { password, name, phone, role, team: teamName };
-        await saveToSupabase('users', users[email]);
+        users[email] = { password: password, name: name, phone: phone, role: role, team: teamName };
         
         if (teamName) {
             const team = teams.find(t => t.name === teamName);
             if (team) team.users.push({ name, email, phone, role });
         }
         
+        saveData();
         renderUsersTable();
         renderTeams();
         alert(`✅ Staff account created for ${name}\nEmail: ${email}\nPassword: ${password}`);
+        document.getElementById('newUserName').value = '';
+        document.getElementById('newUserEmail').value = '';
+        document.getElementById('newUserPhone').value = '';
     }
 
     function renderUsersTable() {
@@ -848,7 +819,7 @@
             row.insertCell(2).innerHTML = user.phone || '—';
             row.insertCell(3).innerHTML = user.role;
             row.insertCell(4).innerHTML = user.team || '—';
-            row.insertCell(5).innerHTML = `<button class="edit-btn" onclick="openEditUser('${email}')">✏️ Edit</button><button class="delete-btn" onclick="deleteUser('${email}')">🗑️ Del</button>`;
+            row.insertCell(5).innerHTML = `<button class="edit-btn" onclick="openEditUser('${email}')">✏️ Edit</button><button class="delete-btn" onclick="deleteUser('${email}')">🗑️ Delete</button>`;
         }
     }
 
@@ -868,7 +839,7 @@
         document.getElementById('editUserModal').style.display = 'flex';
     }
 
-    async function saveUserEdit() {
+    function saveUserEdit() {
         const originalEmail = document.getElementById('editUserOriginalEmail').value;
         const newEmail = document.getElementById('editUserEmail').value;
         const name = document.getElementById('editUserName').value;
@@ -900,22 +871,24 @@
             if (targetTeam) targetTeam.users.push({ name, email: newEmail, phone, role });
         }
         
-        await saveToSupabase('users', user);
+        saveData();
         renderUsersTable();
         renderTeams();
         closeEditModal();
         alert('User updated successfully!');
     }
 
-    async function deleteUser(email) {
-        if (email === 'admin@comium.com') { alert('Cannot delete main admin'); return; }
-        if (confirm('Delete this user?')) {
-            for (const t of teams) t.users = t.users.filter(u => u.email !== email);
+    function deleteUser(email) {
+        if (email === 'admin@comium.com') { alert('Cannot delete the main admin account'); return; }
+        if (confirm('Are you sure you want to delete this user?')) {
+            for (const t of teams) {
+                t.users = t.users.filter(u => u.email !== email);
+            }
             delete users[email];
-            await saveToSupabase('users', { email, _delete: true });
+            saveData();
             renderUsersTable();
             renderTeams();
-            alert('User deleted');
+            alert('User deleted successfully');
         }
     }
 
@@ -925,10 +898,11 @@
         const name = document.getElementById('newTeamName').value.trim();
         if (name && !teams.find(t => t.name === name)) {
             teams.push({ id: Date.now(), name: name, users: [] });
+            saveData();
             renderTeams();
             document.getElementById('newTeamName').value = '';
             alert(`Team "${name}" created`);
-        }
+        } else { alert('Team already exists or name invalid'); }
     }
 
     function renderTeams() {
@@ -938,19 +912,22 @@
         const reportTeamSelect = document.getElementById('reportTeam');
         const adminTeamsContainer = document.getElementById('adminTeamsList');
         
-        if (teamSelect) teamSelect.innerHTML = '<option value="">Select</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
+        if (teamSelect) teamSelect.innerHTML = '<option value="">Select Team</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
         if (newUserTeamSelect) newUserTeamSelect.innerHTML = '<option value="">No Team</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
         if (reportTeamSelect) reportTeamSelect.innerHTML = '<option value="">All Teams</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
         
-        if (container) container.innerHTML = teams.map(team => `<div class="form-card"><h4>🏢 ${team.name}</h4><table class="data-table"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th></tr></thead><tbody>${team.users.map(u=>`<tr><td>${u.name}</td><td>${u.role}</td><td>${u.email}</td><td>${u.phone}</td></tr>`).join('')}</tbody></td></div>`).join('');
+        if (container) container.innerHTML = teams.map(team => `<div class="form-card"><h4>🏢 ${team.name}</h4><table class="data-table"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th></td></thead><tbody>${team.users.map(u=>`<tr><td>${u.name}</td><td>${u.role}</td><td>${u.email}</td><td>${u.phone}</td></tr>`).join('')}</tbody></table></div>`).join('');
         
-        if (adminTeamsContainer) adminTeamsContainer.innerHTML = teams.map(team => `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border-color);"><span><strong>${team.name}</strong> (${team.users.length} users)</span><button class="btn-danger" onclick="deleteTeam('${team.name}')" style="padding:4px 12px;">Delete</button></div>`).join('');
+        if (adminTeamsContainer) adminTeamsContainer.innerHTML = teams.map(team => `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--border-color);"><span><strong>${team.name}</strong> (${team.users.length} users)</span><button class="btn-danger" onclick="deleteTeam('${team.name}')" style="padding:4px 12px;">Delete</button></div>`).join('');
     }
 
     function deleteTeam(teamName) {
-        if (confirm(`Delete team "${teamName}"?`)) {
+        if (confirm(`Delete team "${teamName}"? Users will be unassigned.`)) {
             teams = teams.filter(t => t.name !== teamName);
-            for (const [email, user] of Object.entries(users)) if (user.team === teamName) user.team = '';
+            for (const [email, user] of Object.entries(users)) {
+                if (user.team === teamName) user.team = '';
+            }
+            saveData();
             renderTeams();
             renderUsersTable();
             alert('Team deleted');
@@ -960,17 +937,22 @@
     function openShiftReport() {
         const stats = getTicketStats();
         const now = new Date().toLocaleString();
+        const assignedToCurrent = tickets.filter(t => t.assignedTo === currentUser?.name && t.status !== 'CLOSED').length;
+        const pendingByCurrent = tickets.filter(t => t.owner === currentUser?.name && t.status !== 'CLOSED' && t.status !== 'RESOLVED').length;
+        
         const reportHTML = `
             <div style="background:var(--bg-card-secondary); padding:20px; border-radius:16px; margin-bottom:15px;">
                 <h3 style="color:var(--accent);">📋 Shift Summary Report</h3>
-                <p><strong>Generated by:</strong> ${currentUser?.name}</p>
-                <p><strong>Date:</strong> ${now}</p>
+                <p><strong>Generated by:</strong> ${currentUser?.name} (${currentUser?.role})</p>
+                <p><strong>Date/Time:</strong> ${now}</p>
             </div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-                <div class="stat-card"><h4>Total</h4><div class="stat-number">${stats.total}</div></div>
-                <div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div>
-                <div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div>
-                <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>
+                <div style="background:var(--bg-card-secondary); padding:15px; border-radius:16px;"><strong>📊 Total Tickets:</strong><br><span style="font-size:28px; color:var(--accent);">${stats.total}</span></div>
+                <div style="background:var(--bg-card-secondary); padding:15px; border-radius:16px;"><strong>✅ Closed:</strong><br><span style="font-size:28px; color:#10b981;">${stats.closed}</span></div>
+                <div style="background:var(--bg-card-secondary); padding:15px; border-radius:16px;"><strong>🔄 Open/In Progress:</strong><br><span style="font-size:28px; color:#f59e0b;">${stats.open + stats.inProgress}</span></div>
+                <div style="background:var(--bg-card-secondary); padding:15px; border-radius:16px;"><strong>⏳ Pending Closure:</strong><br><span style="font-size:28px; color:#ec4899;">${stats.pendingClosure}</span></div>
+                <div style="background:var(--bg-card-secondary); padding:15px; border-radius:16px;"><strong>👤 Assigned to You:</strong><br><span style="font-size:28px; color:#3b82f6;">${assignedToCurrent}</span></div>
+                <div style="background:var(--bg-card-secondary); padding:15px; border-radius:16px;"><strong>⚠️ Pending Your Action:</strong><br><span style="font-size:28px; color:#ef4444;">${pendingByCurrent}</span></div>
             </div>`;
         document.getElementById('shiftReportContent').innerHTML = reportHTML;
         document.getElementById('shiftReportModal').style.display = 'flex';
@@ -978,17 +960,31 @@
 
     function exportShiftReport() {
         const stats = getTicketStats();
-        const ws = XLSX.utils.json_to_sheet([{ 'Total': stats.total, 'Open': stats.open, 'In Progress': stats.inProgress, 'Closed': stats.closed, 'Date': new Date().toLocaleString() }]);
+        const reportData = [{
+            'Generated By': currentUser?.name, 'Role': currentUser?.role, 'Date': new Date().toLocaleString(),
+            'Total Tickets': stats.total, 'Open': stats.open, 'In Progress': stats.inProgress,
+            'Pending Closure': stats.pendingClosure, 'Closed': stats.closed
+        }];
+        const ws = XLSX.utils.json_to_sheet(reportData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Shift Report');
-        XLSX.writeFile(wb, `Shift_Report_${new Date().toISOString().slice(0,19)}.xlsx`);
-        alert('Report exported!');
+        XLSX.writeFile(wb, `Shift_Report_${currentUser?.name}_${new Date().toISOString().slice(0,19)}.xlsx`);
+        alert('Shift report exported!');
     }
 
     function closeShiftReport() { document.getElementById('shiftReportModal').style.display = 'none'; }
 
     function exportAnalytics() {
-        const data = tickets.map(t=>({'ID':t.id,'Site':t.site,'Team':t.team,'Owner':t.owner,'Status':t.status}));
+        const fromDate = document.getElementById('reportFromDate').value;
+        const toDate = document.getElementById('reportToDate').value;
+        const team = document.getElementById('reportTeam').value;
+        
+        let filtered = tickets;
+        if (fromDate) filtered = filtered.filter(t => new Date(t.createdAt) >= new Date(fromDate));
+        if (toDate) filtered = filtered.filter(t => new Date(t.createdAt) <= new Date(toDate));
+        if (team) filtered = filtered.filter(t => t.team === team);
+        
+        const data = filtered.map(t=>({'ID':t.id,'Site':t.site,'Team':t.team,'Owner':t.owner,'Status':t.status,'Outage(min)':t.outageDuration,'RCA':t.rca,'Resolution':t.resolution}));
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Analytics');
@@ -999,10 +995,18 @@
     function renderAnalytics() {
         const stats = getTicketStats();
         document.getElementById('analyticsStats').innerHTML = `
-            <div class="stat-card"><h4>Total</h4><div class="stat-number">${stats.total}</div></div>
-            <div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div>
-            <div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div>
-            <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>`;
+            <div class="stat-card"><h4>Total Tickets</h4><div class="stat-number">${stats.total}</div></div>
+            <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>
+            <div class="stat-card"><h4>Open + In Progress</h4><div class="stat-number">${stats.open + stats.inProgress}</div></div>
+            <div class="stat-card"><h4>Pending Closure</h4><div class="stat-number">${stats.pendingClosure}</div></div>`;
+        
+        const reportContainer = document.getElementById('reportTicketsList');
+        reportContainer.innerHTML = '<div class="ticket-grid">' + tickets.slice(0,10).map(t => `
+            <div class="ticket-card"><div class="ticket-header"><span class="ticket-id">${t.id}</span><span class="ticket-status status-${t.status}">${t.status}</span></div>
+            <div><strong>📍 ${t.site}</strong> | 👤 ${t.owner} | 🏢 ${t.team}</div>
+            <div>📅 ${new Date(t.createdAt).toLocaleString()}</div>
+            ${t.rca ? `<div>🔍 RCA: ${t.rca}</div>` : ''}
+            </div>`).join('') + '</div>';
     }
 
     function showPanel(name) {
@@ -1014,7 +1018,6 @@
         if(name === 'teams') renderTeams();
         if(name === 'create') document.getElementById('ticketDate').value = new Date().toISOString().slice(0,16);
         if(name === 'analytics') renderAnalytics();
-        if(name === 'notifications') renderNotificationsLog();
     }
 
     function login() {
@@ -1036,7 +1039,9 @@
                 document.getElementById('adminTab').style.display = 'none';
             }
             
-            renderTickets(); renderTeams(); renderUsersTable();
+            renderTickets(); 
+            renderTeams(); 
+            renderUsersTable();
         } else {
             document.getElementById('loginError').style.display = 'block';
             setTimeout(()=>document.getElementById('loginError').style.display='none',3000);
@@ -1049,9 +1054,11 @@
         document.getElementById('dashboard').style.display = 'none'; 
     }
 
+    // Initialize
     const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
-    initSupabase();
+    loadData();
+    renderTeams();
 </script>
 </body>
 </html>
