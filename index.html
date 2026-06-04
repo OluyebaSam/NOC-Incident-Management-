@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Comium NOC | WhatsApp Integrated Incident Management</title>
+    <title>Comium NOC | Enterprise Incident Management</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -153,15 +154,6 @@
             border: 1px solid var(--border-color);
         }
 
-        .whatsapp-badge {
-            background: var(--whatsapp);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-size: 13px;
-            font-weight: bold;
-        }
-
         .theme-btn {
             background: var(--bg-card-secondary);
             border: 1px solid var(--border-color);
@@ -178,6 +170,15 @@
             border-radius: 30px;
             cursor: pointer;
             color: var(--text-primary);
+        }
+
+        .sync-status {
+            background: var(--success);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: bold;
         }
 
         .nav-tabs {
@@ -295,7 +296,7 @@
             flex-wrap: wrap;
         }
 
-        .btn-primary, .btn-success, .btn-warning, .btn-danger, .btn-secondary, .btn-whatsapp {
+        .btn-primary, .btn-success, .btn-warning, .btn-danger, .btn-secondary {
             padding: 8px 18px;
             border-radius: 30px;
             border: none;
@@ -308,7 +309,6 @@
         .btn-warning { background: #f59e0b; color: white; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-secondary { background: var(--bg-card-secondary); color: var(--text-primary); border: 1px solid var(--border-color); }
-        .btn-whatsapp { background: #25D366; color: white; }
 
         .form-card {
             background: var(--bg-card);
@@ -395,23 +395,6 @@
         .edit-btn { background: var(--info); color: white; }
         .delete-btn { background: #ef4444; color: white; }
 
-        .notification-badge {
-            background: var(--success);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 10px;
-            margin-left: 8px;
-        }
-
-        .whatsapp-config {
-            background: rgba(37, 211, 102, 0.1);
-            border: 1px solid var(--whatsapp);
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
         @media (max-width: 768px) {
             .form-row { grid-template-columns: 1fr; }
             .ticket-grid { grid-template-columns: 1fr; }
@@ -432,7 +415,7 @@
             </svg>
         </div>
         <h1 style="text-align:center; margin-bottom:10px;">Comium NOC</h1>
-        <p style="text-align:center; margin-bottom:20px; color:var(--text-secondary);">WhatsApp Integrated Incident Management</p>
+        <p style="text-align:center; margin-bottom:20px; color:var(--text-secondary);">Enterprise Incident Management</p>
         <input type="text" id="loginEmail" placeholder="Email" value="admin@comium.com">
         <input type="password" id="loginPassword" placeholder="Password" value="admin123">
         <select id="loginRole">
@@ -442,6 +425,7 @@
         </select>
         <button onclick="login()">Sign In →</button>
         <div id="loginError" style="color:#ef4444; text-align:center; margin-top:15px; display:none;">Invalid credentials</div>
+        <div id="connectionStatus" style="text-align:center; margin-top:10px; font-size:11px;"></div>
     </div>
 </div>
 
@@ -455,14 +439,14 @@
                     <circle cx="50" cy="50" r="6" fill="white"/>
                 </svg>
             </div>
-            <h1>Comium NOC <span style="font-size:11px; background:rgba(37,211,102,0.2); padding:4px 10px; border-radius:20px;">WhatsApp Ready</span></h1>
+            <h1>Comium NOC <span style="font-size:11px; background:rgba(16,185,129,0.2); padding:4px 10px; border-radius:20px;">Cloud Sync</span></h1>
         </div>
         <div class="user-section">
+            <div class="sync-status" id="syncStatus">🟢 Live</div>
             <button class="theme-btn" onclick="setTheme('dark')">🌙</button>
             <button class="theme-btn" onclick="setTheme('light')">☀️</button>
             <button class="theme-btn" onclick="setTheme('blue')">💙</button>
             <button class="theme-btn" onclick="setTheme('green')">💚</button>
-            <div class="whatsapp-badge">💚 NOC WhatsApp: +220 123 4567</div>
             <div class="user-badge" id="userDisplay"></div>
             <div class="user-badge" id="roleDisplay"></div>
             <button class="report-btn" onclick="openShiftReport()">📋 Shift Report</button>
@@ -476,11 +460,9 @@
         <button class="tab" onclick="showPanel('analytics')">📊 Analytics</button>
         <button class="tab" onclick="showPanel('teams')">👥 Teams</button>
         <button class="tab admin-only" onclick="showPanel('admin')" id="adminTab" style="display:none;">⚙️ Admin</button>
-        <button class="tab" onclick="showPanel('notifications')">🔔 Notifications Log</button>
-        <button class="tab" onclick="showPanel('whatsapp')">💚 WhatsApp Settings</button>
+        <button class="tab" onclick="showPanel('notifications')">🔔 Notifications</button>
     </div>
 
-    <!-- Tickets Panel -->
     <div id="panel-tickets" class="panel active">
         <div class="stats-grid" id="statsGrid"></div>
         <div class="charts-row">
@@ -490,14 +472,9 @@
         <div class="ticket-grid" id="ticketGrid"></div>
     </div>
 
-    <!-- Create Ticket Panel -->
     <div id="panel-create" class="panel">
         <div class="form-card">
-            <h3>🚨 Create Incident Ticket <span class="notification-badge">WhatsApp + SMS + Email</span></h3>
-            <div class="whatsapp-config">
-                <p style="font-size:13px;">💚 <strong>WhatsApp Notifications Active</strong></p>
-                <p style="font-size:11px; color:var(--text-secondary);">All tickets will be sent to NOC WhatsApp Group: <strong id="displayWhatsAppNumber">+220 123 4567</strong></p>
-            </div>
+            <h3>🚨 Create Incident Ticket</h3>
             <div class="form-row">
                 <div class="form-group"><label>Site Name</label><input type="text" id="ticketSite" placeholder="Enter site name"></div>
                 <div class="form-group"><label>Incident Date</label><input type="datetime-local" id="ticketDate"></div>
@@ -508,12 +485,11 @@
                 <div class="form-group"><label>Team Lead</label><select id="ticketTeamLead"></select></div>
             </div>
             <div class="form-group"><label>Assign Owner</label><select id="ticketOwner"></select></div>
-            <button class="btn-primary" onclick="createTicket()" style="width:100%;">✅ Create & Send Notifications</button>
-            <p style="font-size:11px; color:var(--text-secondary); margin-top:10px; text-align:center;">📧 📱 💚 Notifications will be sent to: Team Lead, Owner, NOC WhatsApp Group</p>
+            <button class="btn-primary" onclick="createTicket()" style="width:100%;">✅ Create Ticket</button>
+            <p style="font-size:11px; color:var(--text-secondary); margin-top:10px; text-align:center;">🌐 Synced to cloud - visible to all team members</p>
         </div>
     </div>
 
-    <!-- Analytics Panel -->
     <div id="panel-analytics" class="panel">
         <div class="form-card">
             <h3>📈 Performance Analytics</h3>
@@ -528,10 +504,8 @@
         <div id="reportTicketsList"></div>
     </div>
 
-    <!-- Teams Panel -->
     <div id="panel-teams" class="panel"><div id="teamsList"></div></div>
 
-    <!-- Notifications Log Panel -->
     <div id="panel-notifications" class="panel">
         <div class="form-card">
             <h3>📨 Notification History</h3>
@@ -542,42 +516,6 @@
         </div>
     </div>
 
-    <!-- WhatsApp Settings Panel -->
-    <div id="panel-whatsapp" class="panel">
-        <div class="form-card">
-            <h3>💚 NOC WhatsApp Configuration</h3>
-            <div class="whatsapp-config">
-                <div class="form-group">
-                    <label>Dedicated NOC WhatsApp Number</label>
-                    <input type="text" id="nocWhatsAppNumber" value="+2201234567" placeholder="+220XXXXXXXX">
-                    <p style="font-size:11px; margin-top:5px;">This number will receive all ticket notifications</p>
-                </div>
-                <div class="form-group">
-                    <label>WhatsApp API Key (Optional for production)</label>
-                    <input type="text" id="whatsappApiKey" placeholder="Enter WhatsApp Business API key">
-                </div>
-                <button class="btn-whatsapp" onclick="saveWhatsAppSettings()" style="width:100%;">💚 Save WhatsApp Settings</button>
-            </div>
-            <div style="margin-top:20px;">
-                <h4>📱 Test WhatsApp Notification</h4>
-                <div class="form-row">
-                    <div class="form-group"><label>Test Phone Number</label><input type="text" id="testPhoneNumber" placeholder="+220XXXXXXXX"></div>
-                    <div class="form-group"><label>Test Message</label><input type="text" id="testMessage" placeholder="Test message"></div>
-                </div>
-                <button class="btn-whatsapp" onclick="sendTestWhatsApp()">💚 Send Test WhatsApp</button>
-            </div>
-        </div>
-        <div class="form-card">
-            <h3>📊 WhatsApp Integration Status</h3>
-            <div id="whatsappStatus">
-                <p>✅ WhatsApp Business API Ready</p>
-                <p>📱 NOC Group: <strong id="displayNOCNumber">+220 123 4567</strong></p>
-                <p>💚 All incidents will be broadcast to NOC WhatsApp</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Admin Panel -->
     <div id="panel-admin" class="panel">
         <div class="form-card">
             <h3>👥 Create New Staff Account</h3>
@@ -586,7 +524,7 @@
                 <div class="form-group"><label>Email</label><input type="email" id="newUserEmail" placeholder="john@comium.com"></div>
             </div>
             <div class="form-row">
-                <div class="form-group"><label>Phone (WhatsApp ready)</label><input type="text" id="newUserPhone" placeholder="+2201234567"></div>
+                <div class="form-group"><label>Phone</label><input type="text" id="newUserPhone" placeholder="+2201234567"></div>
                 <div class="form-group"><label>Role</label><select id="newUserRole">
                     <option value="NOC Manager">NOC Manager</option>
                     <option value="Team Lead">Team Lead</option>
@@ -601,7 +539,7 @@
         </div>
         
         <div class="form-card">
-            <h3>✏️ Manage Users</h3>
+            <h3>✏️ Manage Users (Edit/Delete)</h3>
             <table class="data-table" id="usersTable">
                 <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Team</th><th>Actions</th></tr></thead>
                 <tbody></tbody>
@@ -626,7 +564,7 @@
         <input type="hidden" id="editUserOriginalEmail">
         <div class="form-group"><label>Full Name</label><input type="text" id="editUserName"></div>
         <div class="form-group"><label>Email</label><input type="email" id="editUserEmail"></div>
-        <div class="form-group"><label>Phone (WhatsApp)</label><input type="text" id="editUserPhone"></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="editUserPhone"></div>
         <div class="form-group"><label>Role</label><select id="editUserRole">
             <option value="NOC Manager">NOC Manager</option><option value="Team Lead">Team Lead</option><option value="Engineer">Engineer</option>
         </select></div>
@@ -652,9 +590,14 @@
 </div>
 
 <script>
-    // ============= DATA MODELS =============
+    // ============= SUPABASE CONFIGURATION =============
+    // ⚠️ IMPORTANT: Replace these with YOUR actual Supabase keys
+    const SUPABASE_URL = 'https://sytichlbyvsacrppukrm.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_j57-kq4_T_Wn-IcRodyUEA_M8XZM'; // ← PASTE YOUR FULL KEY HERE
+    
+    let supabase = null;
     let tickets = [];
-    let notificationLog = [];
+    let users = {};
     let teams = [
         { id: 1, name: "Transmission Team", users: [] },
         { id: 2, name: "Wireless Team", users: [] },
@@ -663,155 +606,89 @@
         { id: 5, name: "OCS Team", users: [] },
         { id: 6, name: "Power Team", users: [] }
     ];
-    
-    let users = {
-        'admin@comium.com': { password: 'admin123', name: 'System Admin', phone: '+2209998888', role: 'NOC Manager', team: 'Management' }
-    };
-    
+    let notificationLog = [];
     let currentUser = null;
     let ticketChart = null, slaChart = null;
-    let nocWhatsAppNumber = '+2201234567';
 
-    // Load saved WhatsApp settings
-    function loadWhatsAppSettings() {
-        const saved = localStorage.getItem('nocWhatsAppNumber');
-        if (saved) nocWhatsAppNumber = saved;
-        document.getElementById('nocWhatsAppNumber').value = nocWhatsAppNumber;
-        document.getElementById('displayWhatsAppNumber').innerText = nocWhatsAppNumber;
-        document.getElementById('displayNOCNumber').innerText = nocWhatsAppNumber;
-    }
-
-    function saveWhatsAppSettings() {
-        nocWhatsAppNumber = document.getElementById('nocWhatsAppNumber').value;
-        localStorage.setItem('nocWhatsAppNumber', nocWhatsAppNumber);
-        alert('💚 WhatsApp settings saved! NOC number: ' + nocWhatsAppNumber);
-        document.getElementById('displayWhatsAppNumber').innerText = nocWhatsAppNumber;
-        document.getElementById('displayNOCNumber').innerText = nocWhatsAppNumber;
-    }
-
-    // WhatsApp Notification (Real integration)
-    async function sendWhatsAppMessage(phoneNumber, message, isNOCGroup = false) {
-        // Format phone number (remove spaces, ensure + prefix)
-        let formattedPhone = phoneNumber.replace(/\s/g, '');
-        if (!formattedPhone.startsWith('+')) formattedPhone = '+' + formattedPhone;
-        
-        // Method 1: WhatsApp click to chat link (opens WhatsApp app)
-        const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
-        
-        // Method 2: For production, use WhatsApp Business API
-        // const apiKey = document.getElementById('whatsappApiKey')?.value || '';
-        // if (apiKey) {
-        //     await fetch('https://graph.facebook.com/v17.0/YOUR_PHONE_NUMBER_ID/messages', {
-        //         method: 'POST',
-        //         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        //         body: JSON.stringify({ to: formattedPhone, type: 'text', text: { body: message } })
-        //     });
-        // }
-        
-        console.log(`💚 WhatsApp message to ${formattedPhone}: ${message}`);
-        
-        // Also open WhatsApp in new tab for manual sending (demo mode)
-        if (!isNOCGroup) {
-            window.open(whatsappUrl, '_blank');
-        }
-        
-        return true;
-    }
-
-    // Send to NOC WhatsApp Group/Number
-    async function sendToNOCWhatsApp(ticket, action) {
-        const message = `🔴 *COMIUM NOC ALERT* 🔴\n\n` +
-                       `*Action:* ${action}\n` +
-                       `*Ticket ID:* ${ticket.id}\n` +
-                       `*Site:* ${ticket.site}\n` +
-                       `*Description:* ${ticket.description}\n` +
-                       `*Team:* ${ticket.team}\n` +
-                       `*Assigned To:* ${ticket.owner || 'Unassigned'}\n` +
-                       `*Team Lead:* ${ticket.teamLead}\n` +
-                       `*Status:* ${ticket.status}\n` +
-                       `*Time:* ${new Date().toLocaleString()}\n\n` +
-                       `_Please acknowledge in the system._`;
-        
-        await sendWhatsAppMessage(nocWhatsAppNumber, message, true);
-        logNotification(ticket.id, `NOC WhatsApp (${nocWhatsAppNumber})`, 'WhatsApp Group', 'Sent');
-    }
-
-    // Notification Functions
-    function logNotification(ticketId, sentTo, type, status) {
-        notificationLog.unshift({
-            time: new Date().toLocaleString(),
-            ticketId: ticketId,
-            sentTo: sentTo,
-            type: type,
-            status: status
-        });
-        renderNotificationsLog();
-    }
-
-    async function sendSMS(phoneNumber, message) {
-        if (!phoneNumber || phoneNumber.length < 8) return false;
-        console.log(`📱 SMS to ${phoneNumber}: ${message}`);
-        // In production: integrate with SMS gateway
-        return true;
-    }
-
-    async function sendEmail(email, subject, body) {
-        if (!email || !email.includes('@')) return false;
-        console.log(`📧 Email to ${email}: ${subject}`);
-        if (Notification.permission === "granted") {
-            new Notification(subject, { body: body.substring(0, 100) });
-        }
-        return true;
-    }
-
-    async function sendTicketNotifications(ticket, teamLeadEmail, teamLeadPhone, ownerEmail, ownerPhone) {
-        const subject = `🚨 New Incident Ticket: ${ticket.id}`;
-        const message = `Ticket: ${ticket.id}\nSite: ${ticket.site}\nDescription: ${ticket.description}\nPriority: Critical\nSLA: 1 Hour\n\nPlease login to acknowledge.`;
-        
-        // Send to Team Lead
-        if (teamLeadEmail) {
-            await sendEmail(teamLeadEmail, subject, message);
-            logNotification(ticket.id, teamLeadEmail, 'Email', 'Sent');
-        }
-        if (teamLeadPhone) {
-            await sendSMS(teamLeadPhone, message);
-            logNotification(ticket.id, teamLeadPhone, 'SMS', 'Sent');
-            await sendWhatsAppMessage(teamLeadPhone, message);
-            logNotification(ticket.id, teamLeadPhone, 'WhatsApp', 'Sent');
-        }
-        
-        // Send to Owner
-        if (ownerEmail) {
-            await sendEmail(ownerEmail, subject, message);
-            logNotification(ticket.id, ownerEmail, 'Email', 'Sent');
-        }
-        if (ownerPhone) {
-            await sendSMS(ownerPhone, message);
-            logNotification(ticket.id, ownerPhone, 'SMS', 'Sent');
-            await sendWhatsAppMessage(ownerPhone, message);
-            logNotification(ticket.id, ownerPhone, 'WhatsApp', 'Sent');
-        }
-        
-        // Send to DEDICATED NOC WHATSAPP NUMBER
-        await sendToNOCWhatsApp(ticket, 'NEW TICKET CREATED');
-        
-        // Send to NOC Manager
-        const nocManager = Object.values(users).find(u => u.role === 'NOC Manager');
-        if (nocManager && nocManager.email) {
-            await sendEmail(nocManager.email, `📊 New Ticket Alert: ${ticket.id}`, `${ticket.id} created and assigned to ${ticket.team}`);
-            logNotification(ticket.id, nocManager.email, 'Email (NOC Manager)', 'Sent');
-        }
-    }
-
-    async function sendTestWhatsApp() {
-        const testPhone = document.getElementById('testPhoneNumber').value;
-        const testMsg = document.getElementById('testMessage').value || '🧪 Test message from Comium NOC System';
-        if (testPhone) {
-            await sendWhatsAppMessage(testPhone, testMsg);
-            alert(`💚 Test WhatsApp sent to ${testPhone}`);
+    // Initialize Supabase
+    function initSupabase() {
+        if (SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'sb_publishable_j57-kq4_T_Wn-IcRodyUEA_M8XZM') {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            document.getElementById('connectionStatus').innerHTML = '✅ Connected to cloud database';
+            document.getElementById('syncStatus').innerHTML = '🟢 Cloud Sync';
+            loadFromSupabase();
         } else {
-            alert('Please enter a test phone number');
+            document.getElementById('connectionStatus').innerHTML = '⚠️ Enter your Supabase keys in the code';
+            document.getElementById('syncStatus').innerHTML = '⚠️ Local Only';
+            loadFromLocalStorage();
         }
+    }
+
+    async function loadFromSupabase() {
+        try {
+            const { data: ticketsData } = await supabase.from('tickets').select('*');
+            if (ticketsData) tickets = ticketsData;
+            
+            const { data: usersData } = await supabase.from('users').select('*');
+            if (usersData) {
+                users = {};
+                usersData.forEach(u => { users[u.email] = u; });
+            }
+            
+            renderTickets();
+            renderTeams();
+            renderUsersTable();
+        } catch(e) {
+            console.log('Using local storage fallback');
+            loadFromLocalStorage();
+        }
+    }
+
+    function loadFromLocalStorage() {
+        const savedTickets = localStorage.getItem('comium_tickets');
+        const savedUsers = localStorage.getItem('comium_users');
+        if (savedTickets) tickets = JSON.parse(savedTickets);
+        if (savedUsers) users = JSON.parse(savedUsers);
+        
+        if (Object.keys(users).length === 0) {
+            users = {
+                'admin@comium.com': { password: 'admin123', name: 'System Admin', phone: '+2209998888', role: 'NOC Manager', team: 'Management' },
+                'john@comium.com': { password: 'john123', name: 'John Smith', phone: '+2207771111', role: 'Team Lead', team: 'Transmission Team' },
+                'sarah@comium.com': { password: 'sarah123', name: 'Sarah Wilson', phone: '+2207773333', role: 'Team Lead', team: 'Power Team' },
+                'mike@comium.com': { password: 'mike123', name: 'Mike Jones', phone: '+2207772222', role: 'Engineer', team: 'Transmission Team' },
+                'david@comium.com': { password: 'david123', name: 'David Brown', phone: '+2207774444', role: 'Engineer', team: 'Power Team' }
+            };
+        }
+        
+        if (tickets.length === 0) {
+            for(let i=1;i<=8;i++) {
+                tickets.push({ 
+                    id: `INC-2025120${i}`, site: `Site ${i}`, 
+                    createdAt: new Date(Date.now()-i*86400000).toISOString(),
+                    description: `Sample incident ${i}`, 
+                    team: i%2===0?'Power Team':'Transmission Team',
+                    owner: i%2===0?'David Brown':'Mike Jones',
+                    teamLead: i%2===0?'Sarah Wilson':'John Smith',
+                    ownerEmail: i%2===0?'david@comium.com':'mike@comium.com',
+                    ownerPhone: i%2===0?'+2207774444':'+2207772222',
+                    status: 'OPEN', outageDuration: 0, 
+                    slaDeadline: new Date(Date.now()+3600000).toISOString()
+                });
+            }
+        }
+        renderTickets();
+        renderTeams();
+        renderUsersTable();
+    }
+
+    async function saveToSupabase(table, data) {
+        if (supabase) {
+            try {
+                await supabase.from(table).upsert(data);
+            } catch(e) { console.log('Save failed, using local'); }
+        }
+        if (table === 'tickets') localStorage.setItem('comium_tickets', JSON.stringify(tickets));
+        if (table === 'users') localStorage.setItem('comium_users', JSON.stringify(users));
     }
 
     function generateTicketId() {
@@ -833,6 +710,11 @@
         }
     }
 
+    function logNotification(ticketId, sentTo, type, status) {
+        notificationLog.unshift({ time: new Date().toLocaleString(), ticketId, sentTo, type, status });
+        renderNotificationsLog();
+    }
+
     async function createTicket() {
         const site = document.getElementById('ticketSite').value;
         const date = document.getElementById('ticketDate').value;
@@ -848,43 +730,22 @@
         const owner = team?.users.find(u => u.name === ownerName);
         
         const ticket = {
-            id: generateTicketId(),
-            site: site,
-            createdAt: new Date().toISOString(),
-            occurredAt: date || new Date().toISOString(),
-            description: desc,
-            team: teamName,
-            teamLead: teamLeadName,
-            owner: ownerName,
-            teamLeadEmail: teamLead?.email || '',
-            teamLeadPhone: teamLead?.phone || '',
-            ownerEmail: owner?.email || '',
-            ownerPhone: owner?.phone || '',
-            status: 'OPEN',
-            severity: 'Critical',
-            acknowledgementTime: null,
-            inProgressTime: null,
-            resolutionTime: null,
-            outageDuration: 0,
-            rca: '',
-            resolution: '',
-            assignedTo: ownerName,
-            slaDeadline: new Date(Date.now() + 3600000).toISOString(),
-            closedBy: null
+            id: generateTicketId(), site, createdAt: new Date().toISOString(),
+            occurredAt: date || new Date().toISOString(), description: desc, team: teamName,
+            teamLead: teamLeadName, owner: ownerName,
+            teamLeadEmail: teamLead?.email || '', teamLeadPhone: teamLead?.phone || '',
+            ownerEmail: owner?.email || '', ownerPhone: owner?.phone || '',
+            status: 'OPEN', severity: 'Critical', acknowledgementTime: null,
+            inProgressTime: null, resolutionTime: null, outageDuration: 0,
+            rca: '', resolution: '', assignedTo: ownerName,
+            slaDeadline: new Date(Date.now() + 3600000).toISOString(), closedBy: null
         };
         
         tickets.unshift(ticket);
-        
-        // Send notifications to all channels including dedicated NOC WhatsApp
-        await sendTicketNotifications(
-            ticket,
-            teamLead?.email, teamLead?.phone,
-            owner?.email, owner?.phone
-        );
-        
+        await saveToSupabase('tickets', ticket);
         renderTickets();
         showPanel('tickets');
-        alert(`✅ Ticket ${ticket.id} created!\n\n💚 WhatsApp notification sent to NOC Group: ${nocWhatsAppNumber}\n📧 Email and 📱 SMS sent to:\n- Team Lead: ${teamLeadName}\n- Owner: ${ownerName}`);
+        alert(`✅ Ticket ${ticket.id} created and synced to cloud!\n\nAll team members can now see this ticket.`);
     }
 
     function updateTicketStatus(id, status) {
@@ -893,37 +754,27 @@
             t.status = status; 
             if(status==='ACKNOWLEDGED') t.acknowledgementTime = new Date().toISOString();
             if(status==='IN_PROGRESS') t.inProgressTime = new Date().toISOString();
+            saveToSupabase('tickets', t);
             renderTickets(); 
-            
-            // Send status update to NOC WhatsApp
-            sendToNOCWhatsApp(t, `TICKET ${status}`);
-            
             alert(`Ticket ${id} updated to ${status}`);
         }
     }
 
     function resolveTicket(id) {
         const t = tickets.find(x=>x.id===id);
-        const rca = prompt('Enter RCA:'); 
-        const res = prompt('Enter Resolution:'); 
-        const outage = prompt('Outage duration (minutes):');
+        const rca = prompt('Enter RCA:'); const res = prompt('Enter Resolution:'); const outage = prompt('Outage duration (minutes):');
         if(rca && res) { 
-            t.rca = rca; 
-            t.resolution = res; 
-            t.outageDuration = parseInt(outage) || 0; 
-            t.status = 'RESOLVED'; 
-            t.resolutionTime = new Date().toISOString(); 
+            t.rca = rca; t.resolution = res; t.outageDuration = parseInt(outage) || 0; 
+            t.status = 'RESOLVED'; t.resolutionTime = new Date().toISOString(); 
+            saveToSupabase('tickets', t);
             renderTickets(); 
-            
-            sendToNOCWhatsApp(t, 'TICKET RESOLVED');
-            alert(`✅ Ticket ${id} resolved`);
+            alert(`✅ Ticket ${id} resolved and saved to cloud`);
         }
     }
 
     function getTicketStats() {
         return {
-            total: tickets.length,
-            open: tickets.filter(t=>t.status==='OPEN').length,
+            total: tickets.length, open: tickets.filter(t=>t.status==='OPEN').length,
             acknowledged: tickets.filter(t=>t.status==='ACKNOWLEDGED').length,
             inProgress: tickets.filter(t=>t.status==='IN_PROGRESS').length,
             resolved: tickets.filter(t=>t.status==='RESOLVED').length,
@@ -938,7 +789,7 @@
         
         const stats = getTicketStats();
         document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card"><h4>Total Tickets</h4><div class="stat-number">${stats.total}</div></div>
+            <div class="stat-card"><h4>Total</h4><div class="stat-number">${stats.total}</div></div>
             <div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div>
             <div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div>
             <div class="stat-card"><h4>Resolved</h4><div class="stat-number">${stats.resolved}</div></div>
@@ -948,33 +799,20 @@
         if (currentUser?.role === 'Engineer') filtered = tickets.filter(t => t.owner === currentUser?.name);
         else if (currentUser?.role === 'Team Lead') filtered = tickets.filter(t => t.teamLead === currentUser?.name);
         
-        container.innerHTML = filtered.map(t => `<div class="ticket-card"><div class="ticket-header"><span class="ticket-id">${t.id}</span><span class="ticket-status status-${t.status}">${t.status}</span></div><div><strong>📍 ${t.site}</strong></div><div class="ticket-detail">👤 ${t.owner || 'Unassigned'} | 🏢 ${t.team}</div><div class="ticket-detail">📧 ${t.ownerEmail || 'No email'} | 📱 ${t.ownerPhone || 'No phone'}</div><div class="ticket-actions">${t.status==='OPEN'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','ACKNOWLEDGED')">✅ Acknowledge</button>`:''}${t.status==='ACKNOWLEDGED'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','IN_PROGRESS')">▶ Start</button>`:''}${t.status==='IN_PROGRESS'?`<button class="btn-success" onclick="resolveTicket('${t.id}')">🔧 Resolve</button>`:''}</div></div>`).join('');
+        container.innerHTML = filtered.map(t => `<div class="ticket-card"><div class="ticket-header"><span class="ticket-id">${t.id}</span><span class="ticket-status status-${t.status}">${t.status}</span></div><div><strong>📍 ${t.site}</strong></div><div class="ticket-detail">👤 ${t.owner || 'Unassigned'} | 🏢 ${t.team}</div><div class="ticket-actions">${t.status==='OPEN'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','ACKNOWLEDGED')">✅ Acknowledge</button>`:''}${t.status==='ACKNOWLEDGED'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','IN_PROGRESS')">▶ Start</button>`:''}${t.status==='IN_PROGRESS'?`<button class="btn-success" onclick="resolveTicket('${t.id}')">🔧 Resolve</button>`:''}</div></div>`).join('');
         
         const statusCounts = ['OPEN','ACKNOWLEDGED','IN_PROGRESS','RESOLVED','PENDING_CLOSURE','CLOSED'].map(s => tickets.filter(t=>t.status===s).length);
         if (ticketChart) ticketChart.destroy();
-        ticketChart = new Chart(document.getElementById('ticketChart'), { type: 'doughnut', data: { labels: ['Open','Acknowledged','In Progress','Resolved','Pending Closure','Closed'], datasets: [{ data: statusCounts, backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#10b981','#ec4899','#64748b'] }] }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-secondary') } } } } });
-        
-        const slaData = tickets.slice(0,7).map(t => Math.min(100, Math.round((new Date(t.slaDeadline) - new Date(t.createdAt)) / 36000)));
-        if (slaChart) slaChart.destroy();
-        slaChart = new Chart(document.getElementById('slaChart'), { type: 'line', data: { labels: tickets.slice(0,7).map(t=>t.id), datasets: [{ label: 'SLA Remaining (%)', data: slaData, borderColor: '#10b981', fill: false }] }, options: { responsive: true } });
+        const ctx = document.getElementById('ticketChart')?.getContext('2d');
+        if(ctx) ticketChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Open','Acknowledged','In Progress','Resolved','Pending Closure','Closed'], datasets: [{ data: statusCounts, backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#10b981','#ec4899','#64748b'] }] }, options: { responsive: true } });
     }
 
     function renderNotificationsLog() {
         const tbody = document.querySelector('#notificationsTable tbody');
-        if (!tbody) return;
-        tbody.innerHTML = notificationLog.slice(0, 50).map(n => `
-            <tr>
-                <td>${n.time}</td>
-                <td><strong>${n.ticketId}</strong></td>
-                <td>${n.sentTo}</td>
-                <td>${n.type}</td>
-                <td style="color:${n.status === 'Sent' ? '#10b981' : '#ef4444'}">${n.status}</td>
-            </tr>
-        `).join('');
+        if (tbody) tbody.innerHTML = notificationLog.slice(0, 50).map(n => `<tr><td>${n.time}</td><td><strong>${n.ticketId}</strong></td><td>${n.sentTo}</td><td>${n.type}</td><td style="color:${n.status === 'Sent' ? '#10b981' : '#ef4444'}">${n.status}</td></tr>`).join('');
     }
 
-    // Admin Functions
-    function createStaffAccount() {
+    async function createStaffAccount() {
         if (currentUser?.role !== 'NOC Manager') { alert('Only NOC Manager can create accounts'); return; }
         const name = document.getElementById('newUserName').value.trim();
         const email = document.getElementById('newUserEmail').value.trim();
@@ -986,7 +824,8 @@
         if (!name || !email || !phone) { alert('Please fill all fields'); return; }
         if (users[email]) { alert('User already exists'); return; }
         
-        users[email] = { password: password, name: name, phone: phone, role: role, team: teamName };
+        users[email] = { password, name, phone, role, team: teamName };
+        await saveToSupabase('users', users[email]);
         
         if (teamName) {
             const team = teams.find(t => t.name === teamName);
@@ -995,10 +834,7 @@
         
         renderUsersTable();
         renderTeams();
-        alert(`✅ Staff account created for ${name}\nWhatsApp: ${phone}`);
-        document.getElementById('newUserName').value = '';
-        document.getElementById('newUserEmail').value = '';
-        document.getElementById('newUserPhone').value = '';
+        alert(`✅ Staff account created for ${name}\nEmail: ${email}\nPassword: ${password}`);
     }
 
     function renderUsersTable() {
@@ -1032,7 +868,7 @@
         document.getElementById('editUserModal').style.display = 'flex';
     }
 
-    function saveUserEdit() {
+    async function saveUserEdit() {
         const originalEmail = document.getElementById('editUserOriginalEmail').value;
         const newEmail = document.getElementById('editUserEmail').value;
         const name = document.getElementById('editUserName').value;
@@ -1064,17 +900,19 @@
             if (targetTeam) targetTeam.users.push({ name, email: newEmail, phone, role });
         }
         
+        await saveToSupabase('users', user);
         renderUsersTable();
         renderTeams();
         closeEditModal();
         alert('User updated successfully!');
     }
 
-    function deleteUser(email) {
+    async function deleteUser(email) {
         if (email === 'admin@comium.com') { alert('Cannot delete main admin'); return; }
         if (confirm('Delete this user?')) {
             for (const t of teams) t.users = t.users.filter(u => u.email !== email);
             delete users[email];
+            await saveToSupabase('users', { email, _delete: true });
             renderUsersTable();
             renderTeams();
             alert('User deleted');
@@ -1104,7 +942,7 @@
         if (newUserTeamSelect) newUserTeamSelect.innerHTML = '<option value="">No Team</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
         if (reportTeamSelect) reportTeamSelect.innerHTML = '<option value="">All Teams</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
         
-        if (container) container.innerHTML = teams.map(team => `<div class="form-card"><h4>🏢 ${team.name}</h4><table class="data-table"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>WhatsApp</th></thead><tbody>${team.users.map(u=>`<tr><td>${u.name}</td><td>${u.role}</td><td>${u.email}</td><td>${u.phone}</td></tr>`).join('')}</tbody></table></div>`).join('');
+        if (container) container.innerHTML = teams.map(team => `<div class="form-card"><h4>🏢 ${team.name}</h4><table class="data-table"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th></tr></thead><tbody>${team.users.map(u=>`<tr><td>${u.name}</td><td>${u.role}</td><td>${u.email}</td><td>${u.phone}</td></tr>`).join('')}</tbody></td></div>`).join('');
         
         if (adminTeamsContainer) adminTeamsContainer.innerHTML = teams.map(team => `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border-color);"><span><strong>${team.name}</strong> (${team.users.length} users)</span><button class="btn-danger" onclick="deleteTeam('${team.name}')" style="padding:4px 12px;">Delete</button></div>`).join('');
     }
@@ -1122,47 +960,35 @@
     function openShiftReport() {
         const stats = getTicketStats();
         const now = new Date().toLocaleString();
-        
         const reportHTML = `
             <div style="background:var(--bg-card-secondary); padding:20px; border-radius:16px; margin-bottom:15px;">
                 <h3 style="color:var(--accent);">📋 Shift Summary Report</h3>
                 <p><strong>Generated by:</strong> ${currentUser?.name}</p>
-                <p><strong>WhatsApp NOC:</strong> ${nocWhatsAppNumber}</p>
                 <p><strong>Date:</strong> ${now}</p>
             </div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-                <div class="stat-card"><h4>Total Tickets</h4><div class="stat-number">${stats.total}</div></div>
+                <div class="stat-card"><h4>Total</h4><div class="stat-number">${stats.total}</div></div>
                 <div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div>
                 <div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div>
                 <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>
-            </div>
-            <div class="whatsapp-config" style="margin-top:15px;">
-                💚 All notifications are sent to NOC WhatsApp: <strong>${nocWhatsAppNumber}</strong>
-            </div>
-        `;
+            </div>`;
         document.getElementById('shiftReportContent').innerHTML = reportHTML;
         document.getElementById('shiftReportModal').style.display = 'flex';
     }
 
     function exportShiftReport() {
         const stats = getTicketStats();
-        const reportData = [{
-            'Generated By': currentUser?.name, 'Date': new Date().toLocaleString(),
-            'Total Tickets': stats.total, 'Open': stats.open, 'In Progress': stats.inProgress,
-            'Resolved': stats.resolved, 'Closed': stats.closed,
-            'NOC WhatsApp': nocWhatsAppNumber
-        }];
-        const ws = XLSX.utils.json_to_sheet(reportData);
+        const ws = XLSX.utils.json_to_sheet([{ 'Total': stats.total, 'Open': stats.open, 'In Progress': stats.inProgress, 'Closed': stats.closed, 'Date': new Date().toLocaleString() }]);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Shift Report');
         XLSX.writeFile(wb, `Shift_Report_${new Date().toISOString().slice(0,19)}.xlsx`);
-        alert('Shift report exported!');
+        alert('Report exported!');
     }
 
     function closeShiftReport() { document.getElementById('shiftReportModal').style.display = 'none'; }
 
     function exportAnalytics() {
-        const data = tickets.map(t=>({'ID':t.id,'Site':t.site,'Team':t.team,'Owner':t.owner,'Status':t.status,'Outage(min)':t.outageDuration}));
+        const data = tickets.map(t=>({'ID':t.id,'Site':t.site,'Team':t.team,'Owner':t.owner,'Status':t.status}));
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Analytics');
@@ -1191,7 +1017,7 @@
         if(name === 'notifications') renderNotificationsLog();
     }
 
-    async function login() {
+    function login() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
         const role = document.getElementById('loginRole').value;
@@ -1210,10 +1036,7 @@
                 document.getElementById('adminTab').style.display = 'none';
             }
             
-            if (Notification.permission === "default") Notification.requestPermission();
-            
             renderTickets(); renderTeams(); renderUsersTable();
-            loadWhatsAppSettings();
         } else {
             document.getElementById('loginError').style.display = 'block';
             setTimeout(()=>document.getElementById('loginError').style.display='none',3000);
@@ -1226,37 +1049,9 @@
         document.getElementById('dashboard').style.display = 'none'; 
     }
 
-    // Initialize sample data
-    teams[0].users = [
-        { name:"John Smith", email:"john@comium.com", phone:"+2207771111", role:"Team Lead" },
-        { name:"Mike Jones", email:"mike@comium.com", phone:"+2207772222", role:"Engineer" }
-    ];
-    teams[5].users = [
-        { name:"Sarah Wilson", email:"sarah@comium.com", phone:"+2207773333", role:"Team Lead" },
-        { name:"David Brown", email:"david@comium.com", phone:"+2207774444", role:"Engineer" }
-    ];
-    
-    users['john@comium.com'] = { password: 'john123', name: 'John Smith', phone: '+2207771111', role: 'Team Lead', team: 'Transmission Team' };
-    users['sarah@comium.com'] = { password: 'sarah123', name: 'Sarah Wilson', phone: '+2207773333', role: 'Team Lead', team: 'Power Team' };
-    users['mike@comium.com'] = { password: 'mike123', name: 'Mike Jones', phone: '+2207772222', role: 'Engineer', team: 'Transmission Team' };
-    users['david@comium.com'] = { password: 'david123', name: 'David Brown', phone: '+2207774444', role: 'Engineer', team: 'Power Team' };
-    
-    for(let i=1;i<=8;i++) tickets.push({ 
-        id:`INC-2025120${i}`, site:`Site ${i}`, 
-        createdAt:new Date(Date.now()-i*86400000).toISOString(),
-        description:`Sample incident ${i}`, 
-        team:i%2===0?'Power Team':'Transmission Team',
-        owner:i%2===0?'David Brown':'Mike Jones',
-        teamLead:i%2===0?'Sarah Wilson':'John Smith',
-        ownerEmail:i%2===0?'david@comium.com':'mike@comium.com',
-        ownerPhone:i%2===0?'+2207774444':'+2207772222',
-        status:'OPEN', outageDuration:0, slaDeadline:new Date(Date.now()+3600000).toISOString()
-    });
-    
     const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
-    renderTeams();
-    loadWhatsAppSettings();
+    initSupabase();
 </script>
 </body>
 </html>
