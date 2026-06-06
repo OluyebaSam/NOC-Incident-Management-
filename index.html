@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comium NOC | Advanced Workflow Incident Management</title>
+    <title>Comium NOC | Workflow Incident Management</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
@@ -46,7 +46,6 @@
             transition: all 0.3s ease;
         }
 
-        /* Login Page */
         .login-container {
             min-height: 100vh;
             display: flex;
@@ -91,7 +90,6 @@
         }
         .error-msg { color: #ef4444; margin-top: 15px; display: none; }
 
-        /* Dashboard */
         .dashboard { display: none; }
         .top-bar {
             background: var(--bg-secondary);
@@ -335,7 +333,6 @@
 </head>
 <body>
 
-<!-- LOGIN PAGE -->
 <div class="login-container" id="loginContainer">
     <div class="login-card">
         <div class="small-logo" style="margin: 0 auto 20px; width: 70px; height: 70px;">
@@ -353,7 +350,6 @@
     </div>
 </div>
 
-<!-- DASHBOARD -->
 <div class="dashboard" id="dashboard">
     <div class="top-bar">
         <div class="logo-area">
@@ -376,14 +372,12 @@
         <button class="tab" onclick="showPanel('admin')">⚙️ Admin</button>
     </div>
 
-    <!-- Tickets Panel -->
     <div id="panel-tickets" class="panel active">
         <div class="stats-grid" id="statsGrid"></div>
-        <div class="chart-container"><h3>📊 Ticket Distribution by Status</h3><canvas id="ticketChart"></canvas></div>
+        <div class="chart-container"><h3>📊 Ticket Distribution</h3><canvas id="ticketChart"></canvas></div>
         <div class="ticket-grid" id="ticketGrid"></div>
     </div>
 
-    <!-- Create Ticket Panel -->
     <div id="panel-create" class="panel">
         <div class="form-card">
             <h3>🚨 Create New Incident Ticket</h3>
@@ -397,14 +391,12 @@
                 <div class="form-group"><label>Assign To</label><select id="ticketOwner"></select></div>
             </div>
             <button class="btn-primary" onclick="createTicket()" style="width:100%;">✅ Create Ticket</button>
-            <p style="font-size:11px; color:var(--text-secondary); margin-top:10px; text-align:center;">Ticket will follow workflow: Open → Initial Check → Assigned → Handling → Resolved → Closed</p>
+            <p style="font-size:11px; margin-top:10px; text-align:center;">Workflow: OPEN → INITIAL CHECK → ASSIGNED → HANDLING → RESOLVED → CLOSED</p>
         </div>
     </div>
 
-    <!-- Teams Panel -->
     <div id="panel-teams" class="panel"><div id="teamsList"></div></div>
 
-    <!-- Admin Panel -->
     <div id="panel-admin" class="panel">
         <div class="form-card">
             <h3>👥 Create New Staff Account</h3>
@@ -418,7 +410,7 @@
             </div>
             <div class="form-row">
                 <div class="form-group"><label>Team Assignment</label><select id="newUserTeam"></select></div>
-                <div class="form-group"><label>Default Password</label><input type="text" id="newUserPassword" value="welcome123"></div>
+                <div class="form-group"><label>Password</label><input type="text" id="newUserPassword" value="welcome123"></div>
             </div>
             <button class="btn-primary" onclick="createStaffAccount()" style="width:100%;">+ Create Staff Account</button>
         </div>
@@ -430,18 +422,17 @@
             </table>
         </div>
         <div class="form-card">
-            <h3>🏢 Manage Teams (Create Custom Team)</h3>
+            <h3>🏢 Manage Teams</h3>
             <div class="form-row">
-                <div class="form-group"><label>New Team Name</label><input type="text" id="newTeamName" placeholder="e.g., DATACOM, Security, etc."></div>
+                <div class="form-group"><label>New Team Name</label><input type="text" id="newTeamName" placeholder="e.g., Security Team"></div>
                 <div class="form-group"><button class="btn-primary" onclick="addTeam()" style="margin-top:24px;">+ Create Team</button></div>
             </div>
             <div id="adminTeamsList"></div>
-            <p style="font-size:11px; margin-top:10px; color:var(--text-secondary);">Default Teams: Transmission, Core Network, Power, Call Center, OCS, IPRAN, DATACOM</p>
+            <p style="font-size:11px; margin-top:10px;">Default Teams: Transmission, Core Network, Power, Call Center, OCS, IPRAN, DATACOM</p>
         </div>
     </div>
 </div>
 
-<!-- Edit User Modal -->
 <div id="editUserModal" class="modal">
     <div class="modal-content">
         <h2 style="color:var(--accent); margin-bottom:20px;">✏️ Edit User</h2>
@@ -460,42 +451,87 @@
 </div>
 
 <script>
-    // ============= DATA =============
+    // ============= INITIALIZE DATA =============
+    // This ensures login works immediately
+    if (!localStorage.getItem('comium_users')) {
+        const initialUsers = {
+            'admin@comium.com': { password: 'admin123', name: 'System Admin', phone: '+2209998888', role: 'NOC Manager', team: 'Management' }
+        };
+        localStorage.setItem('comium_users', JSON.stringify(initialUsers));
+    }
+    
+    if (!localStorage.getItem('comium_teams')) {
+        const initialTeams = [
+            { id: 1, name: "Transmission Team", users: [] },
+            { id: 2, name: "Core Network Team", users: [] },
+            { id: 3, name: "Power Team", users: [] },
+            { id: 4, name: "Call Center", users: [] },
+            { id: 5, name: "OCS Team", users: [] },
+            { id: 6, name: "IPRAN Team", users: [] },
+            { id: 7, name: "DATACOM Team", users: [] }
+        ];
+        localStorage.setItem('comium_teams', JSON.stringify(initialTeams));
+    }
+    
+    if (!localStorage.getItem('comium_tickets')) {
+        const initialTickets = [
+            { id: "INC-20241201-001", site: "Old Yundum 4", createdAt: new Date(Date.now() - 2*60*60*1000).toISOString(), description: "NE Is Disconnected - Power failure detected", team: "Power Team", owner: "Unassigned", status: "OPEN", history: [] },
+            { id: "INC-20241201-002", site: "Latriya", createdAt: new Date(Date.now() - 30*60*1000).toISOString(), description: "Transmission link down", team: "Transmission Team", owner: "Unassigned", status: "INITIAL_CHECK", history: [] },
+            { id: "INC-20241201-003", site: "Brufut TAF Estate", createdAt: new Date(Date.now() - 45*60*1000).toISOString(), description: "High CPU usage on core router", team: "Core Network Team", owner: "Unassigned", status: "ASSIGNED", history: [] }
+        ];
+        localStorage.setItem('comium_tickets', JSON.stringify(initialTickets));
+    }
+    
     let tickets = [];
-    let users = {
-        'admin@comium.com': { password: 'admin123', name: 'System Admin', phone: '+2209998888', role: 'NOC Manager', team: 'Management' }
-    };
-    
-    // Default Teams
-    let teams = [
-        { id: 1, name: "Transmission Team", users: [] },
-        { id: 2, name: "Core Network Team", users: [] },
-        { id: 3, name: "Power Team", users: [] },
-        { id: 4, name: "Call Center", users: [] },
-        { id: 5, name: "OCS Team", users: [] },
-        { id: 6, name: "IPRAN Team", users: [] },
-        { id: 7, name: "DATACOM Team", users: [] }
-    ];
-    
+    let users = {};
+    let teams = [];
     let currentUser = null;
     let ticketChart = null;
     
-    // Workflow status sequence
     const workflowStatuses = ['OPEN', 'INITIAL_CHECK', 'ASSIGNED', 'HANDLING', 'RESOLVED', 'CLOSED'];
+    
+    function loadData() {
+        tickets = JSON.parse(localStorage.getItem('comium_tickets') || '[]');
+        users = JSON.parse(localStorage.getItem('comium_users') || '{}');
+        teams = JSON.parse(localStorage.getItem('comium_teams') || '[]');
+        
+        // Ensure default admin exists
+        if (!users['admin@comium.com']) {
+            users['admin@comium.com'] = { password: 'admin123', name: 'System Admin', phone: '+2209998888', role: 'NOC Manager', team: 'Management' };
+            localStorage.setItem('comium_users', JSON.stringify(users));
+        }
+        
+        // Add sample team members for demo
+        const sampleTeamMembers = [
+            { name: "John Smith", email: "john@comium.com", phone: "+2207771111", role: "Team Lead", team: "Transmission Team" },
+            { name: "Mike Jones", email: "mike@comium.com", phone: "+2207772222", role: "Engineer", team: "Transmission Team" },
+            { name: "Sarah Wilson", email: "sarah@comium.com", phone: "+2207773333", role: "Team Lead", team: "Core Network Team" },
+            { name: "David Brown", email: "david@comium.com", phone: "+2207774444", role: "Engineer", team: "Power Team" }
+        ];
+        
+        sampleTeamMembers.forEach(member => {
+            if (!users[member.email]) {
+                users[member.email] = { password: 'welcome123', name: member.name, phone: member.phone, role: member.role, team: member.team };
+            }
+            const team = teams.find(t => t.name === member.team);
+            if (team && !team.users.find(u => u.email === member.email)) {
+                team.users.push({ name: member.name, email: member.email, phone: member.phone, role: member.role });
+            }
+        });
+        
+        localStorage.setItem('comium_users', JSON.stringify(users));
+        localStorage.setItem('comium_teams', JSON.stringify(teams));
+    }
+    
+    function saveData() {
+        localStorage.setItem('comium_tickets', JSON.stringify(tickets));
+        localStorage.setItem('comium_users', JSON.stringify(users));
+        localStorage.setItem('comium_teams', JSON.stringify(teams));
+    }
     
     function getNextStatus(currentStatus) {
         const index = workflowStatuses.indexOf(currentStatus);
-        if (index >= 0 && index < workflowStatuses.length - 1) {
-            return workflowStatuses[index + 1];
-        }
-        return currentStatus;
-    }
-    
-    function getPreviousStatus(currentStatus) {
-        const index = workflowStatuses.indexOf(currentStatus);
-        if (index > 0) {
-            return workflowStatuses[index - 1];
-        }
+        if (index >= 0 && index < workflowStatuses.length - 1) return workflowStatuses[index + 1];
         return currentStatus;
     }
     
@@ -505,51 +541,6 @@
         const now = new Date();
         const hoursDiff = (now - createdTime) / (1000 * 60 * 60);
         return hoursDiff > 1 && ticket.status !== 'CLOSED' && ticket.status !== 'RESOLVED';
-    }
-    
-    function loadData() {
-        const savedTickets = localStorage.getItem('comium_tickets');
-        const savedUsers = localStorage.getItem('comium_users');
-        const savedTeams = localStorage.getItem('comium_teams');
-        
-        if (savedTickets) tickets = JSON.parse(savedTickets);
-        if (savedUsers) { let parsed = JSON.parse(savedUsers); if (parsed['admin@comium.com']) users = parsed; }
-        if (savedTeams) teams = JSON.parse(savedTeams);
-        
-        if (tickets.length === 0) {
-            tickets = [
-                { id: "INC-20241201-001", site: "Old Yundum 4", createdAt: new Date(Date.now() - 2*60*60*1000).toISOString(), description: "NE Is Disconnected - Power failure detected", team: "Power Team", owner: "David Brown", status: "OPEN" },
-                { id: "INC-20241201-002", site: "Latriya", createdAt: new Date(Date.now() - 30*60*1000).toISOString(), description: "Transmission link down", team: "Transmission Team", owner: "John Smith", status: "INITIAL_CHECK" },
-                { id: "INC-20241201-003", site: "Brufut TAF Estate", createdAt: new Date(Date.now() - 45*60*1000).toISOString(), description: "High CPU usage on core router", team: "Core Network Team", owner: "Sarah Wilson", status: "ASSIGNED" }
-            ];
-            saveData();
-        }
-        
-        // Add sample users to teams
-        const sampleUsers = [
-            { name: "John Smith", email: "john@comium.com", phone: "+2207771111", role: "Team Lead", team: "Transmission Team" },
-            { name: "Mike Jones", email: "mike@comium.com", phone: "+2207772222", role: "Engineer", team: "Transmission Team" },
-            { name: "Sarah Wilson", email: "sarah@comium.com", phone: "+2207773333", role: "Team Lead", team: "Core Network Team" },
-            { name: "David Brown", email: "david@comium.com", phone: "+2207774444", role: "Engineer", team: "Power Team" },
-            { name: "Alice Johnson", email: "alice@comium.com", phone: "+2207775555", role: "Team Lead", team: "Call Center" },
-            { name: "Bob Williams", email: "bob@comium.com", phone: "+2207776666", role: "Engineer", team: "OCS Team" }
-        ];
-        
-        sampleUsers.forEach(u => {
-            if (!users[u.email]) users[u.email] = { password: 'welcome123', name: u.name, phone: u.phone, role: u.role, team: u.team };
-            const team = teams.find(t => t.name === u.team);
-            if (team && !team.users.find(tu => tu.email === u.email)) team.users.push({ name: u.name, email: u.email, phone: u.phone, role: u.role });
-        });
-        
-        saveData();
-        renderTeams();
-        renderUsersTable();
-    }
-    
-    function saveData() {
-        localStorage.setItem('comium_tickets', JSON.stringify(tickets));
-        localStorage.setItem('comium_users', JSON.stringify(users));
-        localStorage.setItem('comium_teams', JSON.stringify(teams));
     }
     
     function generateTicketId() {
@@ -588,6 +579,8 @@
         renderTickets();
         showPanel('tickets');
         alert(`✅ Ticket ${ticket.id} created! Workflow started.`);
+        document.getElementById('ticketSite').value = '';
+        document.getElementById('ticketDesc').value = '';
     }
     
     function advanceWorkflow(id) {
@@ -600,7 +593,7 @@
                 t.history.push(`${new Date().toLocaleString()} - Status changed to ${newStatus} by ${currentUser?.name}`);
                 saveData();
                 renderTickets();
-                alert(`Ticket ${id} moved to ${newStatus}`);
+                alert(`✅ Ticket ${id} moved to ${newStatus}`);
             } else {
                 alert(`Ticket ${id} is already at final stage.`);
             }
@@ -615,7 +608,7 @@
             t.history.push(`${new Date().toLocaleString()} - Ticket reopened by ${currentUser?.name}`);
             saveData();
             renderTickets();
-            alert(`Ticket ${id} reopened for further handling`);
+            alert(`✅ Ticket ${id} reopened for further handling`);
         }
     }
     
@@ -638,14 +631,14 @@
         
         const stats = getTicketStats();
         document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card"><h4>Total Tickets</h4><div class="stat-number">${stats.total}</div></div>
+            <div class="stat-card"><h4>Total</h4><div class="stat-number">${stats.total}</div></div>
             <div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div>
             <div class="stat-card"><h4>Initial Check</h4><div class="stat-number">${stats.initialCheck}</div></div>
             <div class="stat-card"><h4>Assigned</h4><div class="stat-number">${stats.assigned}</div></div>
             <div class="stat-card"><h4>Handling</h4><div class="stat-number">${stats.handling}</div></div>
             <div class="stat-card"><h4>Resolved</h4><div class="stat-number">${stats.resolved}</div></div>
             <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>
-            <div class="stat-card"><h4>⚠️ SLA Escalated</h4><div class="stat-number">${stats.escalated}</div></div>`;
+            <div class="stat-card"><h4>⚠️ Escalated</h4><div class="stat-number">${stats.escalated}</div></div>`;
         
         container.innerHTML = tickets.map(t => {
             const isEscalated = checkSLA(t);
@@ -792,7 +785,7 @@
         }
         if (newUserTeamSelect) newUserTeamSelect.innerHTML = '<option value="">No Team</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
         
-        if (container) container.innerHTML = teams.map(team => `<div class="form-card"><h4>🏢 ${team.name}</h4><table class="data-table"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th></tr></thead><tbody>${team.users.map(u=>`<tr><td>${u.name}</td><td>${u.role}</td><td>${u.email}</td><td>${u.phone}</td></tr>`).join('')}</tbody></table></div>`).join('');
+        if (container) container.innerHTML = teams.map(team => `<div class="form-card"><h4>🏢 ${team.name}</h4><table class="data-table"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><tr></thead><tbody>${team.users.map(u=>`<tr><td>${u.name}</td><td>${u.role}</td><td>${u.email}</td><td>${u.phone}</td></tr>`).join('')}</tbody></table></div>`).join('');
         
         if (adminTeamsContainer) adminTeamsContainer.innerHTML = teams.map(team => `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border-color);"><span><strong>${team.name}</strong> (${team.users.length} users)</span><button class="delete-btn" onclick="deleteTeam('${team.name}')">Delete</button></div>`).join('');
     }
@@ -849,6 +842,7 @@
     const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
     loadData();
+    renderTeams();
 </script>
 </body>
 </html>
