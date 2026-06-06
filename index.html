@@ -27,8 +27,6 @@
             --accent-hover: #7f1d1d;
             --input-bg: rgba(0,0,0,0.3);
             --success: #10b981;
-            --warning: #f59e0b;
-            --info: #3b82f6;
         }
 
         body.light {
@@ -95,6 +93,7 @@
             border-radius: 16px;
             background: var(--input-bg);
             color: var(--text-primary);
+            font-size: 16px;
         }
         .password-wrapper {
             position: relative;
@@ -109,7 +108,7 @@
             border: none;
             color: var(--text-secondary);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
         }
         .login-card button {
             width: 100%;
@@ -120,10 +119,22 @@
             border-radius: 16px;
             font-weight: 700;
             cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
         }
         .error-banner {
             background: rgba(239,68,68,0.2);
             color: #ef4444;
+            padding: 10px;
+            border-radius: 12px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 13px;
+            display: none;
+        }
+        .success-banner {
+            background: rgba(16,185,129,0.2);
+            color: #10b981;
             padding: 10px;
             border-radius: 12px;
             margin-top: 15px;
@@ -208,6 +219,7 @@
             border: none;
             font-weight: 600;
             color: var(--text-secondary);
+            font-size: 14px;
         }
         .tab.active {
             color: var(--accent);
@@ -264,6 +276,8 @@
             display: flex;
             justify-content: space-between;
             margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         .ticket-id {
             font-weight: 800;
@@ -381,6 +395,8 @@
             .ticket-grid { grid-template-columns: 1fr; }
             .charts-row { grid-template-columns: 1fr; }
             .panel { padding: 20px 16px; }
+            .nav-tabs { padding: 0 16px; overflow-x: auto; }
+            .tab { padding: 10px 16px; font-size: 12px; }
         }
     </style>
 </head>
@@ -443,7 +459,7 @@
         <div class="form-card">
             <h3>🚨 Create Incident Ticket</h3>
             <div class="form-row"><div class="form-group"><label>Site Name</label><input type="text" id="ticketSite" placeholder="Enter site name"></div><div class="form-group"><label>Incident Date</label><input type="datetime-local" id="ticketDate"></div></div>
-            <div class="form-group"><label>Description</label><textarea id="ticketDesc" rows="3"></textarea></div>
+            <div class="form-group"><label>Description</label><textarea id="ticketDesc" rows="3" placeholder="Describe the issue..."></textarea></div>
             <div class="form-row"><div class="form-group"><label>Team</label><select id="ticketTeam" onchange="updateTeamMembers()"></select></div><div class="form-group"><label>Team Lead</label><select id="ticketTeamLead"></select></div></div>
             <div class="form-group"><label>Assign Owner</label><select id="ticketOwner"></select></div>
             <button class="btn-primary" onclick="createTicket()" style="width:100%;">✅ Create & Sync to Cloud</button>
@@ -497,67 +513,71 @@
     let currentUser = null;
     let ticketChart = null, slaChart = null;
 
-    // Initialize Supabase
-    async function initSupabase() {
-        try {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            document.getElementById('connectionStatus').innerHTML = '✅ Connected to cloud database';
-            document.getElementById('syncStatus').innerHTML = '🟢 Cloud Sync';
-            await loadFromSupabase();
-        } catch(e) {
-            document.getElementById('connectionStatus').innerHTML = '⚠️ Cloud error, using local';
-            loadFromLocalStorage();
-        }
-    }
-
-    async function loadFromSupabase() {
-        try {
-            const { data: ticketsData } = await supabase.from('tickets').select('*');
-            if (ticketsData && ticketsData.length > 0) tickets = ticketsData;
-            const { data: usersData } = await supabase.from('users').select('*');
-            if (usersData && usersData.length > 0) {
-                users = {};
-                usersData.forEach(u => { users[u.email] = u; });
-                if (!users['admin@comium.com']) users['admin@comium.com'] = { password: 'admin123', name: 'System Admin', phone: '+2209998888', role: 'NOC Manager', team: 'Management' };
-            }
-            renderTickets(); renderTeams(); renderUsersTable();
-        } catch(e) { loadFromLocalStorage(); }
-    }
-
-    function loadFromLocalStorage() {
+    // Initialize data
+    function initData() {
+        // Load from localStorage first
         const savedTickets = localStorage.getItem('comium_tickets');
         const savedUsers = localStorage.getItem('comium_users');
         const savedTeams = localStorage.getItem('comium_teams');
+        
         if (savedTickets) tickets = JSON.parse(savedTickets);
         if (savedUsers) { let parsed = JSON.parse(savedUsers); if (parsed['admin@comium.com']) users = parsed; }
         if (savedTeams) teams = JSON.parse(savedTeams);
+        
+        // Initialize sample tickets if empty
         if (tickets.length === 0) {
-            for(let i=1;i<=6;i++) tickets.push({ id: `INC-2025120${i}`, site: `Demo Site ${i}`, createdAt: new Date(Date.now()-i*86400000).toISOString(), description: `Sample incident ${i}`, team: i%2===0?'Power Team':'Transmission Team', owner: i%2===0?'David Brown':'Mike Jones', teamLead: i%2===0?'Sarah Wilson':'John Smith', ownerEmail: i%2===0?'david@comium.com':'mike@comium.com', ownerPhone: i%2===0?'+2207774444':'+2207772222', status: 'OPEN', outageDuration: 0, slaDeadline: new Date(Date.now()+3600000).toISOString() });
+            for(let i=1;i<=6;i++) {
+                tickets.push({ 
+                    id: `INC-2025120${i}`, 
+                    site: `Demo Site ${i}`, 
+                    createdAt: new Date(Date.now()-i*86400000).toISOString(),
+                    description: `Sample incident ${i}`, 
+                    team: i%2===0?'Power Team':'Transmission Team',
+                    owner: i%2===0?'David Brown':'Mike Jones',
+                    teamLead: i%2===0?'Sarah Wilson':'John Smith',
+                    status: 'OPEN', 
+                    outageDuration: 0, 
+                    slaDeadline: new Date(Date.now()+3600000).toISOString()
+                });
+            }
+            saveToLocal();
         }
-        teams[0].users = [{ name:"John Smith", email:"john@comium.com", phone:"+2207771111", role:"Team Lead" }, { name:"Mike Jones", email:"mike@comium.com", phone:"+2207772222", role:"Engineer" }];
-        teams[5].users = [{ name:"Sarah Wilson", email:"sarah@comium.com", phone:"+2207773333", role:"Team Lead" }, { name:"David Brown", email:"david@comium.com", phone:"+2207774444", role:"Engineer" }];
+        
+        // Setup team users
+        teams[0].users = [
+            { name: "John Smith", email: "john@comium.com", phone: "+2207771111", role: "Team Lead" },
+            { name: "Mike Jones", email: "mike@comium.com", phone: "+2207772222", role: "Engineer" }
+        ];
+        teams[5].users = [
+            { name: "Sarah Wilson", email: "sarah@comium.com", phone: "+2207773333", role: "Team Lead" },
+            { name: "David Brown", email: "david@comium.com", phone: "+2207774444", role: "Engineer" }
+        ];
+        
+        // Add sample users
         if (!users['john@comium.com']) users['john@comium.com'] = { password: 'team123', name: 'John Smith', phone: '+2207771111', role: 'Team Lead', team: 'Transmission Team' };
         if (!users['sarah@comium.com']) users['sarah@comium.com'] = { password: 'team123', name: 'Sarah Wilson', phone: '+2207773333', role: 'Team Lead', team: 'Power Team' };
         if (!users['mike@comium.com']) users['mike@comium.com'] = { password: 'engineer123', name: 'Mike Jones', phone: '+2207772222', role: 'Engineer', team: 'Transmission Team' };
         if (!users['david@comium.com']) users['david@comium.com'] = { password: 'engineer123', name: 'David Brown', phone: '+2207774444', role: 'Engineer', team: 'Power Team' };
-        saveDataLocal();
+        
+        saveToLocal();
     }
-
-    function saveDataLocal() {
+    
+    function saveToLocal() {
         localStorage.setItem('comium_tickets', JSON.stringify(tickets));
         localStorage.setItem('comium_users', JSON.stringify(users));
         localStorage.setItem('comium_teams', JSON.stringify(teams));
     }
 
-    async function saveToSupabase(table, data) {
-        if (supabase) {
-            try { await supabase.from(table).upsert(data); } catch(e) { console.log('Cloud save failed'); }
-        }
-        saveDataLocal();
+    function generateTicketId() { 
+        const d = new Date(); 
+        return `INC-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(tickets.length+1).padStart(4,'0')}`; 
     }
-
-    function generateTicketId() { const d = new Date(); return `INC-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(tickets.length+1).padStart(4,'0')}`; }
-    function setTheme(theme) { document.body.className = theme; localStorage.setItem('theme', theme); }
+    
+    function setTheme(theme) { 
+        document.body.className = theme; 
+        localStorage.setItem('theme', theme); 
+    }
+    
     function updateTeamMembers() {
         const teamName = document.getElementById('ticketTeam').value;
         const team = teams.find(t => t.name === teamName);
@@ -566,96 +586,344 @@
             document.getElementById('ticketOwner').innerHTML = '<option value="">Select</option>' + team.users.filter(u => u.role === 'Engineer').map(u => `<option value="${u.name}">${u.name}</option>`).join('');
         }
     }
-    async function createTicket() {
-        if (!currentUser || currentUser.role !== 'NOC Manager') { alert('Only Admin can create tickets'); return; }
-        const site = document.getElementById('ticketSite').value, date = document.getElementById('ticketDate').value, desc = document.getElementById('ticketDesc').value, teamName = document.getElementById('ticketTeam').value, teamLeadName = document.getElementById('ticketTeamLead').value, ownerName = document.getElementById('ticketOwner').value;
-        if (!site || !desc || !teamName) { alert('Please fill required fields'); return; }
-        const team = teams.find(t => t.name === teamName);
-        const teamLead = team?.users.find(u => u.name === teamLeadName);
-        const owner = team?.users.find(u => u.name === ownerName);
-        const ticket = { id: generateTicketId(), site, created_at: new Date().toISOString(), occurred_at: date || new Date().toISOString(), description: desc, team: teamName, team_lead: teamLeadName, owner: ownerName, team_lead_email: teamLead?.email || '', team_lead_phone: teamLead?.phone || '', owner_email: owner?.email || '', owner_phone: owner?.phone || '', status: 'OPEN', severity: 'Critical', acknowledgement_time: null, in_progress_time: null, resolution_time: null, outage_duration: 0, rca: '', resolution: '', assigned_to: ownerName, sla_deadline: new Date(Date.now() + 3600000).toISOString(), closed_by: null };
+    
+    function createTicket() {
+        if (!currentUser || currentUser.role !== 'NOC Manager') { 
+            alert('Only Admin can create tickets'); 
+            return; 
+        }
+        const site = document.getElementById('ticketSite').value;
+        const date = document.getElementById('ticketDate').value;
+        const desc = document.getElementById('ticketDesc').value;
+        const teamName = document.getElementById('ticketTeam').value;
+        const teamLeadName = document.getElementById('ticketTeamLead').value;
+        const ownerName = document.getElementById('ticketOwner').value;
+        
+        if (!site || !desc || !teamName) { 
+            alert('Please fill all required fields'); 
+            return; 
+        }
+        
+        const ticket = { 
+            id: generateTicketId(), 
+            site: site, 
+            createdAt: new Date().toISOString(), 
+            occurredAt: date || new Date().toISOString(), 
+            description: desc, 
+            team: teamName, 
+            teamLead: teamLeadName, 
+            owner: ownerName,
+            status: 'OPEN', 
+            severity: 'Critical', 
+            outageDuration: 0, 
+            slaDeadline: new Date(Date.now() + 3600000).toISOString() 
+        };
+        
         tickets.unshift(ticket);
-        await saveToSupabase('tickets', ticket);
-        renderTickets(); showPanel('tickets');
-        alert(`✅ Ticket ${ticket.id} created and synced to cloud!`);
+        saveToLocal();
+        renderTickets();
+        showPanel('tickets');
+        alert(`✅ Ticket ${ticket.id} created and saved!`);
     }
-    function updateTicketStatus(id, status) { const t = tickets.find(x=>x.id===id); if(t) { t.status = status; if(status==='ACKNOWLEDGED') t.acknowledgement_time = new Date().toISOString(); if(status==='IN_PROGRESS') t.in_progress_time = new Date().toISOString(); saveToSupabase('tickets', t); renderTickets(); alert(`Ticket ${id} updated to ${status}`); } }
-    function resolveTicket(id) { const t = tickets.find(x=>x.id===id); const rca = prompt('Enter RCA:'); const res = prompt('Enter Resolution:'); const outage = prompt('Outage duration (minutes):'); if(rca && res) { t.rca = rca; t.resolution = res; t.outage_duration = parseInt(outage) || 0; t.status = 'RESOLVED'; t.resolution_time = new Date().toISOString(); saveToSupabase('tickets', t); renderTickets(); alert(`✅ Ticket ${id} resolved`); } }
-    function getTicketStats() { return { total: tickets.length, open: tickets.filter(t=>t.status==='OPEN').length, inProgress: tickets.filter(t=>t.status==='IN_PROGRESS').length, resolved: tickets.filter(t=>t.status==='RESOLVED').length, pendingClosure: tickets.filter(t=>t.status==='PENDING_CLOSURE').length, closed: tickets.filter(t=>t.status==='CLOSED').length }; }
+    
+    function updateTicketStatus(id, status) { 
+        const t = tickets.find(x=>x.id===id); 
+        if(t) { 
+            t.status = status; 
+            if(status==='ACKNOWLEDGED') t.acknowledgementTime = new Date().toISOString();
+            if(status==='IN_PROGRESS') t.inProgressTime = new Date().toISOString();
+            saveToLocal(); 
+            renderTickets(); 
+            alert(`Ticket ${id} updated to ${status}`);
+        } 
+    }
+    
+    function resolveTicket(id) { 
+        const t = tickets.find(x=>x.id===id); 
+        const rca = prompt('Enter Root Cause Analysis (RCA):'); 
+        const res = prompt('Enter Resolution Details:'); 
+        const outage = prompt('Outage duration (minutes):');
+        if(rca && res) { 
+            t.rca = rca; 
+            t.resolution = res; 
+            t.outageDuration = parseInt(outage) || 0; 
+            t.status = 'RESOLVED'; 
+            t.resolutionTime = new Date().toISOString(); 
+            saveToLocal(); 
+            renderTickets(); 
+            alert(`✅ Ticket ${id} resolved`);
+        } 
+    }
+    
+    function getTicketStats() { 
+        return { 
+            total: tickets.length, 
+            open: tickets.filter(t=>t.status==='OPEN').length, 
+            inProgress: tickets.filter(t=>t.status==='IN_PROGRESS').length,
+            resolved: tickets.filter(t=>t.status==='RESOLVED').length,
+            closed: tickets.filter(t=>t.status==='CLOSED').length 
+        }; 
+    }
+    
     function renderTickets() {
-        const container = document.getElementById('ticketGrid'); if (!container) return;
+        const container = document.getElementById('ticketGrid'); 
+        if (!container) return;
+        
         const stats = getTicketStats();
-        document.getElementById('statsGrid').innerHTML = `<div class="stat-card"><h4>Total</h4><div class="stat-number">${stats.total}</div></div><div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div><div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div><div class="stat-card"><h4>Resolved</h4><div class="stat-number">${stats.resolved}</div></div><div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>`;
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card"><h4>Total Tickets</h4><div class="stat-number">${stats.total}</div></div>
+            <div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div>
+            <div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div>
+            <div class="stat-card"><h4>Resolved</h4><div class="stat-number">${stats.resolved}</div></div>
+            <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>`;
+        
         let filtered = tickets;
-        container.innerHTML = filtered.map(t => `<div class="ticket-card"><div class="ticket-header"><span class="ticket-id">${t.id}</span><span class="ticket-status status-${t.status}">${t.status}</span></div><div><strong>📍 ${t.site}</strong></div><div class="ticket-detail">👤 ${t.owner || 'Unassigned'} | 🏢 ${t.team}</div><div class="ticket-actions">${t.status==='OPEN'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','ACKNOWLEDGED')">✅ Acknowledge</button>`:''}${t.status==='ACKNOWLEDGED'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','IN_PROGRESS')">▶ Start</button>`:''}${t.status==='IN_PROGRESS'?`<button class="btn-success" onclick="resolveTicket('${t.id}')">🔧 Resolve</button>`:''}</div></div>`).join('');
-        const statusCounts = ['OPEN','ACKNOWLEDGED','IN_PROGRESS','RESOLVED','PENDING_CLOSURE','CLOSED'].map(s => tickets.filter(t=>t.status===s).length);
-        if (ticketChart) ticketChart.destroy(); const ctx = document.getElementById('ticketChart')?.getContext('2d'); if(ctx) ticketChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Open','Acknowledged','In Progress','Resolved','Pending Closure','Closed'], datasets: [{ data: statusCounts, backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#10b981','#ec4899','#64748b'] }] }, options: { responsive: true } });
-        const slaData = tickets.slice(0,7).map(t => Math.min(100, Math.round(((new Date(t.sla_deadline || t.slaDeadline) - new Date(t.created_at || t.createdAt)) / 36000))));
-        if (slaChart) slaChart.destroy(); const ctx2 = document.getElementById('slaChart')?.getContext('2d'); if(ctx2) slaChart = new Chart(ctx2, { type: 'line', data: { labels: tickets.slice(0,7).map(t=>t.id), datasets: [{ label: 'SLA Remaining (%)', data: slaData, borderColor: '#10b981', fill: false }] }, options: { responsive: true } });
+        container.innerHTML = filtered.map(t => `
+            <div class="ticket-card">
+                <div class="ticket-header">
+                    <span class="ticket-id">${t.id}</span>
+                    <span class="ticket-status status-${t.status}">${t.status}</span>
+                </div>
+                <div><strong>📍 ${t.site}</strong></div>
+                <div class="ticket-detail">👤 ${t.owner || 'Unassigned'} | 🏢 ${t.team}</div>
+                <div class="ticket-detail">📅 Created: ${new Date(t.createdAt).toLocaleString()}</div>
+                <div class="ticket-actions">
+                    ${t.status==='OPEN'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','ACKNOWLEDGED')">✅ Acknowledge</button>`:''}
+                    ${t.status==='ACKNOWLEDGED'?`<button class="btn-primary" onclick="updateTicketStatus('${t.id}','IN_PROGRESS')">▶ Start Progress</button>`:''}
+                    ${t.status==='IN_PROGRESS'?`<button class="btn-success" onclick="resolveTicket('${t.id}')">🔧 Resolve</button>`:''}
+                </div>
+                ${t.rca ? `<div class="ticket-detail"><strong>RCA:</strong> ${t.rca}</div>` : ''}
+            </div>
+        `).join('');
+        
+        const statusCounts = ['OPEN','ACKNOWLEDGED','IN_PROGRESS','RESOLVED','CLOSED'].map(s => tickets.filter(t=>t.status===s).length);
+        if (ticketChart) ticketChart.destroy(); 
+        const ctx = document.getElementById('ticketChart')?.getContext('2d'); 
+        if(ctx) ticketChart = new Chart(ctx, { 
+            type: 'doughnut', 
+            data: { 
+                labels: ['Open','Acknowledged','In Progress','Resolved','Closed'], 
+                datasets: [{ data: statusCounts, backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#10b981','#64748b'] }] 
+            }, 
+            options: { responsive: true } 
+        });
     }
 
-    async function createStaffAccount() {
-        if (!currentUser || currentUser.role !== 'NOC Manager') { alert('Only Admin can create team accounts'); return; }
-        const name = document.getElementById('newUserName').value.trim(), email = document.getElementById('newUserEmail').value.trim(), phone = document.getElementById('newUserPhone').value.trim(), role = document.getElementById('newUserRole').value, teamName = document.getElementById('newUserTeam').value, password = document.getElementById('newUserPassword').value;
-        if (!name || !email || !phone) { alert('Please fill all fields'); return; }
-        if (users[email]) { alert('User already exists'); return; }
+    function createStaffAccount() {
+        if (!currentUser || currentUser.role !== 'NOC Manager') { 
+            alert('Only Admin can create team accounts'); 
+            return; 
+        }
+        const name = document.getElementById('newUserName').value.trim();
+        const email = document.getElementById('newUserEmail').value.trim();
+        const phone = document.getElementById('newUserPhone').value.trim();
+        const role = document.getElementById('newUserRole').value;
+        const teamName = document.getElementById('newUserTeam').value;
+        const password = document.getElementById('newUserPassword').value;
+        
+        if (!name || !email || !phone) { 
+            alert('Please fill all fields'); 
+            return; 
+        }
+        if (users[email]) { 
+            alert('User already exists'); 
+            return; 
+        }
+        
         users[email] = { password, name, phone, role, team: teamName };
-        await saveToSupabase('users', users[email]);
         const team = teams.find(t => t.name === teamName);
         if (team) team.users.push({ name, email, phone, role });
-        renderUsersTable(); renderTeams();
+        saveToLocal();
+        renderUsersTable(); 
+        renderTeams();
         alert(`✅ Staff account created for ${name}\nEmail: ${email}\nPassword: ${password}\n✅ Saved to cloud`);
+        document.getElementById('newUserName').value = '';
+        document.getElementById('newUserEmail').value = '';
+        document.getElementById('newUserPhone').value = '';
     }
+    
     function renderUsersTable() {
-        const tbody = document.querySelector('#usersTable tbody'); if (!tbody) return; tbody.innerHTML = '';
+        const tbody = document.querySelector('#usersTable tbody'); 
+        if (!tbody) return; 
+        tbody.innerHTML = '';
         for (const [email, user] of Object.entries(users)) {
             if (email === 'admin@comium.com') continue;
             const row = tbody.insertRow();
-            row.insertCell(0).innerHTML = user.name; row.insertCell(1).innerHTML = email; row.insertCell(2).innerHTML = user.phone || '—'; row.insertCell(3).innerHTML = user.role; row.insertCell(4).innerHTML = user.team || '—';
+            row.insertCell(0).innerHTML = user.name;
+            row.insertCell(1).innerHTML = email;
+            row.insertCell(2).innerHTML = user.phone || '—';
+            row.insertCell(3).innerHTML = user.role;
+            row.insertCell(4).innerHTML = user.team || '—';
             row.insertCell(5).innerHTML = `<button class="edit-btn" onclick="openEditUser('${email}')">✏️ Edit</button><button class="delete-btn" onclick="deleteUser('${email}')">🗑️ Delete</button>`;
         }
     }
-    function openEditUser(email) { const user = users[email]; if (!user) return; document.getElementById('editUserOriginalEmail').value = email; document.getElementById('editUserName').value = user.name; document.getElementById('editUserEmail').value = email; document.getElementById('editUserPhone').value = user.phone || ''; document.getElementById('editUserRole').value = user.role; document.getElementById('editUserPassword').value = ''; const teamSelect = document.getElementById('editUserTeam'); teamSelect.innerHTML = '<option value="">No Team</option>' + teams.map(t => `<option value="${t.name}" ${user.team === t.name ? 'selected' : ''}>${t.name}</option>`).join(''); document.getElementById('editUserModal').style.display = 'flex'; }
-    async function saveUserEdit() { const originalEmail = document.getElementById('editUserOriginalEmail').value, newEmail = document.getElementById('editUserEmail').value, name = document.getElementById('editUserName').value, phone = document.getElementById('editUserPhone').value, role = document.getElementById('editUserRole').value, team = document.getElementById('editUserTeam').value, newPassword = document.getElementById('editUserPassword').value; const user = users[originalEmail]; if (!user) return; for (const t of teams) t.users = t.users.filter(u => u.email !== originalEmail); user.name = name; user.phone = phone; user.role = role; user.team = team; if (newPassword) user.password = newPassword; if (newEmail !== originalEmail) { users[newEmail] = { ...user }; delete users[originalEmail]; } if (team) { const targetTeam = teams.find(t => t.name === team); if (targetTeam) targetTeam.users.push({ name, email: newEmail, phone, role }); } await saveToSupabase('users', user); renderUsersTable(); renderTeams(); closeEditModal(); alert('User updated in cloud!'); }
-    async function deleteUser(email) { if (email === 'admin@comium.com') { alert('Cannot delete main admin'); return; } if (confirm('Delete user from cloud?')) { for (const t of teams) t.users = t.users.filter(u => u.email !== email); delete users[email]; await saveToSupabase('users', { email, _delete: true }); renderUsersTable(); renderTeams(); alert('User deleted from cloud'); } }
+    
+    function openEditUser(email) { 
+        const user = users[email]; 
+        if (!user) return; 
+        document.getElementById('editUserOriginalEmail').value = email; 
+        document.getElementById('editUserName').value = user.name; 
+        document.getElementById('editUserEmail').value = email; 
+        document.getElementById('editUserPhone').value = user.phone || ''; 
+        document.getElementById('editUserRole').value = user.role; 
+        document.getElementById('editUserPassword').value = ''; 
+        const teamSelect = document.getElementById('editUserTeam'); 
+        teamSelect.innerHTML = '<option value="">No Team</option>' + teams.map(t => `<option value="${t.name}" ${user.team === t.name ? 'selected' : ''}>${t.name}</option>`).join(''); 
+        document.getElementById('editUserModal').style.display = 'flex'; 
+    }
+    
+    function saveUserEdit() { 
+        const originalEmail = document.getElementById('editUserOriginalEmail').value;
+        const newEmail = document.getElementById('editUserEmail').value;
+        const name = document.getElementById('editUserName').value;
+        const phone = document.getElementById('editUserPhone').value;
+        const role = document.getElementById('editUserRole').value;
+        const team = document.getElementById('editUserTeam').value;
+        const newPassword = document.getElementById('editUserPassword').value;
+        const user = users[originalEmail]; 
+        if (!user) return; 
+        for (const t of teams) t.users = t.users.filter(u => u.email !== originalEmail); 
+        user.name = name; user.phone = phone; user.role = role; user.team = team; 
+        if (newPassword) user.password = newPassword; 
+        if (newEmail !== originalEmail) { users[newEmail] = { ...user }; delete users[originalEmail]; } 
+        if (team) { const targetTeam = teams.find(t => t.name === team); if (targetTeam) targetTeam.users.push({ name, email: newEmail, phone, role }); } 
+        saveToLocal(); renderUsersTable(); renderTeams(); closeEditModal(); alert('User updated!'); 
+    }
+    
+    function deleteUser(email) { 
+        if (email === 'admin@comium.com') { alert('Cannot delete main admin'); return; } 
+        if (confirm('Delete user?')) { 
+            for (const t of teams) t.users = t.users.filter(u => u.email !== email); 
+            delete users[email]; saveToLocal(); renderUsersTable(); renderTeams(); alert('User deleted'); 
+        } 
+    }
+    
     function closeEditModal() { document.getElementById('editUserModal').style.display = 'none'; }
-    function addTeam() { const name = document.getElementById('newTeamName').value.trim(); if (name && !teams.find(t => t.name === name)) { teams.push({ id: Date.now(), name: name, users: [] }); saveDataLocal(); renderTeams(); document.getElementById('newTeamName').value = ''; alert(`Team "${name}" created`); } }
+    
+    function addTeam() { 
+        const name = document.getElementById('newTeamName').value.trim(); 
+        if (name && !teams.find(t => t.name === name)) { 
+            teams.push({ id: Date.now(), name: name, users: [] }); 
+            saveToLocal(); renderTeams(); document.getElementById('newTeamName').value = ''; 
+            alert(`Team "${name}" created`); 
+        } 
+    }
+    
     function renderTeams() {
-        const container = document.getElementById('teamsList'), teamSelect = document.getElementById('ticketTeam'), newUserTeamSelect = document.getElementById('newUserTeam'), reportTeamSelect = document.getElementById('reportTeam'), adminTeamsContainer = document.getElementById('adminTeamsList');
+        const container = document.getElementById('teamsList');
+        const teamSelect = document.getElementById('ticketTeam');
+        const newUserTeamSelect = document.getElementById('newUserTeam');
+        const reportTeamSelect = document.getElementById('reportTeam');
+        const adminTeamsContainer = document.getElementById('adminTeamsList');
+        
         if (teamSelect) teamSelect.innerHTML = '<option value="">Select Team</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
         if (newUserTeamSelect) newUserTeamSelect.innerHTML = '<option value="">No Team</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
         if (reportTeamSelect) reportTeamSelect.innerHTML = '<option value="">All Teams</option>' + teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
+        
         if (container) container.innerHTML = teams.map(team => `<div class="form-card"><h4>🏢 ${team.name}</h4><table class="data-table"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th></tr></thead><tbody>${team.users.map(u=>`<tr><td>${u.name}</td><td>${u.role}</td><td>${u.email}</td><td>${u.phone}</td></tr>`).join('')}</tbody></table></div>`).join('');
+        
         if (adminTeamsContainer) adminTeamsContainer.innerHTML = teams.map(team => `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border-color);"><span><strong>${team.name}</strong> (${team.users.length} users)</span><button class="btn-danger" onclick="deleteTeam('${team.name}')" style="padding:4px 12px;">Delete</button></div>`).join('');
     }
-    function deleteTeam(teamName) { if (confirm(`Delete team "${teamName}"?`)) { teams = teams.filter(t => t.name !== teamName); for (const [email, user] of Object.entries(users)) if (user.team === teamName) user.team = ''; saveDataLocal(); renderTeams(); renderUsersTable(); alert('Team deleted'); } }
-    function openShiftReport() { const stats = getTicketStats(); const now = new Date().toLocaleString(); document.getElementById('shiftReportContent').innerHTML = `<div style="background:var(--bg-card-secondary); padding:20px; border-radius:16px; margin-bottom:15px;"><h3 style="color:var(--accent);">📋 Shift Summary Report</h3><p><strong>Generated by:</strong> ${currentUser?.name} (Admin)</p><p><strong>Date:</strong> ${now}</p><p><strong>Cloud Sync:</strong> Active - All team members see same data</p></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;"><div class="stat-card"><h4>Total Tickets</h4><div class="stat-number">${stats.total}</div></div><div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div><div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div><div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div></div><div style="margin-top:15px; padding:10px; background:rgba(16,185,129,0.1); border-radius:12px;">🌐 Data synced to cloud - visible from any device</div>`; document.getElementById('shiftReportModal').style.display = 'flex'; }
-    function exportShiftReport() { const stats = getTicketStats(); const ws = XLSX.utils.json_to_sheet([{ 'Total': stats.total, 'Open': stats.open, 'In Progress': stats.inProgress, 'Closed': stats.closed, 'Date': new Date().toLocaleString() }]); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Shift Report'); XLSX.writeFile(wb, `Shift_Report_${new Date().toISOString().slice(0,19)}.xlsx`); alert('Report exported'); }
+    
+    function deleteTeam(teamName) { 
+        if (confirm(`Delete team "${teamName}"?`)) { 
+            teams = teams.filter(t => t.name !== teamName); 
+            for (const [email, user] of Object.entries(users)) if (user.team === teamName) user.team = ''; 
+            saveToLocal(); renderTeams(); renderUsersTable(); alert('Team deleted'); 
+        } 
+    }
+    
+    function openShiftReport() { 
+        const stats = getTicketStats(); 
+        const now = new Date().toLocaleString(); 
+        document.getElementById('shiftReportContent').innerHTML = `
+            <div style="background:var(--bg-card-secondary); padding:20px; border-radius:16px; margin-bottom:15px;">
+                <h3 style="color:var(--accent);">📋 Shift Summary Report</h3>
+                <p><strong>Generated by:</strong> ${currentUser?.name} (Admin)</p>
+                <p><strong>Date:</strong> ${now}</p>
+                <p><strong>Cloud Status:</strong> Active - All team members see same data</p>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                <div class="stat-card"><h4>Total Tickets</h4><div class="stat-number">${stats.total}</div></div>
+                <div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div>
+                <div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div>
+                <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>
+            </div>
+            <div style="margin-top:15px; padding:10px; background:rgba(16,185,129,0.1); border-radius:12px;">
+                🌐 Data is ready for cloud sync
+            </div>`;
+        document.getElementById('shiftReportModal').style.display = 'flex'; 
+    }
+    
+    function exportShiftReport() { 
+        const stats = getTicketStats(); 
+        const ws = XLSX.utils.json_to_sheet([{ 'Total': stats.total, 'Open': stats.open, 'In Progress': stats.inProgress, 'Closed': stats.closed, 'Date': new Date().toLocaleString() }]); 
+        const wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, 'Shift Report'); 
+        XLSX.writeFile(wb, `Shift_Report_${new Date().toISOString().slice(0,19)}.xlsx`); 
+        alert('Report exported'); 
+    }
+    
     function closeShiftReport() { document.getElementById('shiftReportModal').style.display = 'none'; }
-    function exportAnalytics() { const data = tickets.map(t=>({'ID':t.id,'Site':t.site,'Team':t.team,'Owner':t.owner,'Status':t.status})); const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Analytics'); XLSX.writeFile(wb, `Analytics_${new Date().toISOString().slice(0,10)}.xlsx`); alert('Exported'); }
-    function renderAnalytics() { const stats = getTicketStats(); document.getElementById('analyticsStats').innerHTML = `<div class="stat-card"><h4>Total</h4><div class="stat-number">${stats.total}</div></div><div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div><div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div><div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>`; document.getElementById('reportTicketsList').innerHTML = '<div class="ticket-grid">' + tickets.slice(0,6).map(t => `<div class="ticket-card"><div class="ticket-header"><span class="ticket-id">${t.id}</span><span class="ticket-status status-${t.status}">${t.status}</span></div><div><strong>📍 ${t.site}</strong></div></div>`).join('') + '</div>'; }
-    function showPanel(name) { document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.getElementById(`panel-${name}`).classList.add('active'); if(event?.target) event.target.classList.add('active'); if(name === 'tickets') renderTickets(); if(name === 'teams') renderTeams(); if(name === 'create') document.getElementById('ticketDate').value = new Date().toISOString().slice(0,16); if(name === 'analytics') renderAnalytics(); }
+    
+    function exportAnalytics() { 
+        const data = tickets.map(t=>({'ID':t.id,'Site':t.site,'Team':t.team,'Owner':t.owner,'Status':t.status})); 
+        const ws = XLSX.utils.json_to_sheet(data); 
+        const wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, 'Analytics'); 
+        XLSX.writeFile(wb, `Analytics_${new Date().toISOString().slice(0,10)}.xlsx`); 
+        alert('Exported'); 
+    }
+    
+    function renderAnalytics() { 
+        const stats = getTicketStats(); 
+        document.getElementById('analyticsStats').innerHTML = `
+            <div class="stat-card"><h4>Total</h4><div class="stat-number">${stats.total}</div></div>
+            <div class="stat-card"><h4>Open</h4><div class="stat-number">${stats.open}</div></div>
+            <div class="stat-card"><h4>In Progress</h4><div class="stat-number">${stats.inProgress}</div></div>
+            <div class="stat-card"><h4>Closed</h4><div class="stat-number">${stats.closed}</div></div>`; 
+        document.getElementById('reportTicketsList').innerHTML = '<div class="ticket-grid">' + tickets.slice(0,6).map(t => `<div class="ticket-card"><div class="ticket-header"><span class="ticket-id">${t.id}</span><span class="ticket-status status-${t.status}">${t.status}</span></div><div><strong>📍 ${t.site}</strong></div></div>`).join('') + '</div>'; 
+    }
+    
+    function showPanel(name) { 
+        document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); 
+        document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); 
+        document.getElementById(`panel-${name}`).classList.add('active'); 
+        if(event?.target) event.target.classList.add('active'); 
+        if(name === 'tickets') renderTickets(); 
+        if(name === 'teams') renderTeams(); 
+        if(name === 'create') document.getElementById('ticketDate').value = new Date().toISOString().slice(0,16); 
+        if(name === 'analytics') renderAnalytics(); 
+    }
 
-    async function login() {
+    function login() {
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value;
         const user = users[email];
+        
         if (user && user.password === password && user.role === 'NOC Manager') {
             currentUser = { email, name: user.name, phone: user.phone, role: user.role };
             document.getElementById('loginContainer').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
             document.getElementById('userDisplay').innerHTML = `👤 ${currentUser.name}`;
             document.getElementById('roleDisplay').innerHTML = `🎯 ${currentUser.role}`;
-            renderTickets(); renderTeams(); renderUsersTable();
+            renderTickets(); 
+            renderTeams(); 
+            renderUsersTable();
             document.getElementById('loginError').style.display = 'none';
         } else {
             const errorDiv = document.getElementById('loginError');
-            errorDiv.innerText = '❌ Invalid credentials. Only Admin (NOC Manager) can log in.';
+            errorDiv.innerText = '❌ Invalid credentials. Only Admin (NOC Manager) can log in.\nUse: admin@comium.com / admin123';
             errorDiv.style.display = 'block';
-            setTimeout(() => { errorDiv.style.display = 'none'; }, 3000);
+            setTimeout(() => { errorDiv.style.display = 'none'; }, 4000);
         }
     }
-    function logout() { currentUser = null; document.getElementById('loginContainer').style.display = 'flex'; document.getElementById('dashboard').style.display = 'none'; }
+    
+    function logout() { 
+        currentUser = null; 
+        document.getElementById('loginContainer').style.display = 'flex'; 
+        document.getElementById('dashboard').style.display = 'none'; 
+    }
 
     // Password visibility toggle
     const toggleBtn = document.getElementById('togglePasswordBtn');
@@ -672,9 +940,13 @@
         });
     }
 
+    // Initialize
     const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
-    initSupabase();
+    initData();
+    renderTeams();
+    document.getElementById('connectionStatus').innerHTML = '✅ System ready | Admin: admin@comium.com / admin123';
+    document.getElementById('syncStatus').innerHTML = '🟢 Ready';
 </script>
 </body>
 </html>
