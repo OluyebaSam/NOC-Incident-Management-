@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comium NOC | Professional Incident Management</title>
+    <title>Comium NOC | Complete Incident Management</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
@@ -11,7 +11,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         :root {
@@ -24,11 +24,9 @@
             --accent: #dc2626;
             --accent-light: #fee2e2;
             --success: #10b981;
-            --warning: #f59e0b;
             --info: #3b82f6;
             --sidebar-bg: #1e293b;
             --sidebar-text: #94a3b8;
-            --sidebar-hover: #334155;
         }
 
         body.dark {
@@ -40,13 +38,10 @@
             --border-color: #334155;
             --accent: #ef4444;
             --sidebar-bg: #0f172a;
-            --sidebar-text: #94a3b8;
-            --sidebar-hover: #1e293b;
         }
 
         body { background: var(--bg-primary); color: var(--text-primary); transition: all 0.3s ease; }
 
-        /* Login Page */
         .login-container {
             min-height: 100vh;
             display: flex;
@@ -58,23 +53,20 @@
         .login-card {
             background: var(--bg-card);
             border-radius: 28px;
-            padding: 45px;
-            width: 420px;
+            padding: 40px;
+            width: 400px;
             text-align: center;
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
         }
-        .login-card .logo { font-size: 56px; margin-bottom: 15px; }
         .login-card h1 { font-size: 28px; margin-bottom: 8px; color: var(--accent); }
-        .login-card p { color: var(--text-secondary); margin-bottom: 30px; }
         .login-card input {
             width: 100%;
-            padding: 14px 18px;
+            padding: 14px;
             margin: 10px 0;
             border: 1px solid var(--border-color);
             border-radius: 16px;
             background: var(--bg-primary);
             color: var(--text-primary);
-            font-size: 15px;
         }
         .login-card button {
             width: 100%;
@@ -85,14 +77,11 @@
             border-radius: 16px;
             font-weight: 600;
             cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
         }
-        .role-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-left: 10px; }
+        .role-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; margin-left: 8px; }
         .role-admin { background: var(--accent); color: white; }
         .role-viewer { background: var(--info); color: white; }
 
-        /* App Layout */
         .app-container { display: flex; min-height: 100vh; }
         .sidebar {
             width: 280px;
@@ -101,12 +90,9 @@
             position: fixed;
             height: 100vh;
             overflow-y: auto;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
         }
         .sidebar-header { padding: 30px 25px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .sidebar-header .logo { font-size: 40px; margin-bottom: 10px; }
         .sidebar-header h2 { color: white; font-size: 20px; }
-        .sidebar-header p { font-size: 11px; color: var(--sidebar-text); margin-top: 5px; }
         .sidebar-nav { padding: 20px 0; }
         .nav-item {
             padding: 12px 25px;
@@ -115,11 +101,10 @@
             gap: 14px;
             cursor: pointer;
             transition: all 0.3s;
-            color: var(--sidebar-text);
             margin: 4px 12px;
             border-radius: 12px;
         }
-        .nav-item:hover { background: var(--sidebar-hover); color: white; }
+        .nav-item:hover { background: #334155; color: white; }
         .nav-item.active { background: var(--accent); color: white; }
 
         .main-content { flex: 1; margin-left: 280px; min-height: 100vh; }
@@ -136,24 +121,21 @@
         }
         .page-title { font-size: 22px; font-weight: 600; }
         .user-info { display: flex; gap: 15px; align-items: center; }
-        .user-badge { background: var(--bg-primary); padding: 8px 18px; border-radius: 40px; font-size: 13px; font-weight: 500; }
         .theme-toggle, .logout-btn {
             background: var(--bg-primary);
             border: 1px solid var(--border-color);
             padding: 8px 18px;
             border-radius: 40px;
             cursor: pointer;
-            font-weight: 500;
         }
 
         .content-panel { display: none; padding: 30px; }
         .content-panel.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Stats Cards */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -166,26 +148,12 @@
             border: 1px solid var(--border-color);
             transition: all 0.3s;
         }
-        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border-color: var(--accent); }
+        .stat-card:hover { transform: translateY(-3px); border-color: var(--accent); }
         .stat-number { font-size: 36px; font-weight: 800; color: var(--accent); }
-        .stat-label { margin-top: 8px; color: var(--text-secondary); font-weight: 500; }
 
-        /* Charts Row */
-        .charts-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-        .chart-card {
-            background: var(--bg-card);
-            border-radius: 20px;
-            padding: 20px;
-            border: 1px solid var(--border-color);
-        }
-        .chart-card h3 { margin-bottom: 20px; font-size: 16px; font-weight: 600; }
+        .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; margin-bottom: 30px; }
+        .chart-card { background: var(--bg-card); border-radius: 20px; padding: 20px; border: 1px solid var(--border-color); }
 
-        /* Tables */
         .data-table {
             width: 100%;
             background: var(--bg-card);
@@ -194,32 +162,23 @@
             border: 1px solid var(--border-color);
         }
         .data-table th, .data-table td {
-            padding: 12px 12px;
+            padding: 12px 10px;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
-            font-size: 13px;
+            font-size: 12px;
         }
         .data-table th { background: var(--accent-light); color: var(--accent); font-weight: 600; position: sticky; top: 0; }
 
-        .filter-bar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: flex-end;
-        }
-        .btn-primary, .btn-success, .btn-info {
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .btn-primary, .btn-success {
             padding: 10px 24px;
             border: none;
             border-radius: 12px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.2s;
         }
         .btn-primary { background: var(--accent); color: white; }
-        .btn-primary:hover { background: #b91c1c; transform: translateY(-2px); }
         .btn-success { background: var(--success); color: white; }
-        .btn-info { background: var(--info); color: white; }
 
         .form-card {
             background: var(--bg-card);
@@ -254,7 +213,7 @@
 
         @media (max-width: 768px) {
             .sidebar { width: 70px; }
-            .sidebar-header h2, .sidebar-header p, .nav-item span:last-child { display: none; }
+            .sidebar-header h2, .nav-item span:last-child { display: none; }
             .main-content { margin-left: 70px; }
             .form-row { grid-template-columns: 1fr; }
             .charts-row { grid-template-columns: 1fr; }
@@ -265,17 +224,15 @@
 
 <div id="loginPage" class="login-container">
     <div class="login-card">
-        <div class="logo">🔴</div>
+        <div style="font-size: 48px;">🔴</div>
         <h1>Comium NOC</h1>
-        <p>Professional Incident Management System</p>
+        <p>Complete Incident Management</p>
         <input type="text" id="loginEmail" placeholder="Email" value="viewer@comium.com">
         <input type="password" id="loginPassword" placeholder="Password" value="view123">
         <button onclick="doLogin()">Sign In →</button>
         <div id="loginError" style="color:red; margin-top:15px; display:none;"></div>
-        <div style="margin-top: 20px; font-size: 12px; color: var(--text-secondary);">
-            <strong>Demo Accounts:</strong><br>
-            Admin: admin@comium.com / admin123<br>
-            Viewer: viewer@comium.com / view123
+        <div style="margin-top: 20px; font-size: 12px;">
+            Admin: admin@comium.com / admin123 | Viewer: viewer@comium.com / view123
         </div>
     </div>
 </div>
@@ -284,16 +241,16 @@
 <div class="app-container">
     <div class="sidebar">
         <div class="sidebar-header">
-            <div class="logo">🔴</div>
+            <div style="font-size: 32px;">🔴</div>
             <h2>Comium NOC</h2>
-            <p>Incident Management</p>
+            <small>Incident Management</small>
         </div>
         <div class="sidebar-nav">
             <div class="nav-item active" onclick="navigateTo('home')"><span>🏠</span> <span>Dashboard</span></div>
             <div class="nav-item" onclick="navigateTo('incidentReport')"><span>📋</span> <span>Incident Report</span></div>
-            <div class="nav-item" onclick="navigateTo('create')"><span>➕</span> <span>New Ticket</span></div>
-            <div class="nav-item admin-only" id="adminUploadNav" onclick="navigateTo('upload')" style="display:none;"><span>📎</span> <span>⚙️ Admin: Upload Excel</span></div>
-            <div class="nav-item admin-only" id="adminNav" onclick="navigateTo('admin')" style="display:none;"><span>👥</span> <span>Staff Management</span></div>
+            <div class="nav-item" onclick="navigateTo('create')"><span>➕</span> <span>Create Ticket</span></div>
+            <div class="nav-item admin-only" id="adminUploadNav" onclick="navigateTo('upload')" style="display:none;"><span>📎</span> <span>Upload Excel</span></div>
+            <div class="nav-item admin-only" id="adminNav" onclick="navigateTo('admin')" style="display:none;"><span>⚙️</span> <span>Admin</span></div>
         </div>
     </div>
 
@@ -307,52 +264,48 @@
             </div>
         </div>
 
-        <!-- Dashboard Panel -->
+        <!-- Dashboard -->
         <div id="panelHome" class="content-panel active">
             <div class="stats-grid" id="statsGrid"></div>
             <div class="charts-row">
-                <div class="chart-card"><h3>📊 Ticket Status Distribution</h3><canvas id="statusChart"></canvas></div>
-                <div class="chart-card"><h3>📈 RCA Category Breakdown</h3><canvas id="rcaChart"></canvas></div>
+                <div class="chart-card"><h3>📊 Ticket Status</h3><canvas id="statusChart"></canvas></div>
+                <div class="chart-card"><h3>📈 RCA Breakdown</h3><canvas id="rcaChart"></canvas></div>
             </div>
-            <div class="form-card">
-                <h3>📋 Recent Incidents</h3>
-                <div id="recentList"></div>
-            </div>
+            <div class="form-card"><h3>📋 Recent Incidents</h3><div id="recentList"></div></div>
         </div>
 
-        <!-- Upload Excel Panel (Admin Only) -->
+        <!-- Upload Excel (Admin Only) -->
         <div id="panelUpload" class="content-panel">
             <div class="form-card">
                 <h3>📎 Upload Excel Template <span class="admin-badge">Admin Only</span></h3>
-                <p style="margin-bottom: 15px;">Upload your Excel file with sheets: <strong>Raw Data</strong>, <strong>Site Reference</strong>, and <strong>Read Me</strong>.</p>
                 <div class="upload-area" onclick="document.getElementById('excelFile').click()">
-                    📂 Click to upload Excel file (.xlsx, .xls)<br>
-                    <small>All site reference data will be used for XLOOKUP</small>
+                    📂 Click to upload Excel file<br>
+                    <small>Sheets: Raw Data, Site Reference, Read Me</small>
                 </div>
                 <input type="file" id="excelFile" accept=".xlsx,.xls" style="display: none;" onchange="processExcelFile(this)">
                 <div id="uploadStatus" style="margin-top: 15px;"></div>
             </div>
             <div class="form-card">
-                <h3>📍 Site Reference Data (XLOOKUP Source)</h3>
-                <div style="overflow-x: auto; max-height: 300px; overflow-y: auto;">
+                <h3>📍 Site Reference (XLOOKUP Source)</h3>
+                <div style="overflow-x: auto; max-height: 300px;">
                     <table class="data-table" id="siteReferenceTable">
                         <thead><tr><th>Site Name</th><th>Region</th><th>Team</th></tr></thead>
-                        <tbody><tr><td colspan="3">No data. Admin can upload Excel.</td></tr></tbody>
+                        <tbody><tr><td colspan="3">Upload Excel to load data</td></tr></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- Incident Report Panel -->
+        <!-- Incident Report -->
         <div id="panelIncidentReport" class="content-panel">
             <div class="form-card">
                 <h3>📋 Complete Incident Log</h3>
                 <div class="filter-bar">
-                    <input type="text" id="reportFilterSearch" placeholder="Search by Site or ID" style="width: 200px;">
+                    <input type="text" id="reportFilterSearch" placeholder="Search..." style="width: 200px;">
                     <select id="reportFilterTeam"><option value="ALL">All Teams</option></select>
                     <select id="reportFilterStatus"><option value="ALL">All Status</option><option>OPEN</option><option>RESOLVED</option><option>CLOSED</option></select>
-                    <button class="btn-primary" onclick="applyFilters()">Apply Filter</button>
-                    <button class="btn-success" onclick="exportToExcel()">📊 Export Excel</button>
+                    <button class="btn-primary" onclick="applyFilters()">Apply</button>
+                    <button class="btn-success" onclick="exportToExcel()">📊 Export</button>
                 </div>
             </div>
             <div style="overflow-x: auto; max-height: 60vh; overflow-y: auto;">
@@ -363,24 +316,21 @@
             </div>
         </div>
 
-        <!-- Create Ticket Panel -->
+        <!-- Create Ticket -->
         <div id="panelCreate" class="content-panel">
             <div class="form-card">
                 <h3>➕ Create New Incident</h3>
-                <p style="margin-bottom: 15px;">Select a site - Region and Team will auto-fill from uploaded Excel data.</p>
                 <div class="form-row">
-                    <div class="form-group"><label>Site Name *</label>
-                        <select id="ticketSite" onchange="updateSiteDetails()"><option value="">Select Site</option></select>
-                    </div>
+                    <div class="form-group"><label>Site Name</label><select id="ticketSite" onchange="updateSiteDetails()"><option value="">Select Site</option></select></div>
                     <div class="form-group"><label>Region</label><input type="text" id="ticketRegion" readonly placeholder="Auto-filled"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Team</label><input type="text" id="ticketTeamDisplay" readonly placeholder="Auto-filled"></div>
                     <div class="form-group"><label>Incident Date</label><input type="datetime-local" id="ticketDate"></div>
                 </div>
-                <div class="form-group"><label>Description</label><textarea id="ticketDesc" rows="3" placeholder="Describe the issue..."></textarea></div>
+                <div class="form-group"><label>Description</label><textarea id="ticketDesc" rows="3"></textarea></div>
                 <div class="form-row">
-                    <div class="form-group"><label>Root Cause</label><input type="text" id="ticketRootCause" placeholder="e.g., NAWEC Mains Failure"></div>
+                    <div class="form-group"><label>Root Cause</label><input type="text" id="ticketRootCause"></div>
                     <div class="form-group"><label>RCA Category</label><select id="ticketRcaCategory"></select></div>
                 </div>
                 <div class="form-row">
@@ -407,56 +357,70 @@
 </div>
 
 <script>
-    // Data Storage
-    let siteReference = {};
-    let tickets = [];
-    let staffMembers = [];
+    // Complete incident data from your Excel (Raw Data)
+    let tickets = [
+        { id: "0604_11-121", site: "Old Yundum 4", occurred: "2026-06-01 00:17:09", cleared: "2026-06-01 10:50:49", description: "NE Is Disconnected", impact: "Jabang Estate II", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-122", site: "Latriya", occurred: "2026-06-01 00:17:09", cleared: "2026-06-01 08:51:53", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-123", site: "Bwiam", occurred: "2026-06-01 00:39:09", cleared: "2026-06-01 02:31:09", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Ma Ansu", closedBy: "Ma Ansu", resolution: "Generator started manually" },
+        { id: "0604_11-124", site: "Tawto", occurred: "2026-06-01 00:52:37", cleared: "2026-06-01 11:55:53", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-125", site: "Brufut TAF Estate", occurred: "2026-06-01 00:58:37", cleared: "2026-06-01 01:50:41", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Ma Ansu", closedBy: "Ma Ansu", resolution: "Mains restored" },
+        { id: "0604_11-126", site: "Pirang", occurred: "2026-06-01 01:01:37", cleared: "2026-06-01 08:54:49", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-127", site: "Tallinding II", occurred: "2026-06-01 01:01:37", cleared: "2026-06-01 08:46:17", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-128", site: "Brufut Medina", occurred: "2026-06-01 01:02:09", cleared: "2026-06-01 11:11:21", description: "NE Is Disconnected", impact: "Tanji", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-129", site: "Brusubi 2", occurred: "2026-06-01 01:03:09", cleared: "2026-06-01 10:50:49", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-130", site: "Yuna", occurred: "2026-06-02 01:18:00", cleared: "2026-06-01 02:50:41", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Dawda C", closedBy: "Dawda C", resolution: "Mains restored" },
+        { id: "0604_11-131", site: "Gebangarr Foni", occurred: "2026-06-01 01:22:37", cleared: "2026-06-01 02:29:13", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-132", site: "Sangajar", occurred: "2026-06-01 01:22:00", cleared: "2026-06-01 02:29:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-133", site: "White Building", occurred: "2026-06-01 02:18:00", cleared: "2026-06-01 07:52:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Ma Ansu", closedBy: "Ma Ansu", resolution: "Mains restored" },
+        { id: "0604_11-134", site: "Jabang", occurred: "2026-06-01 02:25:00", cleared: "2026-06-01 11:35:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-135", site: "Yundum Medina", occurred: "2026-06-01 02:28:00", cleared: "2026-06-01 08:54:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-136", site: "Tallinding Market", occurred: "2026-06-01 02:32:00", cleared: "2026-06-01 08:36:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-137", site: "Latriya II", occurred: "2026-06-01 02:43:00", cleared: "2026-06-01 08:43:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-138", site: "Somo Bldg", occurred: "2026-06-01 04:02:00", cleared: "2026-06-01 07:44:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-139", site: "Sinchu Alagie 2", occurred: "2026-06-01 04:35:00", cleared: "2026-06-01 07:46:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-140", site: "Sinchu Alagie 3", occurred: "2026-06-01 04:45:00", cleared: "2026-06-01 08:53:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0604_11-141", site: "Kalaji", occurred: "2026-06-01 04:56:00", cleared: "2026-06-01 07:12:00", description: "NE Is Disconnected", impact: "Bondali, Wassadung, Kuli Kunda", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Ma Ansu", closedBy: "Ma Ansu", resolution: "Battery changed, gen started" },
+        { id: "0604_11-142", site: "Serra Kunda Mkt Bldg", occurred: "2026-06-01 05:21:00", cleared: "2026-06-01 05:54:00", description: "NE Is Disconnected", impact: "Dippa Kunda", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Dawda C", closedBy: "Dawda C", resolution: "Mobile generator deployed" },
+        { id: "0604_11-143", site: "Madiana", occurred: "2026-06-01 05:13:00", cleared: "2026-06-01 07:25:00", description: "NE Is Disconnected", impact: "Tanji Village", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Ma Ansu", closedBy: "Ma Ansu", resolution: "Mobile generator deployed" },
+        { id: "0604_11-144", site: "Future Lecce", occurred: "2026-06-01 05:23:00", cleared: "2026-06-01 06:44:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Ma Ansu", closedBy: "Ma Ansu", resolution: "Auto recovery" },
+        { id: "0604_11-145", site: "Banjul Hope Street", occurred: "2026-06-01 05:49:00", cleared: "2026-06-01 08:52:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
+        { id: "0602_1057", site: "Brufut TAF Estate", occurred: "2026-06-02 18:38:09", cleared: "2026-06-03 12:02:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "RESOLVED", severity: "Critical", openedBy: "Bruno", closedBy: "Maimuna", resolution: "Solar charge restored" },
+        { id: "0602_1062", site: "Sukuta 2", occurred: "2026-06-02 21:45:13", cleared: "2026-06-03 07:25:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "RESOLVED", severity: "Critical", openedBy: "Ahmadou", closedBy: "Ahmadou", resolution: "Solar charge restored" },
+        { id: "0603_1068", site: "Jalambang", occurred: "2026-06-02 23:58:45", cleared: "2026-06-03 12:36:57", description: "NE Is Disconnected", impact: "Jalambang II", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "RESOLVED", severity: "Critical", openedBy: "Ahmadou", closedBy: "Ahmadou", resolution: "Rectifier installed" },
+        { id: "0603_1075", site: "Latriya", occurred: "2026-06-03 02:13:45", cleared: "2026-06-03 08:18:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "RESOLVED", severity: "Critical", openedBy: "Maimuna", closedBy: "Maimuna", resolution: "Solar charge restored" },
+        { id: "0603_1082", site: "Darsilarmi", occurred: "2026-06-03 04:16:18", cleared: "2026-06-03 07:36:00", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "RESOLVED", severity: "Critical", openedBy: "Bubacarr", closedBy: "Maimuna", resolution: "Solar charge restored" },
+        { id: "0603_1092", site: "Kerewan", occurred: "2026-06-03 06:42:21", cleared: "2026-06-03 08:44:00", description: "NE Is Disconnected", impact: "13 sites", rootCause: "Generator fail", rcaCategory: "Power Failure", status: "RESOLVED", severity: "Critical", openedBy: "Tabally", closedBy: "Ahmadou", resolution: "Generator started manually" },
+        { id: "0608_1253", site: "Bundung Mosque", occurred: "2026-06-08 08:11:57", cleared: "", description: "NE Is Disconnected", impact: "Site Down", rootCause: "Under investigation", rcaCategory: "Power Failure", status: "OPEN", severity: "Critical", openedBy: "Ahmadou", closedBy: "", resolution: "Pending" }
+    ];
+
+    let siteReference = {
+        "Old Yundum 4": { region: "West Coast", team: "HQ" }, "Latriya": { region: "West Coast", team: "HQ" },
+        "Bwiam": { region: "West Coast", team: "Brikama House" }, "Brufut TAF Estate": { region: "West Coast", team: "HQ" },
+        "Pirang": { region: "West Coast", team: "Brikama House" }, "Tallinding II": { region: "Kanifing", team: "HQ" },
+        "Brufut Medina": { region: "West Coast", team: "HQ" }, "Brusubi 2": { region: "West Coast", team: "HQ" },
+        "Yuna": { region: "West Coast", team: "HQ" }, "Jabang": { region: "West Coast", team: "HQ" },
+        "Sukuta 2": { region: "West Coast", team: "HQ" }, "Jalambang": { region: "West Coast", team: "HQ" },
+        "Kerewan": { region: "North Bank", team: "Barra House" }, "Banjul Hope Street": { region: "Banjul", team: "HQ" },
+        "Kalaji": { region: "West Coast", team: "Brikama House" }, "Madiana": { region: "West Coast", team: "HQ" },
+        "Sinchu Alagie 3": { region: "West Coast", team: "HQ" }, "Darsilarmi": { region: "West Coast", team: "HQ" },
+        "White Building": { region: "Kanifing", team: "HQ" }, "Somo Bldg": { region: "Kanifing", team: "HQ" },
+        "Bundung Mosque": { region: "Kanifing", team: "HQ" }
+    };
+
+    let staffMembers = [
+        { name: "Administrator", email: "admin@comium.com", phone: "+2209998888", role: "Admin", team: "Management", password: "admin123", isAdmin: true },
+        { name: "Viewer User", email: "viewer@comium.com", phone: "+2209997777", role: "Viewer", team: "View Only", password: "view123", isViewer: true }
+    ];
+
     let teams = ["Transmission Team", "Core Network Team", "Power Team", "Call Center", "OCS Team", "IPRAN Team", "DATACOM Team"];
     let currentUser = null;
     let currentFilter = { search: '', team: 'ALL', status: 'ALL' };
     let statusChart = null, rcaChart = null;
-    let rcaOptions = ["Power Failure", "Transmission Fault", "Hardware Fault", "Environmental", "Self-Restored"];
+    let rcaOptions = ["Power Failure", "Transmission Fault", "Hardware Fault", "Environmental"];
 
-    // Helper Functions
     function xlookup(site, field) { return siteReference[site]?.[field] || "—"; }
-    function calculateOutage(occurred, cleared) {
-        if (!occurred || !cleared) return "";
-        const minutes = Math.round((new Date(cleared) - new Date(occurred)) / 60000);
-        return minutes > 0 ? minutes : "";
-    }
-    function generateTicketId() {
-        const d = new Date();
-        return `INC-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(tickets.length+1).padStart(4,'0')}`;
-    }
-
-    // Load sample data
-    function loadSampleData() {
-        if (tickets.length === 0) {
-            tickets = [
-                { id: "INC-001", site: "Old Yundum 4", occurred: "2026-06-01 00:17:09", cleared: "2026-06-01 10:50:49", description: "NE Is Disconnected", rootCause: "NAWEC Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi" },
-                { id: "INC-002", site: "Latriya", occurred: "2026-06-01 00:17:09", cleared: "2026-06-01 08:51:53", description: "NE Is Disconnected", rootCause: "NAWEC Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi" },
-                { id: "INC-003", site: "Bwiam", occurred: "2026-06-01 00:39:09", cleared: "2026-06-01 02:31:09", description: "NE Is Disconnected", rootCause: "Generator failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Ma Ansu" },
-                { id: "INC-004", site: "Brufut TAF Estate", occurred: "2026-06-02 18:38:09", cleared: "", description: "Site Down", rootCause: "NAWEC Mains Failure", rcaCategory: "Power Failure", status: "OPEN", severity: "Critical", openedBy: "Bruno" },
-                { id: "INC-005", site: "Sukuta 2", occurred: "2026-06-02 21:45:13", cleared: "", description: "No connectivity", rootCause: "Transmission issue", rcaCategory: "Transmission Fault", status: "OPEN", severity: "High", openedBy: "Dawda" },
-                { id: "INC-006", site: "Kerewan", occurred: "2026-06-03 06:42:21", cleared: "2026-06-03 08:00:00", description: "Generator fail", rootCause: "Fuel empty", rcaCategory: "Power Failure", status: "RESOLVED", severity: "Critical", openedBy: "Tabally" },
-                { id: "INC-007", site: "Jalambang", occurred: "2026-06-02 23:58:45", cleared: "", description: "Power outage", rootCause: "NAWEC outage", rcaCategory: "Power Failure", status: "OPEN", severity: "Critical", openedBy: "Ahmadou" }
-            ];
-        }
-        if (Object.keys(siteReference).length === 0) {
-            siteReference = {
-                "Old Yundum 4": { region: "West Coast", team: "HQ" },
-                "Latriya": { region: "West Coast", team: "HQ" },
-                "Bwiam": { region: "West Coast", team: "Brikama House" },
-                "Brufut TAF Estate": { region: "West Coast", team: "HQ" },
-                "Sukuta 2": { region: "West Coast", team: "HQ" },
-                "Kerewan": { region: "North Bank", team: "Barra House" },
-                "Jalambang": { region: "West Coast", team: "HQ" },
-                "Pirang": { region: "West Coast", team: "Brikama House" },
-                "Banjul Hope Street": { region: "Banjul", team: "HQ" }
-            };
-        }
-        saveData();
-    }
+    function calculateOutage(occurred, cleared) { if (!occurred || !cleared) return ""; const minutes = Math.round((new Date(cleared) - new Date(occurred)) / 60000); return minutes > 0 ? minutes : ""; }
+    function generateTicketId() { const d = new Date(); return `INC-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(tickets.length+1).padStart(4,'0')}`; }
 
     function saveData() {
         localStorage.setItem('comium_tickets', JSON.stringify(tickets));
@@ -464,27 +428,9 @@
         localStorage.setItem('comium_siteRef', JSON.stringify(siteReference));
     }
 
-    function loadData() {
-        const savedTickets = localStorage.getItem('comium_tickets');
-        const savedStaff = localStorage.getItem('comium_staff');
-        const savedRef = localStorage.getItem('comium_siteRef');
-        if (savedTickets) tickets = JSON.parse(savedTickets);
-        if (savedStaff) staffMembers = JSON.parse(savedStaff);
-        if (savedRef) siteReference = JSON.parse(savedRef);
-        if (staffMembers.length === 0) {
-            staffMembers = [
-                { name: "Administrator", email: "admin@comium.com", phone: "+2209998888", role: "Admin", team: "Management", password: "admin123", isAdmin: true },
-                { name: "Viewer User", email: "viewer@comium.com", phone: "+2209997777", role: "Viewer", team: "View Only", password: "view123", isViewer: true }
-            ];
-        }
-        if (tickets.length === 0 || Object.keys(siteReference).length === 0) loadSampleData();
-    }
-
-    // Excel Upload (Admin Only)
     function processExcelFile(input) {
-        if (currentUser?.role !== 'Admin') { alert("Only Admin can upload Excel files"); return; }
-        const file = input.files[0];
-        if (!file) return;
+        if (currentUser?.role !== 'Admin') { alert("Only Admin can upload Excel"); return; }
+        const file = input.files[0]; if (!file) return;
         document.getElementById('uploadStatus').innerHTML = '<span style="color:blue;">⏳ Processing...</span>';
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -493,31 +439,24 @@
             for (let sheetName of workbook.SheetNames) {
                 const sheet = workbook.Sheets[sheetName];
                 const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-                if (sheetName.toLowerCase().includes('site') || (rows[0] && rows[0].includes('Site'))) {
+                if (sheetName.toLowerCase().includes('site')) {
                     siteReference = {};
                     for (let i = 1; i < rows.length; i++) {
-                        const row = rows[i];
-                        if (row && row[0] && row[0].trim()) {
-                            siteReference[row[0].trim()] = { region: row[2] || row[1] || "—", team: row[5] || row[4] || "—" };
-                        }
+                        if (rows[i] && rows[i][0]) siteReference[rows[i][0].trim()] = { region: rows[i][2] || rows[i][1] || "—", team: rows[i][5] || rows[i][4] || "—" };
                     }
                 }
-                if (sheetName.toLowerCase().includes('raw') && rows[0] && rows[0].includes('Incident ID')) {
+                if (rows[0] && rows[0].includes('Incident ID')) {
                     const headers = rows[0];
-                    const incIdx = headers.indexOf('Incident ID');
-                    const siteIdx = headers.indexOf('Alarm Source') !== -1 ? headers.indexOf('Alarm Source') : headers.indexOf('Site Name');
                     const newTickets = [];
                     for (let i = 1; i < rows.length; i++) {
                         const row = rows[i];
-                        if (row && row[incIdx]) {
-                            newTickets.push({
-                                id: row[incIdx], site: row[siteIdx] || "Unknown", occurred: row[headers.indexOf('Occurred (NT)')] || "",
-                                cleared: row[headers.indexOf('Cleared (NT)')] || "", description: row[headers.indexOf('Alarm Name')] || "",
-                                rootCause: row[headers.indexOf('Root Cause Analysis')] || "", rcaCategory: row[headers.indexOf('RCA Category')] || "",
-                                status: row[headers.indexOf('Status')] || "OPEN", severity: row[headers.indexOf('Severity / Priority')] || "Medium",
-                                openedBy: row[headers.indexOf('OPENED BY')] || "System"
-                            });
-                        }
+                        if (row && row[headers.indexOf('Incident ID')]) newTickets.push({
+                            id: row[headers.indexOf('Incident ID')], site: row[headers.indexOf('Alarm Source')] || "Unknown",
+                            occurred: row[headers.indexOf('Occurred (NT)')] || "", cleared: row[headers.indexOf('Cleared (NT)')] || "",
+                            description: row[headers.indexOf('Alarm Name')] || "", rootCause: row[headers.indexOf('Root Cause Analysis')] || "",
+                            rcaCategory: row[headers.indexOf('RCA Category')] || "", status: row[headers.indexOf('Status')] || "OPEN",
+                            severity: row[headers.indexOf('Severity / Priority')] || "Medium", openedBy: row[headers.indexOf('OPENED BY')] || "System"
+                        });
                     }
                     if (newTickets.length) tickets = newTickets;
                 }
@@ -526,91 +465,93 @@
             renderAll();
             updateDropdowns();
             displaySiteReference();
-            document.getElementById('uploadStatus').innerHTML = `<span style="color:green;">✅ Excel loaded! ${Object.keys(siteReference).length} sites, ${tickets.length} incidents.</span>`;
-            setTimeout(() => document.getElementById('uploadStatus').innerHTML = '', 4000);
+            document.getElementById('uploadStatus').innerHTML = `<span style="color:green;">✅ Loaded ${Object.keys(siteReference).length} sites, ${tickets.length} incidents</span>`;
+            setTimeout(() => document.getElementById('uploadStatus').innerHTML = '', 3000);
         };
         reader.readAsArrayBuffer(file);
-    }
-
-    function displaySiteReference() {
-        const tbody = document.querySelector('#siteReferenceTable tbody');
-        if (!tbody) return;
-        const sites = Object.entries(siteReference);
-        if (sites.length === 0) tbody.innerHTML = '<tr><td colspan="3">No data. Admin can upload Excel.</td></tr>';
-        else tbody.innerHTML = sites.slice(0, 100).map(([site, data]) => `<tr><td>${site}</td><td>${data.region}</td><td>${data.team}</td></tr>`).join('');
-    }
-
-    function updateDropdowns() {
-        const siteSelect = document.getElementById('ticketSite');
-        if (siteSelect) siteSelect.innerHTML = '<option value="">Select Site</option>' + Object.keys(siteReference).map(s => `<option value="${s}">${s}</option>`).join('');
-        const teamSelect = document.getElementById('reportFilterTeam');
-        if (teamSelect) teamSelect.innerHTML = '<option value="ALL">All Teams</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join('');
-        const staffTeamSelect = document.getElementById('staffTeam');
-        if (staffTeamSelect) staffTeamSelect.innerHTML = teams.map(t => `<option value="${t}">${t}</option>`).join('');
-    }
-
-    function updateSiteDetails() {
-        const site = document.getElementById('ticketSite').value;
-        document.getElementById('ticketRegion').value = xlookup(site, 'region');
-        document.getElementById('ticketTeamDisplay').value = xlookup(site, 'team');
     }
 
     function createTicket() {
         const site = document.getElementById('ticketSite').value;
         const desc = document.getElementById('ticketDesc').value;
         if (!site || !desc) { alert("Please fill Site and Description"); return; }
-        tickets.unshift({
+        const newTicket = {
             id: generateTicketId(), site: site, occurred: new Date().toISOString().slice(0,19).replace('T',' '), cleared: "",
             description: desc, rootCause: document.getElementById('ticketRootCause').value || "Under investigation",
             rcaCategory: document.getElementById('ticketRcaCategory').value, status: document.getElementById('ticketStatus').value,
             severity: document.getElementById('ticketSeverity').value, openedBy: currentUser?.name || "User"
-        });
+        };
+        tickets.unshift(newTicket);  // Add to top (most recent first)
         saveData();
         renderAll();
         navigateTo('home');
-        alert(`✅ Ticket created! Region/Team auto-filled from Excel data.`);
+        alert(`✅ Ticket ${newTicket.id} created!`);
         document.getElementById('ticketDesc').value = '';
     }
 
     function renderIncidentTable() {
         const tbody = document.getElementById('incidentTableBody');
         if (!tbody) return;
-        let filtered = tickets;
+        let filtered = [...tickets];
         if (currentFilter.search) filtered = filtered.filter(t => t.site.toLowerCase().includes(currentFilter.search) || t.id.toLowerCase().includes(currentFilter.search));
         if (currentFilter.team !== 'ALL') filtered = filtered.filter(t => xlookup(t.site, 'team') === currentFilter.team);
         if (currentFilter.status !== 'ALL') filtered = filtered.filter(t => t.status === currentFilter.status);
         tbody.innerHTML = filtered.map(t => `
-            <tr><td>${t.id}</td><td>${t.site}</td><td>${xlookup(t.site, 'region')}</td><td>${xlookup(t.site, 'team')}</td>
-            <td>${t.occurred || '—'}</td><td>${t.cleared || '—'}</td><td>${calculateOutage(t.occurred, t.cleared) || '—'}</td>
-            <td>${t.rcaCategory || '—'}</td><td><span style="background:${t.status === 'OPEN' ? '#fee2e2' : t.status === 'RESOLVED' ? '#d5f5e3' : '#e5e7eb'}; padding:4px 10px; border-radius:20px;">${t.status}</span></td>
-            <td>${t.severity || '—'}</td><td>${t.openedBy || '—'}</td></tr>
+            <tr>
+                <td>${t.id}</td>
+                <td>${t.site}</td>
+                <td>${xlookup(t.site, 'region')}</td>
+                <td>${xlookup(t.site, 'team')}</td>
+                <td>${t.occurred || '—'}</td>
+                <td>${t.cleared || '—'}</td>
+                <td>${calculateOutage(t.occurred, t.cleared) || '—'}</td>
+                <td>${t.rcaCategory || '—'}</td>
+                <td><span style="background:${t.status === 'OPEN' ? '#fee2e2' : t.status === 'RESOLVED' ? '#d5f5e3' : '#e5e7eb'}; padding:4px 10px; border-radius:20px;">${t.status}</span></td>
+                <td>${t.severity || '—'}</td>
+                <td>${t.openedBy || '—'}</td>
+            </tr>
         `).join('');
     }
 
     function renderDashboard() {
         const stats = { total: tickets.length, open: tickets.filter(t => t.status === 'OPEN').length, resolved: tickets.filter(t => t.status === 'RESOLVED').length, closed: tickets.filter(t => t.status === 'CLOSED').length };
         document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card" onclick="filterAndGo('ALL')"><div class="stat-number">${stats.total}</div><div class="stat-label">📋 Total Incidents</div></div>
-            <div class="stat-card" onclick="filterAndGo('OPEN')"><div class="stat-number">${stats.open}</div><div class="stat-label">🟠 Open</div></div>
-            <div class="stat-card" onclick="filterAndGo('RESOLVED')"><div class="stat-number">${stats.resolved}</div><div class="stat-label">✅ Resolved</div></div>
-            <div class="stat-card" onclick="filterAndGo('CLOSED')"><div class="stat-number">${stats.closed}</div><div class="stat-label">🔒 Closed</div></div>`;
+            <div class="stat-card" onclick="filterAndGo('ALL')"><div class="stat-number">${stats.total}</div><div>📋 Total</div></div>
+            <div class="stat-card" onclick="filterAndGo('OPEN')"><div class="stat-number">${stats.open}</div><div>🟠 Open</div></div>
+            <div class="stat-card" onclick="filterAndGo('RESOLVED')"><div class="stat-number">${stats.resolved}</div><div>✅ Resolved</div></div>
+            <div class="stat-card" onclick="filterAndGo('CLOSED')"><div class="stat-number">${stats.closed}</div><div>🔒 Closed</div></div>`;
         
         if (statusChart) statusChart.destroy();
         statusChart = new Chart(document.getElementById('statusChart'), { type: 'doughnut', data: { labels: ['Open', 'Resolved', 'Closed'], datasets: [{ data: [stats.open, stats.resolved, stats.closed], backgroundColor: ['#dc2626', '#10b981', '#64748b'] }] }, options: { responsive: true, plugins: { legend: { position: 'bottom' } } } });
         
         const rcaCounts = rcaOptions.map(rca => tickets.filter(t => t.rcaCategory === rca).length);
         if (rcaChart) rcaChart.destroy();
-        rcaChart = new Chart(document.getElementById('rcaChart'), { type: 'bar', data: { labels: rcaOptions, datasets: [{ label: 'Incidents', data: rcaCounts, backgroundColor: '#3b82f6' }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
+        rcaChart = new Chart(document.getElementById('rcaChart'), { type: 'bar', data: { labels: rcaOptions, datasets: [{ label: 'Count', data: rcaCounts, backgroundColor: '#3b82f6' }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
         
-        document.getElementById('recentList').innerHTML = tickets.slice(0, 8).map(t => `<div style="padding:12px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between;"><span><strong>${t.id}</strong> - ${t.site}</span><span style="color:${t.status === 'OPEN' ? '#dc2626' : t.status === 'RESOLVED' ? '#10b981' : '#64748b'}">${t.status}</span></div>`).join('');
+        document.getElementById('recentList').innerHTML = tickets.slice(0, 8).map(t => `<div style="padding:12px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between;"><span><strong>${t.id}</strong> - ${t.site}</span><span>${t.status}</span></div>`).join('');
     }
 
+    function displaySiteReference() {
+        const tbody = document.querySelector('#siteReferenceTable tbody');
+        if (!tbody) return;
+        tbody.innerHTML = Object.entries(siteReference).slice(0, 50).map(([site, data]) => `<tr><td>${site}</td><td>${data.region}</td><td>${data.team}</td></tr>`).join('');
+        if (Object.keys(siteReference).length === 0) tbody.innerHTML = '<tr><td colspan="3">Upload Excel to load data</td></tr>';
+    }
+
+    function updateDropdowns() {
+        document.getElementById('ticketSite').innerHTML = '<option value="">Select Site</option>' + Object.keys(siteReference).map(s => `<option value="${s}">${s}</option>`).join('');
+        document.getElementById('reportFilterTeam').innerHTML = '<option value="ALL">All Teams</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join('');
+        document.getElementById('staffTeam').innerHTML = teams.map(t => `<option value="${t}">${t}</option>`).join('');
+        document.getElementById('ticketRcaCategory').innerHTML = rcaOptions.map(o => `<option value="${o}">${o}</option>`).join('');
+    }
+
+    function updateSiteDetails() { const site = document.getElementById('ticketSite').value; document.getElementById('ticketRegion').value = xlookup(site, 'region'); document.getElementById('ticketTeamDisplay').value = xlookup(site, 'team'); }
     function filterAndGo(status) { currentFilter = { search: '', team: 'ALL', status: status }; renderIncidentTable(); navigateTo('incidentReport'); }
     function applyFilters() { currentFilter.search = document.getElementById('reportFilterSearch').value.toLowerCase(); currentFilter.team = document.getElementById('reportFilterTeam').value; currentFilter.status = document.getElementById('reportFilterStatus').value; renderIncidentTable(); }
-    function exportToExcel() { let filtered = tickets; const data = filtered.map(t => ({ 'ID': t.id, 'Site': t.site, 'Region': xlookup(t.site, 'region'), 'Team': xlookup(t.site, 'team'), 'Occurred': t.occurred, 'Cleared': t.cleared, 'Outage': calculateOutage(t.occurred, t.cleared), 'RCA': t.rcaCategory, 'Status': t.status, 'Severity': t.severity })); const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Incident Report'); XLSX.writeFile(wb, `Incident_Report_${new Date().toISOString().slice(0,19)}.xlsx`); alert('Exported!'); }
+    function exportToExcel() { const data = tickets.map(t => ({ 'ID': t.id, 'Site': t.site, 'Region': xlookup(t.site, 'region'), 'Team': xlookup(t.site, 'team'), 'Occurred': t.occurred, 'Cleared': t.cleared, 'Outage': calculateOutage(t.occurred, t.cleared), 'RCA': t.rcaCategory, 'Status': t.status, 'Severity': t.severity })); const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Incident Report'); XLSX.writeFile(wb, `Incident_Report_${new Date().toISOString().slice(0,19)}.xlsx`); alert('Exported!'); }
 
     function addStaff() { if (currentUser?.role !== 'Admin') { alert("Only Admin can add staff"); return; } const name = document.getElementById('staffName').value.trim(), email = document.getElementById('staffEmail').value.trim(), phone = document.getElementById('staffPhone').value.trim(), role = document.getElementById('staffRole').value, team = document.getElementById('staffTeam').value, password = document.getElementById('staffPassword').value; if (!name || !email) { alert("Fill fields"); return; } if (staffMembers.find(s => s.email === email)) { alert("User exists"); return; } staffMembers.push({ name, email, phone, role, team, password }); saveData(); renderStaffList(); alert(`✅ Staff ${name} added`); }
-    function renderStaffList() { const container = document.getElementById('staffList'); if (!container) return; const nonAdmin = staffMembers.filter(s => !s.isAdmin && !s.isViewer); container.innerHTML = nonAdmin.map(s => `<div style="padding:12px; border-bottom:1px solid var(--border-color);"><strong>${s.name}</strong><br>${s.email}<br><button onclick="deleteStaff('${s.email}')" style="background:#e74c3c; padding:5px 12px; margin-top:5px; border:none; border-radius:8px; color:white;">Delete</button></div>`).join(''); }
+    function renderStaffList() { const container = document.getElementById('staffList'); if (!container) return; const nonAdmin = staffMembers.filter(s => !s.isAdmin && !s.isViewer); container.innerHTML = nonAdmin.map(s => `<div style="padding:12px; border-bottom:1px solid var(--border-color);"><strong>${s.name}</strong><br>${s.email}<br><button onclick="deleteStaff('${s.email}')" style="background:#e74c3c; padding:5px 12px; margin-top:5px;">Delete</button></div>`).join(''); }
     function deleteStaff(email) { if (confirm("Delete?")) { staffMembers = staffMembers.filter(s => s.email !== email); saveData(); renderStaffList(); } }
 
     function renderAll() { renderDashboard(); renderIncidentTable(); displaySiteReference(); }
@@ -618,30 +559,26 @@
         document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.getElementById(`panel${page.charAt(0).toUpperCase() + page.slice(1)}`).classList.add('active');
-        if(event?.target) event.target.closest('.nav-item').classList.add('active');
-        const titles = { home: '📊 Dashboard', incidentReport: '📋 Incident Report', create: '➕ New Ticket', upload: '📎 Upload Excel', admin: '👥 Staff Management' };
+        if (event?.target) event.target.closest('.nav-item').classList.add('active');
+        const titles = { home: '📊 Dashboard', incidentReport: '📋 Incident Report', create: '➕ Create Ticket', upload: '📎 Upload Excel', admin: '⚙️ Admin' };
         document.getElementById('pageTitle').innerHTML = titles[page] || 'Dashboard';
-        if(page === 'home') renderDashboard();
-        if(page === 'incidentReport') renderIncidentTable();
-        if(page === 'create') document.getElementById('ticketDate').value = new Date().toISOString().slice(0,16);
-        if(page === 'admin') renderStaffList();
-        if(page === 'upload') displaySiteReference();
+        if (page === 'home') renderDashboard();
+        if (page === 'incidentReport') renderIncidentTable();
+        if (page === 'create') document.getElementById('ticketDate').value = new Date().toISOString().slice(0,16);
+        if (page === 'admin') renderStaffList();
+        if (page === 'upload') displaySiteReference();
     }
 
     function toggleTheme() { document.body.classList.toggle('dark'); localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light'); renderAll(); }
 
     function doLogin() {
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPassword').value;
-        const user = staffMembers.find(s => s.email === email);
+        const email = document.getElementById('loginEmail').value.trim(), password = document.getElementById('loginPassword').value, user = staffMembers.find(s => s.email === email);
         if (user && user.password === password) {
-            currentUser = user;
+            currentUser = user; const isAdmin = user.role === 'Admin';
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('appContainer').style.display = 'block';
-            const isAdmin = user.role === 'Admin';
             document.getElementById('userDisplay').innerHTML = `👤 ${user.name}${isAdmin ? ' <span class="admin-badge">Admin</span>' : ' (Viewer)'}`;
-            const adminElements = document.querySelectorAll('.admin-only');
-            adminElements.forEach(el => el.style.display = isAdmin ? 'flex' : 'none');
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'flex' : 'none');
             renderAll(); updateDropdowns();
         } else { document.getElementById('loginError').innerHTML = '❌ Invalid credentials'; document.getElementById('loginError').style.display = 'block'; setTimeout(() => { document.getElementById('loginError').style.display = 'none'; }, 3000); }
     }
@@ -649,7 +586,6 @@
 
     const savedTheme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
     document.body.classList.add(savedTheme);
-    loadData();
     updateDropdowns();
     renderAll();
 </script>
