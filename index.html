@@ -98,6 +98,7 @@
             color: #7f8c8d;
             font-size: 12px;
             text-decoration: none;
+            cursor: pointer;
         }
         .forgot-pw a:hover {
             color: #c0392b;
@@ -164,7 +165,6 @@
         .content-panel { display: none; padding: 30px; }
         .content-panel.active { display: block; }
 
-        /* Stats Cards */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -186,7 +186,6 @@
         .stat-label { margin-top: 8px; color: #64748b; font-size: 13px; }
         .dark .stat-label { color: #94a3b8; }
 
-        /* Workflow Diagram */
         .workflow-container {
             background: white;
             border-radius: 20px;
@@ -216,7 +215,6 @@
         .workflow-arrow { font-size: 20px; color: #cbd5e1; }
         .dark .workflow-arrow { color: #475569; }
 
-        /* Tables */
         .data-table {
             width: 100%;
             background: white;
@@ -289,7 +287,6 @@
         .status-HANDLING { background: #d1fae5; color: #059669; }
         .status-RESOLVED { background: #d1fae5; color: #059669; }
         .status-CLOSED { background: #f1f5f9; color: #475569; }
-        .dark .status-CLOSED { background: #334155; color: #94a3b8; }
 
         .admin-badge { background: #c0392b; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; margin-left: 10px; }
 
@@ -311,13 +308,15 @@
         <h2>OPERATION WEB SERVICES</h2>
         <h1>Comium NOC</h1>
         <div class="subtitle">Operation Incident Management</div>
-        <input type="text" id="loginEmail" placeholder="Account" value="admin@comium.com">
-        <input type="password" id="loginPassword" placeholder="Password" value="admin123">
-        <div class="forgot-pw"><a href="#">Forget Password</a></div>
+        <input type="text" id="loginEmail" placeholder="Account" value="viewer@comium.com">
+        <input type="password" id="loginPassword" placeholder="Password" value="view123">
+        <div class="forgot-pw"><a href="#" onclick="showHint()">Forget Password</a></div>
         <button onclick="doLogin()">Login</button>
         <div id="loginError" class="error-msg"></div>
         <div style="margin-top: 20px; font-size: 11px; color: #95a5a6;">
-            Admin: admin@comium.com / admin123 | Viewer: viewer@comium.com / view123
+            <strong>Demo Accounts:</strong><br>
+            Admin: admin@comium.com / admin123<br>
+            Viewer: viewer@comium.com / view123
         </div>
     </div>
 </div>
@@ -401,7 +400,7 @@
             <div style="overflow-x:auto; max-height:60vh; overflow-y:auto;">
                 <table class="data-table" id="incidentTable">
                     <thead>
-                        <tr><th>Incident ID</th><th>Site Name</th><th>Region</th><th>Team</th><th>Occurred (NT)</th><th>Cleared (NT)</th><th>Outage Duration</th><th>Impact (Outage Count)</th><th>Root Cause Analysis</th><th>RCA Category</th><th>Status</th><th>Severity / Priority</th><th>Responsible Team</th><th>Resolution Notes</th><th>OPENED BY</th><th>CLOSED BY</th></tr>
+                        <tr><th>Incident ID</th><th>Site Name</th><th>Region</th><th>Team</th><th>Occurred (NT)</th><th>Cleared (NT)</th><th>Outage Duration</th><th>Impact</th><th>Root Cause</th><th>RCA Category</th><th>Status</th><th>Severity</th><th>Responsible Team</th><th>Resolution Notes</th><th>Opened By</th><th>Closed By</th></tr>
                     </thead>
                     <tbody id="incidentTableBody"></tbody>
                 </table>
@@ -422,8 +421,8 @@
                 </div>
                 <div class="form-group"><label>Description / Alarm Name</label><textarea id="ticketDesc" rows="3" placeholder="NE Is Disconnected..."></textarea></div>
                 <div class="form-row">
-                    <div class="form-group"><label>Impact (Outage Count)</label><input type="text" id="ticketImpact" placeholder="e.g., Site Down, Impacting: XX"></div>
-                    <div class="form-group"><label>Root Cause Analysis</label><input type="text" id="ticketRootCause" placeholder="e.g., NAWEC Mains Failure"></div>
+                    <div class="form-group"><label>Impact</label><input type="text" id="ticketImpact" placeholder="e.g., Site Down"></div>
+                    <div class="form-group"><label>Root Cause</label><input type="text" id="ticketRootCause" placeholder="e.g., NAWEC Mains Failure"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>RCA Category</label><select id="ticketRcaCategory"><option>Power Failure</option><option>Transmission Fault</option><option>Hardware Fault</option><option>Environmental</option></select></div>
@@ -431,7 +430,7 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Status</label><select id="ticketStatus"><option>OPEN</option><option>INITIAL_CHECK</option><option>ASSIGNED</option><option>HANDLING</option><option>RESOLVED</option><option>CLOSED</option></select></div>
-                    <div class="form-group"><label>Assign To (Engineer)</label><select id="ticketAssignee"></select></div>
+                    <div class="form-group"><label>Assign To</label><select id="ticketAssignee"></select></div>
                 </div>
                 <div class="form-group"><label>Resolution Notes</label><textarea id="ticketResolution" rows="2" placeholder="Action taken..."></textarea></div>
                 <button class="btn-primary" onclick="createTicket()">✅ Create Ticket</button>
@@ -454,8 +453,24 @@
 </div>
 
 <script>
-    // Sample Data (matching Excel format)
-    let tickets = [
+    // ============= INITIALIZE DATA WITH VALID USERS =============
+    let tickets = [];
+    let siteReference = {};
+    let teams = ["Transmission Team", "Core Network Team", "Power Team", "Call Center", "OCS Team", "IPRAN Team", "DATACOM Team"];
+    let currentUser = null;
+    let currentFilter = { search: '', team: 'ALL', status: 'ALL' };
+    let statusChart = null, rcaChart = null;
+
+    // Staff Members - BOTH Admin AND Viewer included
+    let staffMembers = [
+        { name: "Administrator", email: "admin@comium.com", phone: "+2209998888", role: "Admin", team: "Management", password: "admin123", isAdmin: true },
+        { name: "Viewer User", email: "viewer@comium.com", phone: "+2209997777", role: "Viewer", team: "View Only", password: "view123", isViewer: true },
+        { name: "Sanusi", email: "sanusi@comium.com", phone: "+2207771111", role: "Engineer", team: "HQ", password: "sanusi123" },
+        { name: "Ma Ansu", email: "maansu@comium.com", phone: "+2207772222", role: "Team Lead", team: "Brikama House", password: "maansu123" }
+    ];
+
+    // Sample Tickets
+    let sampleTickets = [
         { id: "0604_11-121", site: "Old Yundum 4", occurred: "2026-06-01 00:17:09", cleared: "2026-06-01 10:50:49", description: "NE Is Disconnected", impact: "Impacting : Jabang Estate II", rootCause: "(NAWEC) Mains Failure.", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", team: "HQ", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "(NAWEC) Mains is back at the site." },
         { id: "0604_11-122", site: "Latriya", occurred: "2026-06-01 00:17:09", cleared: "2026-06-01 08:51:53", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure.", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", team: "HQ", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "(NAWEC) Mains is back at the site." },
         { id: "0604_11-123", site: "Bwiam", occurred: "2026-06-01 00:39:09", cleared: "2026-06-01 02:31:09", description: "NE Is Disconnected", impact: "Site Down", rootCause: "(NAWEC) Mains Failure.", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", team: "Brikama House", openedBy: "Ma Ansu", closedBy: "Ma Ansu", resolution: "Generator started manually" },
@@ -465,36 +480,44 @@
         { id: "0603_1092", site: "Kerewan", occurred: "2026-06-03 06:42:21", cleared: "2026-06-03 08:44:00", description: "NE Is Disconnected", impact: "Impacting: 13 sites", rootCause: "Generator fail", rcaCategory: "Power Failure", status: "RESOLVED", severity: "Critical", team: "Barra House", openedBy: "Tabally", closedBy: "Ahmadou", resolution: "Generator started manually" }
     ];
 
-    let siteReference = {
+    // Sample Site Reference
+    let sampleSiteReference = {
         "Old Yundum 4": { region: "West Coast", team: "HQ" }, "Latriya": { region: "West Coast", team: "HQ" },
         "Bwiam": { region: "West Coast", team: "Brikama House" }, "Brufut TAF Estate": { region: "West Coast", team: "HQ" },
         "Sukuta 2": { region: "West Coast", team: "HQ" }, "Jalambang": { region: "West Coast", team: "HQ" },
         "Kerewan": { region: "North Bank", team: "Barra House" }
     };
 
-    let staffMembers = [
-        { name: "Administrator", email: "admin@comium.com", phone: "+2209998888", role: "Admin", team: "Management", password: "admin123", isAdmin: true },
-        { name: "Viewer User", email: "viewer@comium.com", phone: "+2209997777", role: "Viewer", team: "View Only", password: "view123", isViewer: true },
-        { name: "Sanusi", email: "sanusi@comium.com", phone: "+2207771111", role: "Engineer", team: "HQ", password: "sanusi123" },
-        { name: "Ma Ansu", email: "maansu@comium.com", phone: "+2207772222", role: "Team Lead", team: "Brikama House", password: "maansu123" }
-    ];
+    function initializeData() {
+        const savedTickets = localStorage.getItem('comium_tickets');
+        const savedStaff = localStorage.getItem('comium_staff');
+        const savedSiteRef = localStorage.getItem('comium_siteRef');
+        
+        if (savedTickets) tickets = JSON.parse(savedTickets);
+        else tickets = [...sampleTickets];
+        
+        if (savedStaff) staffMembers = JSON.parse(savedStaff);
+        else localStorage.setItem('comium_staff', JSON.stringify(staffMembers));
+        
+        if (savedSiteRef) siteReference = JSON.parse(savedSiteRef);
+        else siteReference = {...sampleSiteReference};
+        
+        saveData();
+    }
 
-    let teams = ["Transmission Team", "Core Network Team", "Power Team", "Call Center", "OCS Team", "IPRAN Team", "DATACOM Team"];
-    let currentUser = null;
-    let currentFilter = { search: '', team: 'ALL', status: 'ALL' };
+    function saveData() {
+        localStorage.setItem('comium_tickets', JSON.stringify(tickets));
+        localStorage.setItem('comium_staff', JSON.stringify(staffMembers));
+        localStorage.setItem('comium_siteRef', JSON.stringify(siteReference));
+    }
+
+    function showHint() {
+        alert("Demo Accounts:\nAdmin: admin@comium.com / admin123\nViewer: viewer@comium.com / view123");
+    }
 
     function xlookup(site, field) { return siteReference[site]?.[field] || "—"; }
     function calculateOutage(occurred, cleared) { if (!occurred || !cleared) return ""; const minutes = Math.round((new Date(cleared) - new Date(occurred)) / 60000); return minutes > 0 ? minutes : ""; }
-    function generateTicketId() { const d = new Date(); return `0604_11-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}${String(tickets.length+1).padStart(3,'0')}`; }
-
-    function saveData() { localStorage.setItem('comium_tickets', JSON.stringify(tickets)); localStorage.setItem('comium_staff', JSON.stringify(staffMembers)); localStorage.setItem('comium_siteRef', JSON.stringify(siteReference)); }
-    function loadData() {
-        const saved = localStorage.getItem('comium_tickets'); if (saved) tickets = JSON.parse(saved);
-        const savedStaff = localStorage.getItem('comium_staff'); if (savedStaff) staffMembers = JSON.parse(savedStaff);
-        const savedRef = localStorage.getItem('comium_siteRef'); if (savedRef) siteReference = JSON.parse(savedRef);
-        if (tickets.length === 0) tickets = [];
-        if (staffMembers.length === 0) staffMembers = [{ name: "Administrator", email: "admin@comium.com", phone: "+2209998888", role: "Admin", team: "Management", password: "admin123", isAdmin: true }];
-    }
+    function generateTicketId() { const d = new Date(); return `INC-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(tickets.length+1).padStart(4,'0')}`; }
 
     function processExcelFile(input) {
         if (currentUser?.role !== 'Admin') { alert("Only Admin can upload Excel"); return; }
@@ -513,7 +536,7 @@
                         if (rows[i] && rows[i][0]) siteReference[rows[i][0].trim()] = { region: rows[i][2] || rows[i][1] || "—", team: rows[i][5] || rows[i][4] || "—" };
                     }
                 }
-                if (rows[0] && rows[0].includes('Incident ID')) {
+                if (rows[0] && (rows[0].includes('Incident ID') || rows[0].includes('Incident ID'))) {
                     const headers = rows[0];
                     const newTickets = [];
                     for (let i = 1; i < rows.length; i++) {
@@ -521,11 +544,12 @@
                         if (row && row[headers.indexOf('Incident ID')]) newTickets.push({
                             id: row[headers.indexOf('Incident ID')], site: row[headers.indexOf('Alarm Source')] || "Unknown",
                             occurred: row[headers.indexOf('Occurred (NT)')] || "", cleared: row[headers.indexOf('Cleared (NT)')] || "",
-                            description: row[headers.indexOf('Alarm Name (Incident Title)')] || "", impact: row[headers.indexOf('Impact')] || "",
+                            description: row[headers.indexOf('Alarm Name')] || "", impact: row[headers.indexOf('Impact')] || "",
                             rootCause: row[headers.indexOf('Root Cause Analysis')] || "", rcaCategory: row[headers.indexOf('RCA Category')] || "",
                             status: row[headers.indexOf('Status')] || "OPEN", severity: row[headers.indexOf('Severity / Priority')] || "Medium",
-                            team: row[headers.indexOf('Responsible Team (region team)')] || "", openedBy: row[headers.indexOf('OPENED BY')] || "System",
-                            closedBy: row[headers.indexOf('CLOSED BY')] || "", resolution: row[headers.indexOf('Resolution Notes')] || ""
+                            team: row[headers.indexOf('Responsible Team')] || xlookup(row[headers.indexOf('Alarm Source')], 'team'),
+                            openedBy: row[headers.indexOf('OPENED BY')] || "System", closedBy: row[headers.indexOf('CLOSED BY')] || "",
+                            resolution: row[headers.indexOf('Resolution Notes')] || ""
                         });
                     }
                     if (newTickets.length) tickets = newTickets;
@@ -539,6 +563,7 @@
     }
 
     function createTicket() {
+        if (currentUser?.role === 'Viewer') { alert("Viewer accounts cannot create tickets. Please use Admin account."); return; }
         const site = document.getElementById('ticketSite').value;
         const desc = document.getElementById('ticketDesc').value;
         if (!site || !desc) { alert("Please fill Site and Description"); return; }
@@ -611,30 +636,34 @@
         const exportData = filtered.map(t => ({
             'Incident ID': t.id, 'Alarm Name (Incident Title)': t.description, 'Alarm Source (Service/Network Element)': t.site,
             'Region/Site': xlookup(t.site, 'region'), 'Occurred (NT)': t.occurred, 'Cleared (NT)': t.cleared,
-            'Outage Duration': calculateOutage(t.occurred, t.cleared), 'Impact (Outage Count)': t.impact,
+            'Outage Duration': calculateOutage(t.occurred, t.cleared), 'Impact': t.impact,
             'Root Cause Analysis': t.rootCause, 'RCA Category': t.rcaCategory, 'Status': t.status,
-            'Severity / Priority': t.severity, 'Responsible Team (region team)': xlookup(t.site, 'team'),
-            'Resolution Notes (Action taken)': t.resolution, 'OPENED BY': t.openedBy, 'CLOSED BY': t.closedBy
+            'Severity / Priority': t.severity, 'Responsible Team': xlookup(t.site, 'team'),
+            'Resolution Notes': t.resolution, 'OPENED BY': t.openedBy, 'CLOSED BY': t.closedBy
         }));
         const ws = XLSX.utils.json_to_sheet(exportData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Raw Data');
         XLSX.writeFile(wb, `Incident_Report_${new Date().toISOString().slice(0,19)}.xlsx`);
-        alert('Exported with full Excel format!');
+        alert('Exported!');
     }
 
     function displaySiteReference() {
         const tbody = document.querySelector('#siteReferenceTable tbody');
         if (!tbody) return;
         tbody.innerHTML = Object.entries(siteReference).slice(0, 50).map(([site, data]) => `<tr><td>${site}</td><td>${data.region}</td><td>${data.team}</td></tr>`).join('');
-        if (Object.keys(siteReference).length === 0) tbody.innerHTML = '<tr><td colspan="3">Upload Excel to load data</td></tr>';
+        if (Object.keys(siteReference).length === 0) tbody.innerHTML = '<td><td colspan="3">Upload Excel to load data</td></tr>';
     }
 
     function updateDropdowns() {
-        document.getElementById('ticketSite').innerHTML = '<option value="">Select Site</option>' + Object.keys(siteReference).map(s => `<option value="${s}">${s}</option>`).join('');
-        document.getElementById('reportFilterTeam').innerHTML = '<option value="ALL">All Teams</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join('');
-        document.getElementById('staffTeam').innerHTML = teams.map(t => `<option value="${t}">${t}</option>`).join('');
-        document.getElementById('ticketAssignee').innerHTML = '<option value="">Select Engineer</option>' + staffMembers.filter(s => s.role === 'Engineer' || s.role === 'Team Lead').map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+        const siteSelect = document.getElementById('ticketSite');
+        if (siteSelect) siteSelect.innerHTML = '<option value="">Select Site</option>' + Object.keys(siteReference).map(s => `<option value="${s}">${s}</option>`).join('');
+        const teamSelect = document.getElementById('reportFilterTeam');
+        if (teamSelect) teamSelect.innerHTML = '<option value="ALL">All Teams</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join('');
+        const staffTeamSelect = document.getElementById('staffTeam');
+        if (staffTeamSelect) staffTeamSelect.innerHTML = teams.map(t => `<option value="${t}">${t}</option>`).join('');
+        const assigneeSelect = document.getElementById('ticketAssignee');
+        if (assigneeSelect) assigneeSelect.innerHTML = '<option value="">Select Engineer</option>' + staffMembers.filter(s => s.role === 'Engineer' || s.role === 'Team Lead').map(s => `<option value="${s.name}">${s.name}</option>`).join('');
     }
 
     function updateSiteDetails() { const site = document.getElementById('ticketSite').value; document.getElementById('ticketRegion').value = xlookup(site, 'region'); document.getElementById('ticketTeamDisplay').value = xlookup(site, 'team'); }
@@ -663,21 +692,34 @@
     function toggleTheme() { document.body.classList.toggle('dark'); localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light'); renderAll(); }
 
     function doLogin() {
-        const email = document.getElementById('loginEmail').value.trim(), password = document.getElementById('loginPassword').value, user = staffMembers.find(s => s.email === email);
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const user = staffMembers.find(s => s.email === email);
+        
         if (user && user.password === password) {
-            currentUser = user; const isAdmin = user.role === 'Admin';
+            currentUser = user;
+            const isAdmin = user.role === 'Admin';
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('appContainer').style.display = 'block';
             document.getElementById('userDisplay').innerHTML = `👤 ${user.name}${isAdmin ? ' <span class="admin-badge">Admin</span>' : ' (Viewer)'}`;
-            document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'flex' : 'none');
+            
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => el.style.display = isAdmin ? 'flex' : 'none');
+            
             renderAll(); updateDropdowns();
-        } else { document.getElementById('loginError').innerHTML = '❌ Invalid credentials'; document.getElementById('loginError').style.display = 'block'; setTimeout(() => { document.getElementById('loginError').style.display = 'none'; }, 3000); }
+            document.getElementById('loginError').style.display = 'none';
+        } else {
+            document.getElementById('loginError').innerHTML = '❌ Invalid credentials. Use: admin@comium.com / admin123 or viewer@comium.com / view123';
+            document.getElementById('loginError').style.display = 'block';
+            setTimeout(() => { document.getElementById('loginError').style.display = 'none'; }, 4000);
+        }
     }
+    
     function doLogout() { currentUser = null; document.getElementById('loginPage').style.display = 'flex'; document.getElementById('appContainer').style.display = 'none'; }
 
     const savedTheme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
     document.body.classList.add(savedTheme);
-    loadData();
+    initializeData();
     updateDropdowns();
     renderAll();
 </script>
