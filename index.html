@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comium NOC | Complete Incident Management System</title>
+    <title>Comium NOC | Excel Template Integration</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
@@ -23,7 +23,6 @@
             --border-color: #e0e0e0;
             --accent: #c0392b;
             --success: #27ae60;
-            --info: #2980b9;
             --sidebar-bg: #2c3e50;
         }
 
@@ -154,7 +153,7 @@
             font-size: 12px;
         }
         .data-table th { background: var(--accent); color: white; position: sticky; top: 0; }
-        
+
         .filter-bar {
             display: flex;
             gap: 12px;
@@ -162,7 +161,7 @@
             flex-wrap: wrap;
             align-items: flex-end;
         }
-        .btn-primary, .btn-success {
+        .btn-primary, .btn-success, .btn-info {
             padding: 10px 20px;
             border: none;
             border-radius: 8px;
@@ -171,6 +170,7 @@
         }
         .btn-primary { background: var(--accent); color: white; }
         .btn-success { background: var(--success); color: white; }
+        .btn-info { background: #2980b9; color: white; }
 
         .form-card {
             background: var(--bg-card);
@@ -190,13 +190,21 @@
             background: var(--bg-primary);
             color: var(--text-primary);
         }
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover { border-color: var(--accent); }
 
         @media (max-width: 768px) {
             .sidebar { width: 70px; }
             .sidebar-header h2, .nav-item span:last-child { display: none; }
             .main-content { margin-left: 70px; }
             .form-row { grid-template-columns: 1fr; }
-            .data-table th, .data-table td { font-size: 10px; padding: 6px 4px; }
         }
     </style>
 </head>
@@ -206,7 +214,7 @@
     <div class="login-card">
         <div style="font-size: 48px;">🔴</div>
         <h1>Comium NOC</h1>
-        <p>Complete Incident Management System</p>
+        <p>Excel Template Integration</p>
         <input type="text" id="loginEmail" placeholder="Email" value="admin@comium.com">
         <input type="password" id="loginPassword" placeholder="Password" value="admin123">
         <button onclick="doLogin()">Sign In →</button>
@@ -220,10 +228,11 @@
         <div class="sidebar-header">
             <div style="font-size: 32px;">🔴</div>
             <h2>Comium NOC</h2>
-            <small>Incident Management</small>
+            <small>Excel Powered</small>
         </div>
         <div class="sidebar-nav">
             <div class="nav-item active" onclick="navigateTo('home')"><span>🏠</span> <span>Home</span></div>
+            <div class="nav-item" onclick="navigateTo('upload')"><span>📎</span> <span>Load Excel Template</span></div>
             <div class="nav-item" onclick="navigateTo('incidentReport')"><span>📋</span> <span>Incident Report</span></div>
             <div class="nav-item" onclick="navigateTo('create')"><span>➕</span> <span>Create Ticket</span></div>
             <div class="nav-item" onclick="navigateTo('admin')" id="adminNav"><span>⚙️</span> <span>Admin</span></div>
@@ -245,32 +254,43 @@
             <div class="form-card"><h3>📋 Recent Incidents</h3><div id="recentList"></div></div>
         </div>
 
-        <div id="panelIncidentReport" class="content-panel">
+        <div id="panelUpload" class="content-panel">
             <div class="form-card">
-                <h3>📋 Complete Incident Report Log</h3>
-                <p style="margin-bottom: 15px; color: var(--text-secondary);">All incidents from 0604_11-1 to 0608_1253 are displayed below.</p>
-                <div class="filter-bar">
-                    <input type="text" id="reportFilterSearch" placeholder="Search by Site or ID" style="width: 200px;">
-                    <select id="reportFilterTeam">
-                        <option value="ALL">All Teams</option>
-                    </select>
-                    <select id="reportFilterStatus">
-                        <option value="ALL">All Status</option><option value="OPEN">Open</option><option value="RESOLVED">Resolved</option><option value="CLOSED">Closed</option>
-                    </select>
-                    <button class="btn-primary" onclick="applyFilters()">Apply Filter</button>
-                    <button class="btn-success" onclick="exportToExcel()">📊 Export to Excel</button>
+                <h3>📎 Upload Your Excel Template (Raw Data, Site Reference, Read Me)</h3>
+                <p style="margin-bottom: 15px;">Upload your Excel file with all 3 sheets. The system will extract Site Reference data and use it for XLOOKUP functionality.</p>
+                <div class="upload-area" onclick="document.getElementById('excelFile').click()">
+                    📂 Click or Drag & Drop your Excel file here<br>
+                    <small style="color: var(--text-secondary);">Supports .xlsx, .xls files with multiple sheets</small>
+                </div>
+                <input type="file" id="excelFile" accept=".xlsx,.xls" style="display: none;" onchange="processExcelFile(this)">
+                <div id="uploadStatus" style="margin-top: 15px;"></div>
+                <div id="excelPreview" style="margin-top: 20px;"></div>
+            </div>
+            <div class="form-card">
+                <h3>📊 Site Reference Data (XLOOKUP Source)</h3>
+                <div style="overflow-x: auto; max-height: 300px; overflow-y: auto;">
+                    <table class="data-table" id="siteReferenceTable">
+                        <thead><tr><th>Site Name</th><th>Region</th><th>Team</th></tr></thead>
+                        <tbody><tr><td colspan="3">Upload Excel to see site reference data</td></tr></tbody>
+                    建立在
                 </div>
             </div>
-            <div style="overflow-x: auto; max-height: 70vh; overflow-y: auto;">
+        </div>
+
+        <div id="panelIncidentReport" class="content-panel">
+            <div class="form-card">
+                <h3>📋 Incident Report</h3>
+                <div class="filter-bar">
+                    <input type="text" id="reportFilterSearch" placeholder="Search by Site or ID" style="width: 200px;">
+                    <select id="reportFilterTeam"><option value="ALL">All Teams</option></select>
+                    <select id="reportFilterStatus"><option value="ALL">All Status</option><option value="OPEN">Open</option><option value="RESOLVED">Resolved</option><option value="CLOSED">Closed</option></select>
+                    <button class="btn-primary" onclick="applyFilters()">Apply Filter</button>
+                    <button class="btn-success" onclick="exportToExcel()">📊 Export</button>
+                </div>
+            </div>
+            <div style="overflow-x: auto; max-height: 60vh; overflow-y: auto;">
                 <table class="data-table" id="incidentTable">
-                    <thead>
-                        <tr>
-                            <th>Incident ID</th><th>Site Name</th><th>Region</th><th>Team</th>
-                            <th>Occurred</th><th>Cleared</th><th>Outage (min)</th>
-                            <th>Impact</th><th>Root Cause</th><th>RCA Category</th><th>Status</th><th>Severity</th>
-                            <th>Opened By</th><th>Closed By</th><th>Resolution</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>ID</th><th>Site</th><th>Region</th><th>Team</th><th>Occurred</th><th>Cleared</th><th>Outage</th><th>RCA</th><th>Status</th><th>Severity</th><th>Opened By</th><th>Closed By</th></thead>
                     <tbody id="incidentTableBody"></tbody>
                 </table>
             </div>
@@ -278,41 +298,34 @@
 
         <div id="panelCreate" class="content-panel">
             <div class="form-card">
-                <h3>➕ Create New Incident Ticket</h3>
+                <h3>➕ Create New Incident (Auto XLOOKUP from Excel Template)</h3>
                 <div class="form-row">
-                    <div class="form-group"><label>Site Name</label>
-                        <select id="ticketSite">
+                    <div class="form-group"><label>Site Name *</label>
+                        <select id="ticketSite" onchange="updateSiteDetails()">
                             <option value="">Select Site</option>
                         </select>
                     </div>
-                    <div class="form-group"><label>Region (Auto)</label><input type="text" id="ticketRegion" readonly style="background:#e8e8e8;"></div>
+                    <div class="form-group"><label>Region (Auto from Excel)</label><input type="text" id="ticketRegion" readonly style="background:#e8e8e8;"></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>Team (Auto)</label><input type="text" id="ticketTeamDisplay" readonly style="background:#e8e8e8;"></div>
+                    <div class="form-group"><label>Team (Auto from Excel)</label><input type="text" id="ticketTeamDisplay" readonly style="background:#e8e8e8;"></div>
                     <div class="form-group"><label>Incident Date</label><input type="datetime-local" id="ticketDate"></div>
                 </div>
                 <div class="form-group"><label>Description</label><textarea id="ticketDesc" rows="3"></textarea></div>
                 <div class="form-row">
-                    <div class="form-group"><label>Impact</label><input type="text" id="ticketImpact" placeholder="e.g., Site Down"></div>
-                    <div class="form-group"><label>Root Cause</label><input type="text" id="ticketRootCause" placeholder="e.g., Power Failure"></div>
+                    <div class="form-group"><label>Root Cause</label><input type="text" id="ticketRootCause"></div>
+                    <div class="form-group"><label>RCA Category</label><select id="ticketRcaCategory"></select></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>RCA Category</label>
-                        <select id="ticketRcaCategory"><option>Power Failure</option><option>Transmission Fault</option><option>Hardware Fault</option></select>
-                    </div>
-                    <div class="form-group"><label>Severity</label><select id="ticketSeverity"><option>Critical</option><option>High</option><option>Medium</option></select></div>
-                </div>
-                <div class="form-row">
+                    <div class="form-group"><label>Severity</label><select id="ticketSeverity"></select></div>
                     <div class="form-group"><label>Status</label><select id="ticketStatus"><option>OPEN</option><option>RESOLVED</option><option>CLOSED</option></select></div>
-                    <div class="form-group"><label>Resolution Notes</label><input type="text" id="ticketResolution"></div>
                 </div>
                 <button class="btn-primary" onclick="createTicket()">✅ Create Ticket</button>
             </div>
         </div>
 
         <div id="panelAdmin" class="content-panel">
-            <div class="form-card">
-                <h3>👥 Add New Staff Member</h3>
+            <div class="form-card"><h3>👥 Staff Management</h3>
                 <div class="form-row"><div class="form-group"><label>Name</label><input type="text" id="staffName"></div><div class="form-group"><label>Email</label><input type="email" id="staffEmail"></div></div>
                 <div class="form-row"><div class="form-group"><label>Phone</label><input type="text" id="staffPhone"></div><div class="form-group"><label>Role</label><select id="staffRole"><option>Engineer</option><option>Team Lead</option></select></div></div>
                 <div class="form-row"><div class="form-group"><label>Team</label><select id="staffTeam"></select></div><div class="form-group"><label>Password</label><input type="text" id="staffPassword" value="welcome123"></div></div>
@@ -325,53 +338,210 @@
 </div>
 
 <script>
-    // ============= SITE REFERENCE DATA (XLOOKUP Replacement) =============
-    const siteReference = {
-        "Old Yundum 4": { region: "West Coast", team: "HQ" }, "Latriya": { region: "West Coast", team: "HQ" },
-        "Bwiam": { region: "West Coast", team: "Brikama House" }, "Brufut TAF Estate": { region: "West Coast", team: "HQ" },
-        "Pirang": { region: "West Coast", team: "Brikama House" }, "Tallinding II": { region: "Kanifing", team: "HQ" },
-        "Brufut Medina": { region: "West Coast", team: "HQ" }, "Brusubi 2": { region: "West Coast", team: "HQ" },
-        "Yuna": { region: "West Coast", team: "HQ" }, "Jabang": { region: "West Coast", team: "HQ" },
-        "Sukuta 2": { region: "West Coast", team: "HQ" }, "Jalambang": { region: "West Coast", team: "HQ" },
-        "Kerewan": { region: "North Bank", team: "Barra House" }, "Banjul Hope Street": { region: "Banjul", team: "HQ" },
-        "Kununku": { region: "Central River", team: "Mansakonko House" }, "Brusubi Turntable": { region: "West Coast", team: "HQ" },
-        "Brufut_Nema": { region: "West Coast", team: "HQ" }, "Sukuta 3": { region: "West Coast", team: "HQ" },
-        "Manjai II": { region: "Kanifing", team: "HQ" }, "Nema Nasiru": { region: "West Coast", team: "HQ" },
-        "Sinchu Alagie 3": { region: "West Coast", team: "HQ" }, "Bijilo II": { region: "West Coast", team: "HQ" }
-    };
-
-    // Complete incident data from your Excel (all IDs from 0604_11-1 to 0608_1253)
-    let tickets = [
-        { id: "0604_11-1", site: "Old Yundum 4", occurred: "2026-06-01 00:17:09", cleared: "2026-06-01 10:50:49", impact: "Jabang Estate II", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
-        { id: "0604_11-2", site: "Latriya", occurred: "2026-06-01 00:17:09", cleared: "2026-06-01 08:51:53", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
-        { id: "0604_11-3", site: "Bwiam", occurred: "2026-06-01 00:39:09", cleared: "2026-06-01 02:31:09", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Ma Ansu", closedBy: "Ma Ansu", resolution: "Generator started manually" },
-        { id: "0604_11-4", site: "Tawto", occurred: "2026-06-01 00:52:37", cleared: "2026-06-01 11:55:53", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
-        { id: "0604_11-5", site: "Brufut TAF Estate", occurred: "2026-06-01 00:58:37", cleared: "2026-06-01 01:50:41", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Ma Ansu", closedBy: "Ma Ansu", resolution: "Mains restored" },
-        { id: "0604_11-6", site: "Pirang", occurred: "2026-06-01 01:01:37", cleared: "2026-06-01 08:54:49", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
-        { id: "0604_11-7", site: "Tallinding II", occurred: "2026-06-01 01:01:37", cleared: "2026-06-01 08:46:17", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
-        { id: "0604_11-8", site: "Brufut Medina", occurred: "2026-06-01 01:02:09", cleared: "2026-06-01 11:11:21", impact: "Tanji", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
-        { id: "0604_11-9", site: "Brusubi 2", occurred: "2026-06-01 01:03:09", cleared: "2026-06-01 10:50:49", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Sanusi", closedBy: "Sanusi", resolution: "Mains restored" },
-        { id: "0604_11-10", site: "Yuna", occurred: "2026-06-02 01:18:00", cleared: "2026-06-01 02:50:41", impact: "Site Down", rootCause: "(NAWEC) Mains Failure", rcaCategory: "Power Failure", status: "CLOSED", severity: "Critical", openedBy: "Dawda C", closedBy: "Dawda C", resolution: "Mains restored" }
-    ];
-
-    // Generate all remaining ticket IDs from 0604_11-11 to 0608_1253
-    for (let i = 11; i <= 120; i++) tickets.push({ id: `0604_11-${i}`, site: "Demo Site", occurred: "2026-06-01 00:00:00", cleared: "2026-06-01 01:00:00", impact: "Site Down", rootCause: "Under investigation", rcaCategory: "Power Failure", status: "OPEN", severity: "Medium", openedBy: "System", closedBy: "", resolution: "Pending" });
-    for (let i = 1; i <= 80; i++) tickets.push({ id: `0604_11${i}`, site: "Network Site", occurred: "2026-06-02 00:00:00", cleared: "", impact: "Site Down", rootCause: "Under investigation", rcaCategory: "Power Failure", status: "OPEN", severity: "High", openedBy: "System", closedBy: "", resolution: "Pending" });
-    for (let i = 81; i <= 180; i++) tickets.push({ id: `0604_11${i}`, site: "Regional Site", occurred: "2026-06-03 00:00:00", cleared: "2026-06-03 12:00:00", impact: "Service Interruption", rootCause: "NAWEC outage", rcaCategory: "Power Failure", status: "RESOLVED", severity: "Critical", openedBy: "NOC", closedBy: "Field Team", resolution: "Generator deployed" });
-    for (let i = 181; i <= 220; i++) tickets.push({ id: `0605_${i}`, site: "Remote Site", occurred: "2026-06-04 00:00:00", cleared: "", impact: "Connectivity Lost", rootCause: "Transmission issue", rcaCategory: "Transmission Fault", status: "OPEN", severity: "High", openedBy: "NOC", closedBy: "", resolution: "Pending" });
-    for (let i = 221; i <= 253; i++) tickets.push({ id: `0606_${i}`, site: "Core Site", occurred: "2026-06-05 00:00:00", cleared: "2026-06-05 08:00:00", impact: "Full Outage", rootCause: "Hardware failure", rcaCategory: "Hardware Fault", status: "CLOSED", severity: "Critical", openedBy: "Engineer", closedBy: "Technician", resolution: "Replaced board" });
-
-    let staffMembers = [{ name: "Administrator", email: "admin@comium.com", phone: "+2209998888", role: "Admin", team: "Management", password: "admin123", isAdmin: true }];
+    // Store data from Excel
+    let siteReference = {};  // { siteName: { region, team } }
+    let severityOptions = ["Critical", "High", "Medium", "Low"];
+    let rcaOptions = ["Power Failure", "Transmission Fault", "Hardware Fault", "Environmental", "Self-Restored / Unknown"];
+    let tickets = [];
+    let staffMembers = [];
     let teams = ["Transmission Team", "Core Network Team", "Power Team", "Call Center", "OCS Team", "IPRAN Team", "DATACOM Team"];
     let currentUser = null;
     let currentFilter = { search: '', team: 'ALL', status: 'ALL' };
+    let excelLoaded = false;
 
+    // XLOOKUP function
     function xlookup(site, field) { return siteReference[site]?.[field] || "—"; }
-    function calculateOutage(occurred, cleared) { if (!occurred || !cleared) return ""; const minutes = Math.round((new Date(cleared) - new Date(occurred)) / 60000); return minutes > 0 ? minutes : ""; }
-    function generateTicketId() { const d = new Date(); return `0604_11${String(tickets.length + 1).padStart(3, '0')}`; }
 
-    function saveData() { localStorage.setItem('comium_tickets', JSON.stringify(tickets)); localStorage.setItem('comium_staff', JSON.stringify(staffMembers)); }
-    function loadData() { const saved = localStorage.getItem('comium_tickets'); if (saved) tickets = JSON.parse(saved); }
+    function calculateOutage(occurred, cleared) {
+        if (!occurred || !cleared) return "";
+        const minutes = Math.round((new Date(cleared) - new Date(occurred)) / 60000);
+        return minutes > 0 ? minutes : "";
+    }
+
+    function generateTicketId() {
+        const d = new Date();
+        return `INC-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(tickets.length+1).padStart(4,'0')}`;
+    }
+
+    // Process uploaded Excel file
+    function processExcelFile(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            let siteRefFound = false;
+            
+            // Process each sheet
+            for (let sheetName of workbook.SheetNames) {
+                const sheet = workbook.Sheets[sheetName];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+                
+                // Check if this is the Site Reference sheet (look for "Site Name" or "Row Labels" or similar)
+                if (sheetName.toLowerCase().includes('site') || sheetName.toLowerCase().includes('reference') || rows[0]?.includes('Site') || rows[0]?.includes('Row Labels')) {
+                    siteRefFound = true;
+                    siteReference = {};
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (row && row[0] && typeof row[0] === 'string' && row[0].trim()) {
+                            const siteName = row[0].trim();
+                            const region = row[2] || row[1] || "—";
+                            const team = row[5] || row[4] || "—";
+                            siteReference[siteName] = { region: region, team: team };
+                        }
+                    }
+                }
+                
+                // Check for Read Me sheet (severity and RCA definitions)
+                if (sheetName.toLowerCase().includes('read') || sheetName.toLowerCase().includes('me')) {
+                    for (let i = 0; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (row && row[0] === 'Severity') {
+                            const newSeverities = [];
+                            for (let j = i+1; j < rows.length && rows[j] && rows[j][0] && !rows[j][0].includes('Status'); j++) {
+                                if (rows[j][0] && rows[j][0].trim()) newSeverities.push(rows[j][0].trim());
+                            }
+                            if (newSeverities.length) severityOptions = newSeverities;
+                        }
+                        if (row && row[4] === 'RCA Type') {
+                            const newRcas = [];
+                            for (let j = i+1; j < rows.length && rows[j] && rows[j][4]; j++) {
+                                if (rows[j][4] && rows[j][4].trim()) newRcas.push(rows[j][4].trim());
+                            }
+                            if (newRcas.length) rcaOptions = newRcas;
+                        }
+                    }
+                }
+                
+                // Process Raw Data sheet for incidents
+                if (sheetName.toLowerCase().includes('raw') || (rows[0] && rows[0].includes('Incident ID'))) {
+                    const headers = rows[0];
+                    const incIdx = headers.indexOf('Incident ID');
+                    const siteIdx = headers.indexOf('Alarm Source') !== -1 ? headers.indexOf('Alarm Source') : headers.indexOf('Site Name');
+                    const occurredIdx = headers.indexOf('Occurred (NT)');
+                    const clearedIdx = headers.indexOf('Cleared (NT)');
+                    const rootCauseIdx = headers.indexOf('Root Cause Analysis');
+                    const rcaIdx = headers.indexOf('RCA Category');
+                    const statusIdx = headers.indexOf('Status');
+                    const severityIdx = headers.indexOf('Severity / Priority');
+                    const openedIdx = headers.indexOf('OPENED BY');
+                    const closedIdx = headers.indexOf('CLOSED BY');
+                    
+                    const newTickets = [];
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (row && row[incIdx] && row[incIdx].toString().trim()) {
+                            newTickets.push({
+                                id: row[incIdx],
+                                site: row[siteIdx] || "Unknown",
+                                occurred: row[occurredIdx] || "",
+                                cleared: row[clearedIdx] || "",
+                                description: row[headers.indexOf('Alarm Name')] || "",
+                                rootCause: row[rootCauseIdx] || "",
+                                rcaCategory: row[rcaIdx] || "",
+                                status: row[statusIdx] || "OPEN",
+                                severity: row[severityIdx] || "Medium",
+                                openedBy: row[openedIdx] || "System",
+                                closedBy: row[closedIdx] || "",
+                                resolution: row[headers.indexOf('Resolution Notes')] || ""
+                            });
+                        }
+                    }
+                    if (newTickets.length) tickets = newTickets;
+                }
+            }
+            
+            if (!siteRefFound) {
+                // Fallback to default site reference
+                siteReference = {
+                    "Old Yundum 4": { region: "West Coast", team: "HQ" },
+                    "Latriya": { region: "West Coast", team: "HQ" },
+                    "Bwiam": { region: "West Coast", team: "Brikama House" },
+                    "Brufut TAF Estate": { region: "West Coast", team: "HQ" },
+                    "Pirang": { region: "West Coast", team: "Brikama House" }
+                };
+            }
+            
+            saveData();
+            renderAll();
+            updateDropdowns();
+            displaySiteReference();
+            
+            document.getElementById('uploadStatus').innerHTML = `<span style="color:green;">✅ Excel loaded successfully! ${Object.keys(siteReference).length} sites loaded. ${tickets.length} incidents loaded.</span>`;
+            excelLoaded = true;
+            setTimeout(() => document.getElementById('uploadStatus').innerHTML = '', 4000);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function displaySiteReference() {
+        const tbody = document.querySelector('#siteReferenceTable tbody');
+        if (!tbody) return;
+        tbody.innerHTML = Object.entries(siteReference).slice(0, 50).map(([site, data]) => `
+            <tr><td>${site}</td><td>${data.region}</td><td>${data.team}</td></tr>
+        `).join('');
+        if (Object.keys(siteReference).length === 0) tbody.innerHTML = '<tr><td colspan="3">No data. Please upload Excel file.</td></tr>';
+    }
+
+    function updateDropdowns() {
+        const siteSelect = document.getElementById('ticketSite');
+        if (siteSelect) {
+            siteSelect.innerHTML = '<option value="">Select Site</option>' + Object.keys(siteReference).map(s => `<option value="${s}">${s}</option>`).join('');
+        }
+        
+        const rcaSelect = document.getElementById('ticketRcaCategory');
+        if (rcaSelect) rcaSelect.innerHTML = rcaOptions.map(o => `<option value="${o}">${o}</option>`).join('');
+        
+        const severitySelect = document.getElementById('ticketSeverity');
+        if (severitySelect) severitySelect.innerHTML = severityOptions.map(o => `<option value="${o}">${o}</option>`).join('');
+        
+        const teamSelect = document.getElementById('reportFilterTeam');
+        if (teamSelect) teamSelect.innerHTML = '<option value="ALL">All Teams</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join('');
+        
+        const staffTeamSelect = document.getElementById('staffTeam');
+        if (staffTeamSelect) staffTeamSelect.innerHTML = teams.map(t => `<option value="${t}">${t}</option>`).join('');
+    }
+
+    function updateSiteDetails() {
+        const site = document.getElementById('ticketSite').value;
+        document.getElementById('ticketRegion').value = xlookup(site, 'region');
+        document.getElementById('ticketTeamDisplay').value = xlookup(site, 'team');
+    }
+
+    function createTicket() {
+        const site = document.getElementById('ticketSite').value;
+        const date = document.getElementById('ticketDate').value;
+        const desc = document.getElementById('ticketDesc').value;
+        const rootCause = document.getElementById('ticketRootCause').value;
+        const rcaCategory = document.getElementById('ticketRcaCategory').value;
+        const severity = document.getElementById('ticketSeverity').value;
+        const status = document.getElementById('ticketStatus').value;
+        
+        if (!site || !desc) { alert("Please fill Site and Description"); return; }
+        
+        tickets.unshift({
+            id: generateTicketId(),
+            site: site,
+            occurred: date || new Date().toISOString().slice(0,19).replace('T',' '),
+            cleared: status === 'CLOSED' ? new Date().toISOString().slice(0,19).replace('T',' ') : "",
+            description: desc,
+            rootCause: rootCause || "Under investigation",
+            rcaCategory: rcaCategory,
+            status: status,
+            severity: severity,
+            openedBy: currentUser?.name || "Admin",
+            closedBy: status === 'CLOSED' ? currentUser?.name || "Admin" : "",
+            resolution: ""
+        });
+        saveData();
+        renderAll();
+        navigateTo('home');
+        alert(`✅ Ticket created with XLOOKUP from Excel template!`);
+        document.getElementById('ticketDesc').value = '';
+    }
 
     function renderIncidentTable() {
         const tbody = document.getElementById('incidentTableBody');
@@ -381,13 +551,20 @@
         if (currentFilter.team !== 'ALL') filtered = filtered.filter(t => xlookup(t.site, 'team') === currentFilter.team);
         if (currentFilter.status !== 'ALL') filtered = filtered.filter(t => t.status === currentFilter.status);
         
-        tbody.innerHTML = filtered.map(t => `
+        tbody.innerHTML = filtered.slice(0, 500).map(t => `
             <tr>
-                <td>${t.id}</td><td>${t.site}</td><td>${xlookup(t.site, 'region')}</td><td>${xlookup(t.site, 'team')}</td>
-                <td>${t.occurred || '—'}</td><td>${t.cleared || '—'}</td><td>${calculateOutage(t.occurred, t.cleared) || '—'}</td>
-                <td>${t.impact || '—'}</td><td>${t.rootCause || '—'}</td><td>${t.rcaCategory || '—'}</td>
+                <td>${t.id}</td>
+                <td>${t.site}</td>
+                <td>${xlookup(t.site, 'region')}</td>
+                <td>${xlookup(t.site, 'team')}</td>
+                <td>${t.occurred || '—'}</td>
+                <td>${t.cleared || '—'}</td>
+                <td>${calculateOutage(t.occurred, t.cleared) || '—'}</td>
+                <td>${t.rcaCategory || '—'}</td>
                 <td><span style="background:${t.status === 'OPEN' ? '#fee2e2' : t.status === 'RESOLVED' ? '#d5f5e3' : '#e5e7eb'}; padding:4px 8px; border-radius:20px;">${t.status}</span></td>
-                <td>${t.severity || '—'}</td><td>${t.openedBy || '—'}</td><td>${t.closedBy || '—'}</td><td>${t.resolution || '—'}</td>
+                <td>${t.severity || '—'}</td>
+                <td>${t.openedBy || '—'}</td>
+                <td>${t.closedBy || '—'}</td>
             </tr>
         `).join('');
     }
@@ -397,57 +574,89 @@
     function renderHome() {
         const stats = getStats();
         document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card" onclick="filterByStatus('ALL')"><div class="stat-number">${stats.total}</div><div>📋 Total Incidents</div></div>
-            <div class="stat-card" onclick="filterByStatus('OPEN')"><div class="stat-number">${stats.open}</div><div>🟠 Open</div></div>
-            <div class="stat-card" onclick="filterByStatus('RESOLVED')"><div class="stat-number">${stats.resolved}</div><div>✅ Resolved</div></div>
-            <div class="stat-card" onclick="filterByStatus('CLOSED')"><div class="stat-number">${stats.closed}</div><div>🔒 Closed</div></div>`;
+            <div class="stat-card"><div class="stat-number">${stats.total}</div><div>📋 Total</div></div>
+            <div class="stat-card"><div class="stat-number">${stats.open}</div><div>🟠 Open</div></div>
+            <div class="stat-card"><div class="stat-number">${stats.resolved}</div><div>✅ Resolved</div></div>
+            <div class="stat-card"><div class="stat-number">${stats.closed}</div><div>🔒 Closed</div></div>`;
         document.getElementById('recentList').innerHTML = tickets.slice(0, 10).map(t => `<div style="padding:8px; border-bottom:1px solid var(--border-color);"><strong>${t.id}</strong> - ${t.site} | ${t.status}</div>`).join('');
     }
 
-    function filterByStatus(status) { currentFilter = { search: '', team: 'ALL', status: status }; document.getElementById('reportFilterSearch').value = ''; document.getElementById('reportFilterTeam').value = 'ALL'; document.getElementById('reportFilterStatus').value = status; renderIncidentTable(); navigateTo('incidentReport'); }
-    function applyFilters() { currentFilter.search = document.getElementById('reportFilterSearch').value.toLowerCase(); currentFilter.team = document.getElementById('reportFilterTeam').value; currentFilter.status = document.getElementById('reportFilterStatus').value; renderIncidentTable(); }
-    
+    function applyFilters() {
+        currentFilter.search = document.getElementById('reportFilterSearch').value.toLowerCase();
+        currentFilter.team = document.getElementById('reportFilterTeam').value;
+        currentFilter.status = document.getElementById('reportFilterStatus').value;
+        renderIncidentTable();
+    }
+
     function exportToExcel() {
         let filtered = tickets;
         if (currentFilter.search) filtered = filtered.filter(t => t.site.toLowerCase().includes(currentFilter.search) || t.id.toLowerCase().includes(currentFilter.search));
         if (currentFilter.team !== 'ALL') filtered = filtered.filter(t => xlookup(t.site, 'team') === currentFilter.team);
         if (currentFilter.status !== 'ALL') filtered = filtered.filter(t => t.status === currentFilter.status);
         
-        const data = filtered.map(t => ({ 'Incident ID': t.id, 'Site Name': t.site, 'Region': xlookup(t.site, 'region'), 'Team': xlookup(t.site, 'team'), 'Occurred': t.occurred, 'Cleared': t.cleared, 'Outage (min)': calculateOutage(t.occurred, t.cleared), 'Impact': t.impact, 'Root Cause': t.rootCause, 'RCA Category': t.rcaCategory, 'Status': t.status, 'Severity': t.severity, 'Opened By': t.openedBy, 'Closed By': t.closedBy, 'Resolution': t.resolution }));
-        const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Incident Report'); XLSX.writeFile(wb, `Incident_Report_${new Date().toISOString().slice(0,19)}.xlsx`); alert('Exported!');
+        const data = filtered.map(t => ({ 'ID': t.id, 'Site': t.site, 'Region': xlookup(t.site, 'region'), 'Team': xlookup(t.site, 'team'), 'Occurred': t.occurred, 'Cleared': t.cleared, 'Outage(min)': calculateOutage(t.occurred, t.cleared), 'RCA': t.rcaCategory, 'Status': t.status, 'Severity': t.severity }));
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Incident Report');
+        XLSX.writeFile(wb, `Incident_Report_${new Date().toISOString().slice(0,19)}.xlsx`);
+        alert('Exported!');
     }
 
-    function createTicket() {
-        const site = document.getElementById('ticketSite').value, date = document.getElementById('ticketDate').value, desc = document.getElementById('ticketDesc').value, impact = document.getElementById('ticketImpact').value, rootCause = document.getElementById('ticketRootCause').value, rcaCategory = document.getElementById('ticketRcaCategory').value, severity = document.getElementById('ticketSeverity').value, status = document.getElementById('ticketStatus').value, resolution = document.getElementById('ticketResolution').value;
-        if (!site || !desc) { alert("Fill required fields"); return; }
-        tickets.unshift({ id: generateTicketId(), site: site, occurred: date || new Date().toISOString().slice(0,19).replace('T',' '), cleared: status === 'CLOSED' ? new Date().toISOString().slice(0,19).replace('T',' ') : "", description: desc, impact: impact || "Site Down", rootCause: rootCause || "Under investigation", rcaCategory: rcaCategory, status: status, severity: severity, resolution: resolution || "Pending", openedBy: currentUser?.name || "Admin", closedBy: status === 'CLOSED' ? currentUser?.name || "Admin" : "" });
-        saveData(); renderAll(); navigateTo('home'); alert(`✅ Ticket created!`);
-        document.getElementById('ticketDesc').value = '';
+    function saveData() { localStorage.setItem('comium_tickets', JSON.stringify(tickets)); localStorage.setItem('comium_staff', JSON.stringify(staffMembers)); localStorage.setItem('comium_siteRef', JSON.stringify(siteReference)); }
+    function loadData() {
+        const saved = localStorage.getItem('comium_tickets'); if (saved) tickets = JSON.parse(saved);
+        const savedStaff = localStorage.getItem('comium_staff'); if (savedStaff) staffMembers = JSON.parse(savedStaff);
+        const savedRef = localStorage.getItem('comium_siteRef'); if (savedRef) siteReference = JSON.parse(savedRef);
+        if (tickets.length === 0) tickets = [];
+        if (staffMembers.length === 0) staffMembers = [{ name: "Administrator", email: "admin@comium.com", phone: "+2209998888", role: "Admin", team: "Management", password: "admin123", isAdmin: true }];
     }
 
-    function updateSiteDetails() { const site = document.getElementById('ticketSite').value; document.getElementById('ticketRegion').value = xlookup(site, 'region'); document.getElementById('ticketTeamDisplay').value = xlookup(site, 'team'); }
-
-    function renderTeamSelectors() {
-        const options = teams.map(t => `<option value="${t}">${t}</option>`).join('');
-        document.getElementById('staffTeam').innerHTML = options;
-        document.getElementById('reportFilterTeam').innerHTML = '<option value="ALL">All Teams</option>' + options;
-        document.getElementById('ticketSite').innerHTML = '<option value="">Select Site</option>' + Object.keys(siteReference).map(s => `<option value="${s}">${s}</option>`).join('');
+    function addStaff() {
+        const name = document.getElementById('staffName').value.trim(), email = document.getElementById('staffEmail').value.trim(), phone = document.getElementById('staffPhone').value.trim(), role = document.getElementById('staffRole').value, team = document.getElementById('staffTeam').value, password = document.getElementById('staffPassword').value;
+        if (!name || !email) { alert("Fill fields"); return; }
+        if (staffMembers.find(s => s.email === email)) { alert("User exists"); return; }
+        staffMembers.push({ name, email, phone, role, team, password }); saveData(); renderStaffList(); alert(`✅ Staff ${name} added`);
     }
-
-    function addStaff() { const name = document.getElementById('staffName').value.trim(), email = document.getElementById('staffEmail').value.trim(), phone = document.getElementById('staffPhone').value.trim(), role = document.getElementById('staffRole').value, team = document.getElementById('staffTeam').value, password = document.getElementById('staffPassword').value; if (!name || !email) { alert("Fill fields"); return; } if (staffMembers.find(s => s.email === email)) { alert("User exists"); return; } staffMembers.push({ name, email, phone, role, team, password }); saveData(); renderStaffList(); alert(`✅ Staff ${name} added`); }
-    function renderStaffList() { const container = document.getElementById('staffList'); const nonAdmin = staffMembers.filter(s => !s.isAdmin); container.innerHTML = nonAdmin.map(s => `<div style="padding:10px; border-bottom:1px solid var(--border-color);"><strong>${s.name}</strong><br>${s.email}<br><button onclick="deleteStaff('${s.email}')" style="background:#e74c3c; padding:5px 10px; border:none; border-radius:5px; margin-top:5px;">Delete</button></div>`).join(''); }
+    function renderStaffList() {
+        const container = document.getElementById('staffList'); if (!container) return;
+        const nonAdmin = staffMembers.filter(s => !s.isAdmin);
+        container.innerHTML = nonAdmin.map(s => `<div style="padding:10px; border-bottom:1px solid var(--border-color);"><strong>${s.name}</strong><br>${s.email}<br><button onclick="deleteStaff('${s.email}')" style="background:#e74c3c; padding:5px 10px; margin-top:5px;">Delete</button></div>`).join('');
+    }
     function deleteStaff(email) { if (confirm("Delete?")) { staffMembers = staffMembers.filter(s => s.email !== email); saveData(); renderStaffList(); } }
 
-    function renderAll() { renderHome(); renderIncidentTable(); }
-    function navigateTo(page) { document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById(`panel${page.charAt(0).toUpperCase() + page.slice(1)}`).classList.add('active'); if(event?.target) event.target.closest('.nav-item').classList.add('active'); const titles = { home: '🏠 Dashboard', incidentReport: '📋 Incident Report', create: '➕ Create Ticket', admin: '⚙️ Admin' }; document.getElementById('pageTitle').innerHTML = titles[page] || 'Dashboard'; if(page === 'home') renderHome(); if(page === 'incidentReport') renderIncidentTable(); if(page === 'create') document.getElementById('ticketDate').value = new Date().toISOString().slice(0,16); if(page === 'admin') renderStaffList(); }
+    function renderAll() { renderHome(); renderIncidentTable(); displaySiteReference(); }
+    function navigateTo(page) {
+        document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById(`panel${page.charAt(0).toUpperCase() + page.slice(1)}`).classList.add('active');
+        if(event?.target) event.target.closest('.nav-item').classList.add('active');
+        const titles = { home: '🏠 Dashboard', upload: '📎 Load Excel', incidentReport: '📋 Incident Report', create: '➕ Create Ticket', admin: '⚙️ Admin' };
+        document.getElementById('pageTitle').innerHTML = titles[page] || 'Dashboard';
+        if(page === 'home') renderHome();
+        if(page === 'incidentReport') renderIncidentTable();
+        if(page === 'create') { document.getElementById('ticketDate').value = new Date().toISOString().slice(0,16); updateDropdowns(); }
+        if(page === 'admin') renderStaffList();
+        if(page === 'upload') displaySiteReference();
+    }
     function toggleTheme() { document.body.classList.toggle('dark'); localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light'); renderAll(); }
-    function doLogin() { const email = document.getElementById('loginEmail').value.trim(), password = document.getElementById('loginPassword').value, user = staffMembers.find(s => s.email === email); if(user && user.password === password) { currentUser = user; document.getElementById('loginPage').style.display = 'none'; document.getElementById('appContainer').style.display = 'block'; document.getElementById('userDisplay').innerHTML = `👤 ${user.name}`; const adminNav = document.getElementById('adminNav'); adminNav.style.display = user.role === 'Admin' ? 'flex' : 'none'; renderAll(); renderTeamSelectors(); } else { document.getElementById('loginError').innerHTML = '❌ Invalid credentials'; document.getElementById('loginError').style.display = 'block'; setTimeout(() => { document.getElementById('loginError').style.display = 'none'; }, 3000); } }
+    function doLogin() {
+        const email = document.getElementById('loginEmail').value.trim(), password = document.getElementById('loginPassword').value, user = staffMembers.find(s => s.email === email);
+        if(user && user.password === password) {
+            currentUser = user;
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            document.getElementById('userDisplay').innerHTML = `👤 ${user.name}`;
+            const adminNav = document.getElementById('adminNav');
+            adminNav.style.display = user.role === 'Admin' ? 'flex' : 'none';
+            renderAll(); updateDropdowns();
+        } else { document.getElementById('loginError').innerHTML = '❌ Invalid credentials'; document.getElementById('loginError').style.display = 'block'; setTimeout(() => { document.getElementById('loginError').style.display = 'none'; }, 3000); }
+    }
     function doLogout() { currentUser = null; document.getElementById('loginPage').style.display = 'flex'; document.getElementById('appContainer').style.display = 'none'; }
 
     const savedTheme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
     document.body.classList.add(savedTheme);
     loadData();
-    renderTeamSelectors();
+    updateDropdowns();
 </script>
 </body>
 </html>
