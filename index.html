@@ -197,8 +197,9 @@
             text-align: center;
             cursor: pointer;
             margin-bottom: 20px;
+            transition: all 0.3s;
         }
-        .upload-area:hover { border-color: var(--accent); }
+        .upload-area:hover { border-color: var(--accent); background: rgba(192,57,43,0.05); }
 
         @media (max-width: 768px) {
             .sidebar { width: 70px; }
@@ -210,6 +211,7 @@
 </head>
 <body>
 
+<!-- LOGIN PAGE -->
 <div id="loginPage" class="login-container">
     <div class="login-card">
         <div style="font-size: 48px;">🔴</div>
@@ -222,8 +224,10 @@
     </div>
 </div>
 
+<!-- MAIN APP -->
 <div id="appContainer" style="display: none;">
 <div class="app-container">
+    <!-- SIDEBAR MENU -->
     <div class="sidebar">
         <div class="sidebar-header">
             <div style="font-size: 32px;">🔴</div>
@@ -232,13 +236,14 @@
         </div>
         <div class="sidebar-nav">
             <div class="nav-item active" onclick="navigateTo('home')"><span>🏠</span> <span>Home</span></div>
-            <div class="nav-item" onclick="navigateTo('upload')"><span>📎</span> <span>Load Excel Template</span></div>
-            <div class="nav-item" onclick="navigateTo('incidentReport')"><span>📋</span> <span>Incident Report</span></div>
-            <div class="nav-item" onclick="navigateTo('create')"><span>➕</span> <span>Create Ticket</span></div>
-            <div class="nav-item" onclick="navigateTo('admin')" id="adminNav"><span>⚙️</span> <span>Admin</span></div>
+            <div class="nav-item" onclick="navigateTo('upload')"><span>📎</span> <span>📎 Load Excel Template</span></div>
+            <div class="nav-item" onclick="navigateTo('incidentReport')"><span>📋</span> <span>📋 Incident Report</span></div>
+            <div class="nav-item" onclick="navigateTo('create')"><span>➕</span> <span>➕ Create Ticket</span></div>
+            <div class="nav-item" onclick="navigateTo('admin')" id="adminNav"><span>⚙️</span> <span>⚙️ Admin</span></div>
         </div>
     </div>
 
+    <!-- MAIN CONTENT -->
     <div class="main-content">
         <div class="top-bar">
             <div class="page-title" id="pageTitle">🏠 Dashboard</div>
@@ -249,34 +254,49 @@
             </div>
         </div>
 
+        <!-- HOME PANEL -->
         <div id="panelHome" class="content-panel active">
             <div class="stats-grid" id="statsGrid"></div>
             <div class="form-card"><h3>📋 Recent Incidents</h3><div id="recentList"></div></div>
         </div>
 
+        <!-- UPLOAD EXCEL PANEL -->
         <div id="panelUpload" class="content-panel">
             <div class="form-card">
-                <h3>📎 Upload Your Excel Template (Raw Data, Site Reference, Read Me)</h3>
-                <p style="margin-bottom: 15px;">Upload your Excel file with all 3 sheets. The system will extract Site Reference data and use it for XLOOKUP functionality.</p>
+                <h3>📎 Step 1: Upload Your Excel Template</h3>
+                <p style="margin-bottom: 15px;">Upload your Excel file with 3 sheets: <strong>Raw Data</strong>, <strong>Site Reference</strong>, and <strong>Read Me</strong>. The system will extract all data and make XLOOKUP work automatically.</p>
+                
                 <div class="upload-area" onclick="document.getElementById('excelFile').click()">
                     📂 Click or Drag & Drop your Excel file here<br>
                     <small style="color: var(--text-secondary);">Supports .xlsx, .xls files with multiple sheets</small>
                 </div>
                 <input type="file" id="excelFile" accept=".xlsx,.xls" style="display: none;" onchange="processExcelFile(this)">
-                <div id="uploadStatus" style="margin-top: 15px;"></div>
-                <div id="excelPreview" style="margin-top: 20px;"></div>
+                <div id="uploadStatus" style="margin-top: 15px; font-weight: bold;"></div>
             </div>
+
             <div class="form-card">
-                <h3>📊 Site Reference Data (XLOOKUP Source)</h3>
+                <h3>📊 Step 2: Site Reference Data (XLOOKUP Source)</h3>
+                <p style="margin-bottom: 10px;">This data comes from your "Site Reference" sheet. When you select a site, Region and Team will auto-fill.</p>
                 <div style="overflow-x: auto; max-height: 300px; overflow-y: auto;">
                     <table class="data-table" id="siteReferenceTable">
                         <thead><tr><th>Site Name</th><th>Region</th><th>Team</th></tr></thead>
-                        <tbody><tr><td colspan="3">Upload Excel to see site reference data</td></tr></tbody>
-                    建立在
+                        <tbody><tr><td colspan="3">Waiting for Excel upload...点击上传Excel文件</td></tr></tbody>
+                    </table>
+                </div>
+                <p style="margin-top: 10px; font-size: 12px; color: var(--text-secondary);">✅ After upload, Region and Team will auto-populate when creating tickets</p>
+            </div>
+
+            <div class="form-card">
+                <h3>📊 Step 3: Current Data Status</h3>
+                <div id="dataStatus">
+                    <p>📋 Total Incidents Loaded: <span id="totalIncidentsCount">0</span></p>
+                    <p>📍 Total Sites in Reference: <span id="totalSitesCount">0</span></p>
+                    <p>⚙️ Excel Loaded: <span id="excelLoadedStatus">No</span></p>
                 </div>
             </div>
         </div>
 
+        <!-- INCIDENT REPORT PANEL -->
         <div id="panelIncidentReport" class="content-panel">
             <div class="form-card">
                 <h3>📋 Incident Report</h3>
@@ -285,35 +305,37 @@
                     <select id="reportFilterTeam"><option value="ALL">All Teams</option></select>
                     <select id="reportFilterStatus"><option value="ALL">All Status</option><option value="OPEN">Open</option><option value="RESOLVED">Resolved</option><option value="CLOSED">Closed</option></select>
                     <button class="btn-primary" onclick="applyFilters()">Apply Filter</button>
-                    <button class="btn-success" onclick="exportToExcel()">📊 Export</button>
+                    <button class="btn-success" onclick="exportToExcel()">📊 Export to Excel</button>
                 </div>
             </div>
             <div style="overflow-x: auto; max-height: 60vh; overflow-y: auto;">
                 <table class="data-table" id="incidentTable">
-                    <thead><tr><th>ID</th><th>Site</th><th>Region</th><th>Team</th><th>Occurred</th><th>Cleared</th><th>Outage</th><th>RCA</th><th>Status</th><th>Severity</th><th>Opened By</th><th>Closed By</th></thead>
+                    <thead><tr><th>ID</th><th>Site</th><th>Region</th><th>Team</th><th>Occurred</th><th>Cleared</th><th>Outage</th><th>RCA</th><th>Status</th><th>Severity</th><th>Opened By</th><th>Closed By</th></tr></thead>
                     <tbody id="incidentTableBody"></tbody>
                 </table>
             </div>
         </div>
 
+        <!-- CREATE TICKET PANEL -->
         <div id="panelCreate" class="content-panel">
             <div class="form-card">
-                <h3>➕ Create New Incident (Auto XLOOKUP from Excel Template)</h3>
+                <h3>➕ Create New Incident (XLOOKUP Working)</h3>
+                <p style="margin-bottom: 15px;">Select a site - Region and Team will auto-fill from your uploaded Excel data!</p>
                 <div class="form-row">
                     <div class="form-group"><label>Site Name *</label>
                         <select id="ticketSite" onchange="updateSiteDetails()">
                             <option value="">Select Site</option>
                         </select>
                     </div>
-                    <div class="form-group"><label>Region (Auto from Excel)</label><input type="text" id="ticketRegion" readonly style="background:#e8e8e8;"></div>
+                    <div class="form-group"><label>Region (Auto from Excel)</label><input type="text" id="ticketRegion" readonly style="background:#e8e8e8;" placeholder="Will auto-fill"></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>Team (Auto from Excel)</label><input type="text" id="ticketTeamDisplay" readonly style="background:#e8e8e8;"></div>
+                    <div class="form-group"><label>Team (Auto from Excel)</label><input type="text" id="ticketTeamDisplay" readonly style="background:#e8e8e8;" placeholder="Will auto-fill"></div>
                     <div class="form-group"><label>Incident Date</label><input type="datetime-local" id="ticketDate"></div>
                 </div>
-                <div class="form-group"><label>Description</label><textarea id="ticketDesc" rows="3"></textarea></div>
+                <div class="form-group"><label>Description</label><textarea id="ticketDesc" rows="3" placeholder="Describe the issue..."></textarea></div>
                 <div class="form-row">
-                    <div class="form-group"><label>Root Cause</label><input type="text" id="ticketRootCause"></div>
+                    <div class="form-group"><label>Root Cause</label><input type="text" id="ticketRootCause" placeholder="e.g., NAWEC Mains Failure"></div>
                     <div class="form-group"><label>RCA Category</label><select id="ticketRcaCategory"></select></div>
                 </div>
                 <div class="form-row">
@@ -324,6 +346,7 @@
             </div>
         </div>
 
+        <!-- ADMIN PANEL -->
         <div id="panelAdmin" class="content-panel">
             <div class="form-card"><h3>👥 Staff Management</h3>
                 <div class="form-row"><div class="form-group"><label>Name</label><input type="text" id="staffName"></div><div class="form-group"><label>Email</label><input type="email" id="staffEmail"></div></div>
@@ -339,7 +362,7 @@
 
 <script>
     // Store data from Excel
-    let siteReference = {};  // { siteName: { region, team } }
+    let siteReference = {};
     let severityOptions = ["Critical", "High", "Medium", "Low"];
     let rcaOptions = ["Power Failure", "Transmission Fault", "Hardware Fault", "Environmental", "Self-Restored / Unknown"];
     let tickets = [];
@@ -349,7 +372,6 @@
     let currentFilter = { search: '', team: 'ALL', status: 'ALL' };
     let excelLoaded = false;
 
-    // XLOOKUP function
     function xlookup(site, field) { return siteReference[site]?.[field] || "—"; }
 
     function calculateOutage(occurred, cleared) {
@@ -363,25 +385,27 @@
         return `INC-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(tickets.length+1).padStart(4,'0')}`;
     }
 
-    // Process uploaded Excel file
     function processExcelFile(input) {
         const file = input.files[0];
         if (!file) return;
 
+        document.getElementById('uploadStatus').innerHTML = '<span style="color:blue;">⏳ Processing Excel file...</span>';
+        
         const reader = new FileReader();
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
             
             let siteRefFound = false;
+            let incidentCount = 0;
             
-            // Process each sheet
             for (let sheetName of workbook.SheetNames) {
                 const sheet = workbook.Sheets[sheetName];
                 const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
                 
-                // Check if this is the Site Reference sheet (look for "Site Name" or "Row Labels" or similar)
-                if (sheetName.toLowerCase().includes('site') || sheetName.toLowerCase().includes('reference') || rows[0]?.includes('Site') || rows[0]?.includes('Row Labels')) {
+                // Site Reference Sheet
+                if (sheetName.toLowerCase().includes('site') || sheetName.toLowerCase().includes('reference') || 
+                    (rows[0] && (rows[0].includes('Site') || rows[0].includes('Row Labels')))) {
                     siteRefFound = true;
                     siteReference = {};
                     for (let i = 1; i < rows.length; i++) {
@@ -390,12 +414,14 @@
                             const siteName = row[0].trim();
                             const region = row[2] || row[1] || "—";
                             const team = row[5] || row[4] || "—";
-                            siteReference[siteName] = { region: region, team: team };
+                            if (region !== "—" && team !== "—") {
+                                siteReference[siteName] = { region: region, team: team };
+                            }
                         }
                     }
                 }
                 
-                // Check for Read Me sheet (severity and RCA definitions)
+                // Read Me Sheet
                 if (sheetName.toLowerCase().includes('read') || sheetName.toLowerCase().includes('me')) {
                     for (let i = 0; i < rows.length; i++) {
                         const row = rows[i];
@@ -416,8 +442,8 @@
                     }
                 }
                 
-                // Process Raw Data sheet for incidents
-                if (sheetName.toLowerCase().includes('raw') || (rows[0] && rows[0].includes('Incident ID'))) {
+                // Raw Data Sheet
+                if (rows[0] && (rows[0].includes('Incident ID') || rows[0].includes('Incident ID'))) {
                     const headers = rows[0];
                     const incIdx = headers.indexOf('Incident ID');
                     const siteIdx = headers.indexOf('Alarm Source') !== -1 ? headers.indexOf('Alarm Source') : headers.indexOf('Site Name');
@@ -450,12 +476,14 @@
                             });
                         }
                     }
-                    if (newTickets.length) tickets = newTickets;
+                    if (newTickets.length) {
+                        tickets = newTickets;
+                        incidentCount = newTickets.length;
+                    }
                 }
             }
             
-            if (!siteRefFound) {
-                // Fallback to default site reference
+            if (!siteRefFound || Object.keys(siteReference).length === 0) {
                 siteReference = {
                     "Old Yundum 4": { region: "West Coast", team: "HQ" },
                     "Latriya": { region: "West Coast", team: "HQ" },
@@ -469,27 +497,44 @@
             renderAll();
             updateDropdowns();
             displaySiteReference();
+            updateDataStatus();
             
-            document.getElementById('uploadStatus').innerHTML = `<span style="color:green;">✅ Excel loaded successfully! ${Object.keys(siteReference).length} sites loaded. ${tickets.length} incidents loaded.</span>`;
             excelLoaded = true;
-            setTimeout(() => document.getElementById('uploadStatus').innerHTML = '', 4000);
+            document.getElementById('uploadStatus').innerHTML = `<span style="color:green;">✅ Excel loaded successfully! ${Object.keys(siteReference).length} sites loaded. ${incidentCount} incidents loaded. XLOOKUP is now active!</span>`;
+            setTimeout(() => document.getElementById('uploadStatus').innerHTML = '', 5000);
         };
         reader.readAsArrayBuffer(file);
+    }
+
+    function updateDataStatus() {
+        document.getElementById('totalIncidentsCount').innerText = tickets.length;
+        document.getElementById('totalSitesCount').innerText = Object.keys(siteReference).length;
+        document.getElementById('excelLoadedStatus').innerHTML = excelLoaded ? '<span style="color:green;">✅ Yes</span>' : '<span style="color:orange;">⏳ Not yet - please upload</span>';
     }
 
     function displaySiteReference() {
         const tbody = document.querySelector('#siteReferenceTable tbody');
         if (!tbody) return;
-        tbody.innerHTML = Object.entries(siteReference).slice(0, 50).map(([site, data]) => `
-            <tr><td>${site}</td><td>${data.region}</td><td>${data.team}</td></tr>
-        `).join('');
-        if (Object.keys(siteReference).length === 0) tbody.innerHTML = '<tr><td colspan="3">No data. Please upload Excel file.</td></tr>';
+        const sites = Object.entries(siteReference);
+        if (sites.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3">No data. Please upload your Excel file using the upload area above.</td></tr>';
+        } else {
+            tbody.innerHTML = sites.slice(0, 100).map(([site, data]) => `
+                <tr><td>${site}</td><td>${data.region}</td><td>${data.team}</td></tr>
+            `).join('');
+            if (sites.length > 100) tbody.innerHTML += `<tr><td colspan="3">... and ${sites.length - 100} more sites</td></tr>`;
+        }
     }
 
     function updateDropdowns() {
         const siteSelect = document.getElementById('ticketSite');
         if (siteSelect) {
-            siteSelect.innerHTML = '<option value="">Select Site</option>' + Object.keys(siteReference).map(s => `<option value="${s}">${s}</option>`).join('');
+            const sites = Object.keys(siteReference);
+            if (sites.length > 0) {
+                siteSelect.innerHTML = '<option value="">Select Site</option>' + sites.map(s => `<option value="${s}">${s}</option>`).join('');
+            } else {
+                siteSelect.innerHTML = '<option value="">Select Site (Upload Excel first)</option>';
+            }
         }
         
         const rcaSelect = document.getElementById('ticketRcaCategory');
@@ -539,8 +584,9 @@
         saveData();
         renderAll();
         navigateTo('home');
-        alert(`✅ Ticket created with XLOOKUP from Excel template!`);
+        alert(`✅ Ticket ${generateTicketId()} created! Region and Team auto-filled from your Excel data.`);
         document.getElementById('ticketDesc').value = '';
+        document.getElementById('ticketRootCause').value = '';
     }
 
     function renderIncidentTable() {
@@ -550,6 +596,11 @@
         if (currentFilter.search) filtered = filtered.filter(t => t.site.toLowerCase().includes(currentFilter.search) || t.id.toLowerCase().includes(currentFilter.search));
         if (currentFilter.team !== 'ALL') filtered = filtered.filter(t => xlookup(t.site, 'team') === currentFilter.team);
         if (currentFilter.status !== 'ALL') filtered = filtered.filter(t => t.status === currentFilter.status);
+        
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="12">No incidents found. Upload Excel or create tickets.</td></tr>';
+            return;
+        }
         
         tbody.innerHTML = filtered.slice(0, 500).map(t => `
             <tr>
@@ -569,12 +620,19 @@
         `).join('');
     }
 
-    function getStats() { return { total: tickets.length, open: tickets.filter(t => t.status === 'OPEN').length, resolved: tickets.filter(t => t.status === 'RESOLVED').length, closed: tickets.filter(t => t.status === 'CLOSED').length }; }
+    function getStats() { 
+        return { 
+            total: tickets.length, 
+            open: tickets.filter(t => t.status === 'OPEN').length, 
+            resolved: tickets.filter(t => t.status === 'RESOLVED').length, 
+            closed: tickets.filter(t => t.status === 'CLOSED').length 
+        }; 
+    }
     
     function renderHome() {
         const stats = getStats();
         document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card"><div class="stat-number">${stats.total}</div><div>📋 Total</div></div>
+            <div class="stat-card"><div class="stat-number">${stats.total}</div><div>📋 Total Incidents</div></div>
             <div class="stat-card"><div class="stat-number">${stats.open}</div><div>🟠 Open</div></div>
             <div class="stat-card"><div class="stat-number">${stats.resolved}</div><div>✅ Resolved</div></div>
             <div class="stat-card"><div class="stat-number">${stats.closed}</div><div>🔒 Closed</div></div>`;
@@ -594,20 +652,33 @@
         if (currentFilter.team !== 'ALL') filtered = filtered.filter(t => xlookup(t.site, 'team') === currentFilter.team);
         if (currentFilter.status !== 'ALL') filtered = filtered.filter(t => t.status === currentFilter.status);
         
-        const data = filtered.map(t => ({ 'ID': t.id, 'Site': t.site, 'Region': xlookup(t.site, 'region'), 'Team': xlookup(t.site, 'team'), 'Occurred': t.occurred, 'Cleared': t.cleared, 'Outage(min)': calculateOutage(t.occurred, t.cleared), 'RCA': t.rcaCategory, 'Status': t.status, 'Severity': t.severity }));
+        const data = filtered.map(t => ({ 
+            'ID': t.id, 'Site': t.site, 'Region': xlookup(t.site, 'region'), 'Team': xlookup(t.site, 'team'),
+            'Occurred': t.occurred, 'Cleared': t.cleared, 'Outage(min)': calculateOutage(t.occurred, t.cleared),
+            'RCA': t.rcaCategory, 'Status': t.status, 'Severity': t.severity 
+        }));
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Incident Report');
         XLSX.writeFile(wb, `Incident_Report_${new Date().toISOString().slice(0,19)}.xlsx`);
-        alert('Exported!');
+        alert('Report exported!');
     }
 
-    function saveData() { localStorage.setItem('comium_tickets', JSON.stringify(tickets)); localStorage.setItem('comium_staff', JSON.stringify(staffMembers)); localStorage.setItem('comium_siteRef', JSON.stringify(siteReference)); }
+    function saveData() { 
+        localStorage.setItem('comium_tickets', JSON.stringify(tickets)); 
+        localStorage.setItem('comium_staff', JSON.stringify(staffMembers)); 
+        localStorage.setItem('comium_siteRef', JSON.stringify(siteReference));
+        localStorage.setItem('comium_rcaOptions', JSON.stringify(rcaOptions));
+        localStorage.setItem('comium_severityOptions', JSON.stringify(severityOptions));
+    }
+    
     function loadData() {
         const saved = localStorage.getItem('comium_tickets'); if (saved) tickets = JSON.parse(saved);
         const savedStaff = localStorage.getItem('comium_staff'); if (savedStaff) staffMembers = JSON.parse(savedStaff);
         const savedRef = localStorage.getItem('comium_siteRef'); if (savedRef) siteReference = JSON.parse(savedRef);
-        if (tickets.length === 0) tickets = [];
+        const savedRca = localStorage.getItem('comium_rcaOptions'); if (savedRca) rcaOptions = JSON.parse(savedRca);
+        const savedSev = localStorage.getItem('comium_severityOptions'); if (savedSev) severityOptions = JSON.parse(savedSev);
+        if (Object.keys(siteReference).length > 0) excelLoaded = true;
         if (staffMembers.length === 0) staffMembers = [{ name: "Administrator", email: "admin@comium.com", phone: "+2209998888", role: "Admin", team: "Management", password: "admin123", isAdmin: true }];
     }
 
@@ -617,28 +688,34 @@
         if (staffMembers.find(s => s.email === email)) { alert("User exists"); return; }
         staffMembers.push({ name, email, phone, role, team, password }); saveData(); renderStaffList(); alert(`✅ Staff ${name} added`);
     }
+    
     function renderStaffList() {
         const container = document.getElementById('staffList'); if (!container) return;
         const nonAdmin = staffMembers.filter(s => !s.isAdmin);
+        if (nonAdmin.length === 0) { container.innerHTML = '<p>No staff members yet.</p>'; return; }
         container.innerHTML = nonAdmin.map(s => `<div style="padding:10px; border-bottom:1px solid var(--border-color);"><strong>${s.name}</strong><br>${s.email}<br><button onclick="deleteStaff('${s.email}')" style="background:#e74c3c; padding:5px 10px; margin-top:5px;">Delete</button></div>`).join('');
     }
+    
     function deleteStaff(email) { if (confirm("Delete?")) { staffMembers = staffMembers.filter(s => s.email !== email); saveData(); renderStaffList(); } }
 
-    function renderAll() { renderHome(); renderIncidentTable(); displaySiteReference(); }
+    function renderAll() { renderHome(); renderIncidentTable(); displaySiteReference(); updateDataStatus(); }
+    
     function navigateTo(page) {
         document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.getElementById(`panel${page.charAt(0).toUpperCase() + page.slice(1)}`).classList.add('active');
         if(event?.target) event.target.closest('.nav-item').classList.add('active');
-        const titles = { home: '🏠 Dashboard', upload: '📎 Load Excel', incidentReport: '📋 Incident Report', create: '➕ Create Ticket', admin: '⚙️ Admin' };
+        const titles = { home: '🏠 Dashboard', upload: '📎 Load Excel Template', incidentReport: '📋 Incident Report', create: '➕ Create Ticket', admin: '⚙️ Admin' };
         document.getElementById('pageTitle').innerHTML = titles[page] || 'Dashboard';
         if(page === 'home') renderHome();
         if(page === 'incidentReport') renderIncidentTable();
         if(page === 'create') { document.getElementById('ticketDate').value = new Date().toISOString().slice(0,16); updateDropdowns(); }
         if(page === 'admin') renderStaffList();
-        if(page === 'upload') displaySiteReference();
+        if(page === 'upload') { displaySiteReference(); updateDataStatus(); }
     }
+    
     function toggleTheme() { document.body.classList.toggle('dark'); localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light'); renderAll(); }
+    
     function doLogin() {
         const email = document.getElementById('loginEmail').value.trim(), password = document.getElementById('loginPassword').value, user = staffMembers.find(s => s.email === email);
         if(user && user.password === password) {
@@ -651,12 +728,14 @@
             renderAll(); updateDropdowns();
         } else { document.getElementById('loginError').innerHTML = '❌ Invalid credentials'; document.getElementById('loginError').style.display = 'block'; setTimeout(() => { document.getElementById('loginError').style.display = 'none'; }, 3000); }
     }
+    
     function doLogout() { currentUser = null; document.getElementById('loginPage').style.display = 'flex'; document.getElementById('appContainer').style.display = 'none'; }
 
     const savedTheme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
     document.body.classList.add(savedTheme);
     loadData();
     updateDropdowns();
+    renderAll();
 </script>
 </body>
 </html>
