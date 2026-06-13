@@ -435,6 +435,11 @@
                             <option value="Transmission Team">Transmission Team</option>
                             <option value="Wireless Team">Wireless Team</option>
                             <option value="Operation Team">Operation Team</option>
+                            <option value="Power Team">Power Team</option>
+                            <option value="Tx Team">Tx Team</option>
+                            <option value="IPRAN Team">IPRAN Team</option>
+                            <option value="Core Network Team">Core Network Team</option>
+                            <option value="OCS Team">OCS Team</option>
                         </select>
                     </div>
                     <div class="form-group"><label>Password</label><input type="text" id="staffPassword" value="welcome123"></div>
@@ -455,7 +460,7 @@
     // ============= DATA =============
     let tickets = [];
     let staffMembers = [];
-    let teams = ["NOC Team", "Transmission Team", "Wireless Team", "Operation Team"];
+    let teams = ["NOC Team", "Transmission Team", "Wireless Team", "Operation Team", "Power Team", "Tx Team", "IPRAN Team", "Core Network Team", "OCS Team"];
     let siteReference = {};
     let currentUser = null;
     let currentTicketFilter = 'ALL';
@@ -480,14 +485,14 @@
 
     // ============= SAMPLE INCIDENTS =============
     const sampleTickets = [
-        { id: "TT-001", site: "Old Yundum 4", createdAt: new Date().toISOString(), description: "NE Is Disconnected - Power failure detected", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", resolution: "Generator started manually", rca: "NAWEC Mains Failure", closedAt: new Date().toISOString() },
-        { id: "TT-002", site: "Latriya", createdAt: new Date(Date.now() - 1*24*60*60*1000).toISOString(), description: "NE Is Disconnected - Transmission link down", priority: "Major", rcaCategory: "Transmission Fault", status: "Processed", assignee: "Sarah Lead", resolution: "Fiber spliced", rca: "Fiber cut", closedAt: "" },
-        { id: "TT-003", site: "Bwiam", createdAt: new Date(Date.now() - 2*24*60*60*1000).toISOString(), description: "Site Down - Power outage", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", resolution: "Generator started", rca: "NAWEC outage", closedAt: new Date().toISOString() },
-        { id: "TT-004", site: "Brufut TAF Estate", createdAt: new Date(Date.now() - 3*24*60*60*1000).toISOString(), description: "NE Is Disconnected - No connectivity", priority: "Major", rcaCategory: "Power Failure", status: "Handling", assignee: "John Engineer", resolution: "", rca: "", closedAt: "" },
-        { id: "TT-005", site: "Sukuta 2", createdAt: new Date(Date.now() - 4*24*60*60*1000).toISOString(), description: "Site Down - Mains failure", priority: "Critical", rcaCategory: "Power Failure", status: "Assigned", assignee: "Sarah Lead", resolution: "", rca: "", closedAt: "" },
-        { id: "TT-006", site: "Jalambang", createdAt: new Date(Date.now() - 5*24*60*60*1000).toISOString(), description: "NE Is Disconnected - Power issue", priority: "Major", rcaCategory: "Power Failure", status: "Open", assignee: "", resolution: "", rca: "", closedAt: "" },
-        { id: "TT-007", site: "Kerewan", createdAt: new Date(Date.now() - 6*24*60*60*1000).toISOString(), description: "Generator fail - Impacting 13 sites", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", resolution: "Generator started manually", rca: "Fuel empty", closedAt: new Date().toISOString() },
-        { id: "TT-008", site: "Pirang", createdAt: new Date(Date.now() - 7*24*60*60*1000).toISOString(), description: "Transmission link down", priority: "Major", rcaCategory: "Transmission Fault", status: "Processed", assignee: "Sarah Lead", resolution: "Link restored", rca: "Equipment fault", closedAt: "" }
+        { id: "TT-001", site: "Old Yundum 4", createdAt: new Date().toISOString(), description: "NE Is Disconnected - Power failure detected", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", teamAssigned: "NOC Team", resolution: "Generator started manually", rca: "NAWEC Mains Failure", closedAt: new Date().toISOString() },
+        { id: "TT-002", site: "Latriya", createdAt: new Date(Date.now() - 1*24*60*60*1000).toISOString(), description: "NE Is Disconnected - Transmission link down", priority: "Major", rcaCategory: "Transmission Fault", status: "Processed", assignee: "Sarah Lead", teamAssigned: "Tx Team", resolution: "Fiber spliced", rca: "Fiber cut", closedAt: "" },
+        { id: "TT-003", site: "Bwiam", createdAt: new Date(Date.now() - 2*24*60*60*1000).toISOString(), description: "Site Down - Power outage", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", teamAssigned: "Power Team", resolution: "Generator started", rca: "NAWEC outage", closedAt: new Date().toISOString() },
+        { id: "TT-004", site: "Brufut TAF Estate", createdAt: new Date(Date.now() - 3*24*60*60*1000).toISOString(), description: "NE Is Disconnected - No connectivity", priority: "Major", rcaCategory: "Power Failure", status: "Handling", assignee: "John Engineer", teamAssigned: "Power Team", resolution: "", rca: "", closedAt: "" },
+        { id: "TT-005", site: "Sukuta 2", createdAt: new Date(Date.now() - 4*24*60*60*1000).toISOString(), description: "Site Down - Mains failure", priority: "Critical", rcaCategory: "Power Failure", status: "Assigned", assignee: "Sarah Lead", teamAssigned: "Core Network Team", resolution: "", rca: "", closedAt: "" },
+        { id: "TT-006", site: "Jalambang", createdAt: new Date(Date.now() - 5*24*60*60*1000).toISOString(), description: "NE Is Disconnected - Power issue", priority: "Major", rcaCategory: "Power Failure", status: "Open", assignee: "", teamAssigned: "IPRAN Team", resolution: "", rca: "", closedAt: "" },
+        { id: "TT-007", site: "Kerewan", createdAt: new Date(Date.now() - 6*24*60*60*1000).toISOString(), description: "Generator fail - Impacting 13 sites", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", teamAssigned: "Power Team", resolution: "Generator started manually", rca: "Fuel empty", closedAt: new Date().toISOString() },
+        { id: "TT-008", site: "Pirang", createdAt: new Date(Date.now() - 7*24*60*60*1000).toISOString(), description: "Transmission link down", priority: "Major", rcaCategory: "Transmission Fault", status: "Processed", assignee: "Sarah Lead", teamAssigned: "Tx Team", resolution: "Link restored", rca: "Equipment fault", closedAt: "" }
     ];
 
     // ============= INITIALIZE FUNCTIONS =============
@@ -505,7 +510,9 @@
                 { name: "Administrator", email: "admin@comium.com", phone: "+2209998888", role: "Admin", team: "Management", password: "admin123", isAdmin: true },
                 { name: "Viewer User", email: "viewer@comium.com", phone: "+2209997777", role: "Viewer", team: "View Only", password: "view123", isViewer: true },
                 { name: "John Engineer", email: "john@comium.com", phone: "+2207771111", role: "NOC Junior Technician", team: "NOC Team", password: "john123" },
-                { name: "Sarah Lead", email: "sarah@comium.com", phone: "+2207772222", role: "NOC Team Lead", team: "NOC Team", password: "sarah123" }
+                { name: "Sarah Lead", email: "sarah@comium.com", phone: "+2207772222", role: "NOC Team Lead", team: "NOC Team", password: "sarah123" },
+                { name: "Power Specialist", email: "power@comium.com", phone: "+2207773333", role: "Operation team", team: "Power Team", password: "power123" },
+                { name: "Tx Engineer", email: "tx@comium.com", phone: "+2207774444", role: "Operation team", team: "Tx Team", password: "tx123" }
             ];
         }
         
@@ -550,6 +557,17 @@
         else tbody.innerHTML = sites.slice(0, 50).map(([site, data]) => `<tr><td>${site}</td><td>${data.region}</td><td>${data.team}</td></tr>`).join('');
     }
 
+    // ============= TEAM-BASED VISIBILITY =============
+    function canUserSeeTicket(ticket) {
+        if (!currentUser) return false;
+        // NOC Manager, NOC Team Lead, NOC Junior Technician can see all tickets
+        if (currentUser.role === 'NOC Manager' || currentUser.role === 'NOC Team Lead' || currentUser.role === 'NOC Junior Technician') {
+            return true;
+        }
+        // Otherwise, user can see only tickets assigned to their team
+        return ticket.teamAssigned === currentUser.team;
+    }
+
     // ============= EXCEL UPLOAD FUNCTION =============
     function processExcelFile(input) {
         if (currentUser?.role !== 'Admin') { alert("Only Admin can upload Excel"); return; }
@@ -587,7 +605,8 @@
                                 id: row[0], site: row[1] || "Unknown",
                                 createdAt: new Date().toISOString(), description: row[2] || "",
                                 priority: row[3] || "Medium", rcaCategory: row[4] || "Power Failure",
-                                status: "Open", assignee: "", resolution: "", rca: "", closedAt: ""
+                                status: "Open", assignee: "", teamAssigned: row[5] || "NOC Team",
+                                resolution: "", rca: "", closedAt: ""
                             });
                         }
                     }
@@ -613,6 +632,10 @@
         const desc = document.getElementById('ticketDesc').value;
         if (!site || !desc) { alert("Please fill Site and Description"); return; }
         
+        // Get the team from the auto-filled team display (from XLOOKUP)
+        const assignedTeam = document.getElementById('ticketTeamDisplay').value;
+        const finalTeam = (assignedTeam && assignedTeam !== "—" && assignedTeam !== "Auto-filled") ? assignedTeam : "NOC Team";
+        
         const newTicket = {
             id: generateTicketId(),
             site: site,
@@ -622,6 +645,7 @@
             rcaCategory: document.getElementById('ticketRca').value,
             status: 'Open',
             assignee: '',
+            teamAssigned: finalTeam,
             resolution: '',
             rca: '',
             closedAt: '',
@@ -634,7 +658,7 @@
         saveData();
         renderAll();
         navigateTo('home');
-        alert(`✅ Ticket ${newTicket.id} created! Workflow started. Now assign it to an engineer.`);
+        alert(`✅ Ticket ${newTicket.id} created! Assigned to team: ${finalTeam}. Workflow started.`);
         
         document.getElementById('ticketSite').value = '';
         document.getElementById('ticketDesc').value = '';
@@ -646,26 +670,30 @@
         if (!ticket || ticket.status !== 'Open') { alert("Ticket must be in 'Open' status to assign"); return; }
         if (currentUser?.role === 'Viewer') { alert("Viewer cannot assign tickets"); return; }
         
-        const engineers = staffMembers.filter(s => s.role !== 'Viewer' && s.role !== 'Admin');
-        if (engineers.length === 0) { alert("No engineers available. Add engineers in Admin panel."); return; }
+        // Get engineers from the ticket's assigned team
+        const engineers = staffMembers.filter(s => s.team === ticket.teamAssigned && s.role !== 'Viewer' && s.role !== 'Admin');
+        if (engineers.length === 0) { alert(`No engineers available in team ${ticket.teamAssigned}. Add engineers in Admin panel.`); return; }
         
-        const assignee = prompt(`Select assignee from:\n${engineers.map(e => e.name).join(', ')}\n\nEnter engineer name:`, engineers[0]?.name);
+        const assignee = prompt(`Select assignee from team ${ticket.teamAssigned}:\n${engineers.map(e => e.name).join(', ')}\n\nEnter engineer name:`, engineers[0]?.name);
         
-        if (assignee && staffMembers.find(s => s.name === assignee)) {
+        if (assignee && staffMembers.find(s => s.name === assignee && s.team === ticket.teamAssigned)) {
             ticket.assignee = assignee;
             ticket.status = 'Assigned';
             saveData();
             renderAll();
-            alert(`✅ Ticket ${ticketId} assigned to ${assignee}`);
+            alert(`✅ Ticket ${ticketId} assigned to ${assignee} (${ticket.teamAssigned})`);
         } else if (assignee) {
-            alert("Invalid engineer name.");
+            alert("Invalid engineer name for this team.");
         }
     }
 
     function startHandling(ticketId) {
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket || ticket.status !== 'Assigned') { alert("Ticket must be in 'Assigned' status"); return; }
-        if (ticket.assignee !== currentUser?.name && currentUser?.role !== 'Admin') { alert("Only assigned engineer can start handling"); return; }
+        if (ticket.assignee !== currentUser?.name && currentUser?.role !== 'Admin' && currentUser?.role !== 'NOC Manager' && currentUser?.role !== 'NOC Team Lead') { 
+            alert("Only assigned engineer or NOC management can start handling"); 
+            return; 
+        }
         
         ticket.status = 'Handling';
         saveData();
@@ -676,7 +704,10 @@
     function processTicket(ticketId) {
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket || ticket.status !== 'Handling') { alert("Ticket must be in 'Handling' status"); return; }
-        if (ticket.assignee !== currentUser?.name && currentUser?.role !== 'Admin') { alert("Only assigned engineer can process/fix"); return; }
+        if (ticket.assignee !== currentUser?.name && currentUser?.role !== 'Admin' && currentUser?.role !== 'NOC Manager' && currentUser?.role !== 'NOC Team Lead') { 
+            alert("Only assigned engineer or NOC management can process/fix"); 
+            return; 
+        }
         
         const resolution = prompt("Enter Resolution Details (Fix action taken):");
         const rca = prompt("Enter Root Cause Analysis (RCA):");
@@ -708,7 +739,10 @@
     function closeTicket(ticketId) {
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket || ticket.status !== 'Processed') { alert("Ticket must be in 'Processed' status"); return; }
-        if (ticket.assignee !== currentUser?.name && currentUser?.role !== 'Admin') { alert("Only assigned engineer or admin can close"); return; }
+        if (ticket.assignee !== currentUser?.name && currentUser?.role !== 'Admin' && currentUser?.role !== 'NOC Manager' && currentUser?.role !== 'NOC Team Lead') { 
+            alert("Only assigned engineer or NOC management can close"); 
+            return; 
+        }
         
         if (confirm(`Close ticket ${ticketId}? This will complete the workflow and make it read-only.`)) {
             ticket.status = 'Closed';
@@ -759,7 +793,7 @@
         
         document.getElementById('recentList').innerHTML = tickets.slice(0, 8).map(t => `
             <div style="padding:12px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between;">
-                <span><strong>${t.id}</strong> - ${t.site}</span>
+                <span><strong>${t.id}</strong> - ${t.site} (${t.teamAssigned})</span>
                 <span class="status-${t.status}">${STAGE_NAMES[t.status]}</span>
             </div>
         `).join('');
@@ -769,13 +803,16 @@
         const container = document.getElementById('ticketGrid');
         if (!container) return;
         
-        let filtered = tickets;
+        let filtered = tickets.filter(t => canUserSeeTicket(t));
         if (currentTicketFilter !== 'ALL') filtered = filtered.filter(t => t.status === currentTicketFilter);
-        if (currentUser?.role === 'Engineer') filtered = filtered.filter(t => t.assignee === currentUser?.name || t.status === 'Open');
         
         container.innerHTML = filtered.map(ticket => {
             const currentStageIndex = WORKFLOW_STAGES.indexOf(ticket.status);
             const isClosed = ticket.status === 'Closed';
+            const canAssign = (currentUser?.role === 'Admin' || currentUser?.role === 'NOC Manager' || currentUser?.role === 'NOC Team Lead') && ticket.status === 'Open';
+            const canHandle = (ticket.assignee === currentUser?.name || currentUser?.role === 'Admin' || currentUser?.role === 'NOC Manager' || currentUser?.role === 'NOC Team Lead') && ticket.status === 'Assigned';
+            const canProcess = (ticket.assignee === currentUser?.name || currentUser?.role === 'Admin' || currentUser?.role === 'NOC Manager' || currentUser?.role === 'NOC Team Lead') && ticket.status === 'Handling';
+            const canClose = (ticket.assignee === currentUser?.name || currentUser?.role === 'Admin' || currentUser?.role === 'NOC Manager' || currentUser?.role === 'NOC Team Lead') && ticket.status === 'Processed';
             
             return `
             <div class="ticket-card" style="${isClosed ? 'opacity:0.8;' : ''}">
@@ -784,7 +821,7 @@
                     <span class="ticket-status status-${ticket.status}">${STAGE_NAMES[ticket.status]}</span>
                 </div>
                 <div><strong>📍 ${ticket.site}</strong> | ⚡ ${ticket.priority}</div>
-                <div>🏢 ${xlookup(ticket.site, 'team')} | 📍 ${xlookup(ticket.site, 'region')}</div>
+                <div>🏢 ${ticket.teamAssigned || 'Unassigned'} | 📍 ${xlookup(ticket.site, 'region')}</div>
                 <div>📝 ${ticket.description.substring(0, 80)}</div>
                 <div>👤 Assignee: ${ticket.assignee || 'Not assigned yet'}</div>
                 <div>📅 Created: ${new Date(ticket.createdAt).toLocaleString()}</div>
@@ -800,15 +837,11 @@
                 ${ticket.resolution ? `<div><strong>📝 Resolution:</strong> ${ticket.resolution}</div>` : ''}
                 
                 <div class="ticket-actions" style="margin-top:15px;">
-                    ${ticket.status === 'Open' && (currentUser?.role === 'Admin' || currentUser?.role === 'Team Lead') ? 
-                        `<button class="btn-primary" onclick="assignTicket('${ticket.id}')">📋 Assign</button>` : ''}
-                    ${ticket.status === 'Assigned' && (ticket.assignee === currentUser?.name || currentUser?.role === 'Admin') ? 
-                        `<button class="btn-primary" onclick="startHandling('${ticket.id}')">🔧 Handle</button>` : ''}
-                    ${ticket.status === 'Handling' && (ticket.assignee === currentUser?.name || currentUser?.role === 'Admin') ? 
-                        `<button class="btn-success" onclick="processTicket('${ticket.id}')">✅ Fix</button>
-                         <button class="btn-danger" onclick="escalateTicket('${ticket.id}')">📢 Escalate</button>` : ''}
-                    ${ticket.status === 'Processed' && (ticket.assignee === currentUser?.name || currentUser?.role === 'Admin') ? 
-                        `<button class="btn-primary" onclick="closeTicket('${ticket.id}')">🔒 Close</button>` : ''}
+                    ${canAssign ? `<button class="btn-primary" onclick="assignTicket('${ticket.id}')">📋 Assign</button>` : ''}
+                    ${canHandle ? `<button class="btn-primary" onclick="startHandling('${ticket.id}')">🔧 Handle</button>` : ''}
+                    ${canProcess ? `<button class="btn-success" onclick="processTicket('${ticket.id}')">✅ Fix</button>
+                                   <button class="btn-danger" onclick="escalateTicket('${ticket.id}')">📢 Escalate</button>` : ''}
+                    ${canClose ? `<button class="btn-primary" onclick="closeTicket('${ticket.id}')">🔒 Close</button>` : ''}
                 </div>
                 ${isClosed ? `<div style="margin-top:10px; font-size:11px;">🔒 Closed on: ${new Date(ticket.closedAt).toLocaleString()}</div>` : ''}
             </div>`;
@@ -820,9 +853,9 @@
         const tbody = document.getElementById('reportTableBody');
         if (!tbody) return;
         
-        let filtered = [...tickets];
+        let filtered = tickets.filter(t => canUserSeeTicket(t));
         if (currentReportFilter.search) filtered = filtered.filter(t => t.site.toLowerCase().includes(currentReportFilter.search) || t.id.toLowerCase().includes(currentReportFilter.search));
-        if (currentReportFilter.team !== 'ALL') filtered = filtered.filter(t => xlookup(t.site, 'team') === currentReportFilter.team);
+        if (currentReportFilter.team !== 'ALL') filtered = filtered.filter(t => t.teamAssigned === currentReportFilter.team);
         if (currentReportFilter.status !== 'ALL') filtered = filtered.filter(t => t.status === currentReportFilter.status);
         
         tbody.innerHTML = filtered.map(t => `
@@ -830,7 +863,7 @@
                 <td>${t.id}</td>
                 <td>${t.site}</td>
                 <td>${xlookup(t.site, 'region')}</td>
-                <td>${xlookup(t.site, 'team')}</td>
+                <td>${t.teamAssigned || '—'}</td>
                 <td>${t.description.substring(0, 40)}...</td>
                 <td>${t.assignee || '—'}</td>
                 <td><span class="status-${t.status}">${STAGE_NAMES[t.status]}</span></td>
@@ -843,13 +876,13 @@
     }
 
     function exportToExcel() {
-        let filtered = [...tickets];
+        let filtered = tickets.filter(t => canUserSeeTicket(t));
         if (currentReportFilter.search) filtered = filtered.filter(t => t.site.toLowerCase().includes(currentReportFilter.search) || t.id.toLowerCase().includes(currentReportFilter.search));
-        if (currentReportFilter.team !== 'ALL') filtered = filtered.filter(t => xlookup(t.site, 'team') === currentReportFilter.team);
+        if (currentReportFilter.team !== 'ALL') filtered = filtered.filter(t => t.teamAssigned === currentReportFilter.team);
         if (currentReportFilter.status !== 'ALL') filtered = filtered.filter(t => t.status === currentReportFilter.status);
         
         const data = filtered.map(t => ({
-            'Ticket ID': t.id, 'Site Name': t.site, 'Region': xlookup(t.site, 'region'), 'Team': xlookup(t.site, 'team'),
+            'Ticket ID': t.id, 'Site Name': t.site, 'Region': xlookup(t.site, 'region'), 'Team': t.teamAssigned,
             'Description': t.description, 'Priority': t.priority, 'Assignee': t.assignee, 'Status': STAGE_NAMES[t.status],
             'RCA Category': t.rcaCategory, 'Root Cause Analysis': t.rca, 'Resolution': t.resolution,
             'Created At': new Date(t.createdAt).toLocaleString(), 'Closed At': t.closedAt ? new Date(t.closedAt).toLocaleString() : ''
@@ -885,14 +918,14 @@
         if (!name || !email) { alert("Fill fields"); return; }
         if (staffMembers.find(s => s.email === email)) { alert("User exists"); return; }
         staffMembers.push({ name, email, phone, role, team, password });
-        saveData(); renderStaffList(); alert(`✅ Staff ${name} added`);
+        saveData(); renderStaffList(); alert(`✅ Staff ${name} added to team ${team}`);
     }
     
     function renderStaffList() {
         const container = document.getElementById('staffList');
         if (!container) return;
         const nonAdmin = staffMembers.filter(s => !s.isAdmin && !s.isViewer);
-        container.innerHTML = nonAdmin.map(s => `<div style="padding:12px; border-bottom:1px solid #e2e8f0;"><strong>${s.name}</strong><br>${s.email}<br><button onclick="deleteStaff('${s.email}')" style="background:#e74c3c; padding:5px 12px; margin-top:5px;">Delete</button></div>`).join('');
+        container.innerHTML = nonAdmin.map(s => `<div style="padding:12px; border-bottom:1px solid #e2e8f0;"><strong>${s.name}</strong><br>📧 ${s.email}<br>🎯 ${s.role}<br>🏢 ${s.team}<br><button onclick="deleteStaff('${s.email}')" style="background:#e74c3c; padding:5px 12px; margin-top:5px;">Delete</button></div>`).join('');
     }
     
     function deleteStaff(email) { if (confirm("Delete?")) { staffMembers = staffMembers.filter(s => s.email !== email); saveData(); renderStaffList(); } }
