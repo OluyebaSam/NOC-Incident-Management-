@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comium NOC | Operations Dashboard</title>
+    <title>Comium NOC | BI Analytics Dashboard</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -190,28 +191,6 @@
         .status-Processed { background: #d1fae5; color: #059669; }
         .status-Closed { background: #e2e8f0; color: #475569; }
         .comment-section { margin-top: 12px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 12px; }
-        .workflow-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin: 15px 0;
-            padding: 10px;
-            background: #f8fafc;
-            border-radius: 12px;
-            flex-wrap: wrap;
-        }
-        .workflow-stage {
-            text-align: center;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: 600;
-            background: #e2e8f0;
-            color: #64748b;
-        }
-        .workflow-stage.active { background: #c0392b; color: white; }
-        .workflow-stage.completed { background: #27ae60; color: white; }
-        .workflow-arrow { color: #cbd5e1; font-size: 16px; }
 
         .form-card {
             background: white;
@@ -295,6 +274,9 @@
         .shift-report-form .form-row { margin-bottom: 12px; }
         .shift-report-form input, .shift-report-form textarea, .shift-report-form select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; }
         .shift-summary { background: #fef3c7; padding: 15px; border-radius: 12px; margin: 15px 0; }
+        .sync-status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+        .sync-online { background-color: #10b981; box-shadow: 0 0 5px #10b981; }
+        .sync-offline { background-color: #ef4444; }
 
         @media (max-width: 768px) {
             .sidebar { width: 70px; }
@@ -303,8 +285,6 @@
             .form-row { grid-template-columns: 1fr; }
             .analytics-grid { grid-template-columns: 1fr; }
             .charts-row { grid-template-columns: 1fr; }
-            .workflow-bar { flex-direction: column; gap: 8px; }
-            .workflow-arrow { transform: rotate(90deg); }
         }
     </style>
 </head>
@@ -320,6 +300,10 @@
         <div class="forgot-pw"><a href="#" onclick="alert('Contact your system administrator for password reset.')">Forget Password</a></div>
         <button onclick="doLogin()">Login</button>
         <div id="loginError" class="error-msg"></div>
+        <div style="margin-top: 15px; font-size: 11px; color: #666;">
+            <span id="syncIndicator" class="sync-status sync-offline"></span>
+            <span id="syncText">Connecting to Supabase...</span>
+        </div>
     </div>
 </div>
 
@@ -333,7 +317,7 @@
             <div class="nav-item" onclick="navigateTo('tickets')"><span>🎫</span> <span>My Tickets</span></div>
             <div class="nav-item" onclick="navigateTo('create')"><span>➕</span> <span>Create Ticket</span></div>
             <div class="nav-item" onclick="navigateTo('report')"><span>📋</span> <span>Incident Report</span></div>
-            <div class="nav-item shift-report-nav" id="shiftReportNav" onclick="navigateTo('shiftReport')"><span>📋</span> <span>End of Shift Report</span></div>
+            <div class="nav-item" onclick="navigateTo('shiftReport')"><span>📋</span> <span>End of Shift Report</span></div>
             <div class="nav-item admin-only" id="adminNav" onclick="navigateTo('admin')" style="display:none;"><span>⚙️</span> <span>Admin Panel</span></div>
         </div>
     </div>
@@ -350,12 +334,12 @@
         </div>
 
         <div id="panelHome" class="content-panel active"><div class="stats-grid" id="statsGrid"></div><div class="charts-row"><div class="chart-card"><h3>📊 Ticket Status Distribution</h3><canvas id="statusChart"></canvas></div><div class="chart-card"><h3>📈 RCA Category Breakdown</h3><canvas id="rcaChart"></canvas></div></div><div class="form-card"><h3>📋 Recent Tickets</h3><div id="recentList"></div></div></div>
-        <div id="panelAnalytics" class="content-panel"><div class="analytics-grid"><div class="analytics-card"><h4>🔍 Filter Data</h4><div class="filter-group-inline"><select id="analyticsDateRange"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="all">All time</option></select><select id="analyticsTeam"><option value="ALL">All Teams</option></select><select id="analyticsStatus"><option value="ALL">All Status</option><option>Open</option><option>Assigned</option><option>Handling</option><option>Processed</option><option>Closed</option></select><button class="btn-primary" onclick="applyAnalyticsFilter()">Apply</button></div></div><div class="analytics-card"><h4>📈 Key Metrics</h4><div><span>Total Incidents:</span> <span class="kpi-value" id="kpiTotal">0</span></div><div><span>Avg Resolution Time:</span> <span class="kpi-value" id="kpiAvgResolution">0</span> <small>min</small></div><div><span>SLA Compliance:</span> <span class="kpi-value" id="kpiSLA">0</span><small>%</small></div><div><span>Open Incidents:</span> <span class="kpi-value" id="kpiOpen">0</span></div></div><div class="analytics-card"><h4>📊 Trend Analysis</h4><canvas id="trendChart" height="120"></canvas></div></div><div class="charts-row"><div class="chart-card"><h3>🏢 Incidents by Team</h3><canvas id="teamChart"></canvas></div><div class="chart-card"><h3>📅 MTTR by Team</h3><canvas id="mttrChart"></canvas></div></div><div class="form-card"><h3>📋 Detailed Analytics Table</h3><div style="overflow-x:auto;"><table class="data-table" id="analyticsTable"><thead><tr><th>Team</th><th>Total Incidents</th><th>Open</th><th>Closed</th><th>Avg Resolution (min)</th><th>SLA %</th></tr></thead><tbody></tbody></table></div></div></div>
+        <div id="panelAnalytics" class="content-panel"><div class="analytics-grid"><div class="analytics-card"><h4>🔍 Filter Data</h4><div class="filter-group-inline"><select id="analyticsDateRange"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="all">All time</option></select><select id="analyticsTeam"><option value="ALL">All Teams</option></select><select id="analyticsStatus"><option value="ALL">All Status</option></select><button class="btn-primary" onclick="applyAnalyticsFilter()">Apply</button></div></div><div class="analytics-card"><h4>📈 Key Metrics</h4><div><span>Total Incidents:</span> <span class="kpi-value" id="kpiTotal">0</span></div><div><span>Avg Resolution Time:</span> <span class="kpi-value" id="kpiAvgResolution">0</span> <small>min</small></div><div><span>SLA Compliance:</span> <span class="kpi-value" id="kpiSLA">0</span><small>%</small></div><div><span>Open Incidents:</span> <span class="kpi-value" id="kpiOpen">0</span></div></div><div class="analytics-card"><h4>📊 Trend Analysis</h4><canvas id="trendChart" height="120"></canvas></div></div><div class="charts-row"><div class="chart-card"><h3>🏢 Incidents by Team</h3><canvas id="teamChart"></canvas></div><div class="chart-card"><h3>📅 MTTR by Team</h3><canvas id="mttrChart"></canvas></div></div><div class="form-card"><h3>📋 Detailed Analytics Table</h3><div style="overflow-x:auto;"><table class="data-table" id="analyticsTable"><thead><tr><th>Team</th><th>Total Incidents</th><th>Open</th><th>Closed</th><th>Avg Resolution (min)</th><th>SLA %</th></tr></thead><tbody></tbody></tr></div></div></div>
         <div id="panelTickets" class="content-panel"><div class="filter-bar"><select id="filterStatus"><option value="ALL">All Status</option><option value="Open">Open</option><option value="Assigned">Assigned</option><option value="Handling">Handling</option><option value="Processed">Processed</option><option value="Closed">Closed</option></select><button class="btn-primary" onclick="applyTicketFilter()">Apply</button></div><div class="ticket-grid" id="ticketGrid"></div></div>
         <div id="panelCreate" class="content-panel"><div class="form-card"><h3>➕ Create New Incident Ticket</h3><div class="form-row"><div class="form-group"><label>Site Name *</label><select id="ticketSite" onchange="updateSiteDetails()"><option value="">Select Site</option></select></div><div class="form-group"><label>Region (Auto)</label><input type="text" id="ticketRegion" readonly placeholder="Auto-filled"></div></div><div class="form-row"><div class="form-group"><label>Team (Auto)</label><input type="text" id="ticketTeamDisplay" readonly placeholder="Auto-filled"></div><div class="form-group"><label>Incident Date</label><input type="datetime-local" id="ticketDate"></div></div><div class="form-group"><label>Alarm Name / Description *</label><textarea id="ticketDesc" rows="2"></textarea></div><div class="form-row"><div class="form-group"><label>Impact</label><input type="text" id="ticketImpact" placeholder="e.g., Site Down"></div><div class="form-group"><label>Root Cause</label><input type="text" id="ticketRootCause"></div></div><div class="form-row"><div class="form-group"><label>RCA Category</label><select id="ticketRcaCategory"><option>Power Failure</option><option>Transmission Fault</option><option>Hardware Fault</option><option>Environmental</option></select></div><div class="form-group"><label>Severity</label><select id="ticketPriority"><option>Critical</option><option>Major</option><option>Minor</option></select></div></div><div class="form-row"><div class="form-group"><label>Resolution Notes</label><input type="text" id="ticketResolution"></div><div class="form-group"><label>Status</label><select id="ticketStatus"><option>Open</option><option>Assigned</option><option>Handling</option><option>Processed</option><option>Closed</option></select></div></div><div class="form-row"><div class="form-group"><label>Assign to Team *</label><select id="assignTeam" onchange="updateAssigneeList()"><option value="">Select Team</option></select></div><div class="form-group"><label>Assign to Individual *</label><select id="assignIndividual"><option value="">Select Individual</option></select></div></div><button class="btn-primary" onclick="createTicket()">✅ Generate Incident TT</button></div></div>
         <div id="panelReport" class="content-panel"><div class="form-card"><h3>📋 Incident Report</h3><div class="filter-bar"><input type="text" id="reportSearch" placeholder="Search..." style="width:200px;"><select id="reportTeam"><option value="ALL">All Teams</option></select><select id="reportStatus"><option value="ALL">All Status</option></select><button class="btn-primary" onclick="applyReportFilter()">Apply</button><button class="btn-success" onclick="exportToExcel()">📊 Export Excel</button></div></div><div style="overflow-x:auto; max-height:60vh;"><table class="data-table" id="reportTable"><thead><tr><th>ID</th><th>Site</th><th>Team</th><th>Status</th><th>Priority</th><th>Created</th></tr></thead><tbody id="reportTableBody"></tbody></table></div></div>
-        <div id="panelShiftReport" class="content-panel"><div class="form-card"><h3>📋 End of Shift Handover Report</h3><p style="margin-bottom: 15px;">Fill out this report at the end of your shift. It will be sent to the specified recipients.</p><form id="shiftReportForm"><div class="form-row"><div class="form-group"><label>Employee Name</label><input type="text" id="shiftEmployeeName" readonly></div><div class="form-group"><label>Date</label><input type="date" id="shiftDate"></div></div><div class="form-row"><div class="form-group"><label>No of Inherited TICKET</label><input type="number" id="shiftInherited" value="0"></div><div class="form-group"><label>No of TICKET presently OPENED</label><input type="number" id="shiftOpened" value="0"></div></div><div class="form-row"><div class="form-group"><label>No of closed TICKET-Noc</label><input type="number" id="shiftClosedNoc" value="0"></div><div class="form-group"><label>No of Logged TICKET-Noc</label><input type="number" id="shiftLoggedNoc" value="0"></div></div><div class="form-row"><div class="form-group"><label>No of Logged TICKET-Call center</label><input type="number" id="shiftLoggedCall" value="0"></div><div class="form-group"><label>TICKET resolved but not closed</label><textarea id="shiftResolvedNotClosed" rows="2"></textarea></div></div><div class="form-row"><div class="form-group"><label>No of visitor at Data Center</label><input type="number" id="shiftVisitorDC" value="0"></div><div class="form-group"><label>No of visitor at Site Access</label><input type="number" id="shiftVisitorSite" value="0"></div></div><div class="form-row"><div class="form-group"><label>No of Calls to Team lead / NOC Manager</label><input type="number" id="shiftCallsLead" value="0"></div><div class="form-group"><label>No of Calls to Operation Team</label><input type="number" id="shiftCallsOpTx" value="0"></div></div><div class="form-row"><div class="form-group"><label>No of Calls to Power Team</label><input type="number" id="shiftCallsPower" value="0"></div><div class="form-group"><label>No of Escalations on Teams App.</label><input type="number" id="shiftEscalations" value="0"></div></div><div class="form-group"><label>Day / Night Activity / (CR) Impacting Service</label><textarea id="shiftActivities" rows="2"></textarea></div><div class="form-group"><label>TO NOTE FOR INCOMING SHIFT</label><textarea id="shiftNotes" rows="2"></textarea></div><div class="form-group"><label>Incoming NOC Engineer</label><input type="text" id="shiftIncomingEngineer"></div><div class="form-group shift-summary"><label>Shift Summary</label><textarea id="shiftSummary" rows="3"></textarea></div><div class="form-group"><label>Outstanding Tasks</label><textarea id="shiftOutstanding" rows="2"></textarea></div><div class="form-group"><label>Other Comments</label><textarea id="shiftOtherComments" rows="2"></textarea></div><div class="form-group"><label>Office Tools/APPs/Inventory Check</label><textarea id="shiftInventory" rows="2"></textarea></div><div class="form-row"><div class="form-group"><label>Send to (Email)</label><input type="email" id="shiftSendToEmail" placeholder="nextengineer@comium.com"></div><div class="form-group"><label>CC (Email)</label><input type="text" id="shiftCcEmails" placeholder="teamlead@comium.com"></div></div><button type="button" class="btn-primary" onclick="submitShiftReport()" style="width:100%;">📧 Send Shift Report & Email</button></form></div><div class="form-card"><h3>📜 Previous Shift Reports</h3><div id="shiftReportsList" style="max-height: 300px; overflow-y: auto;"></div></div></div>
-        <div id="panelAdmin" class="content-panel"><div class="form-card"><h3>📎 Upload Excel Template</h3><div class="upload-area" onclick="document.getElementById('excelFile').click()">📂 Click to upload Excel file (.xlsx, .xls)<br><small>Supports Site Reference data</small></div><input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none;" onchange="processExcelFile(this)"></div><div class="form-card"><h3>📍 Site Reference Data</h3><div style="overflow-x:auto;"><table class="data-table" id="siteReferenceTable"><thead><tr><th>Site Name</th><th>Region</th><th>Team</th></tr></thead><tbody><tr><td colspan="3">Upload Excel to load data</tbody>}</div></div><div class="form-card"><h3>👥 Staff Management</h3><div class="form-row"><div class="form-group"><label>Name</label><input type="text" id="staffName"></div><div class="form-group"><label>Email</label><input type="email" id="staffEmail"></div></div><div class="form-row"><div class="form-group"><label>Phone</label><input type="text" id="staffPhone"></div><div class="form-group"><label>Role</label><select id="staffRole"><option>NOC Junior Technician</option><option>NOC Team Lead</option><option>NOC Manager</option><option>Operation team</option></select></div></div><div class="form-row"><div class="form-group"><label>Team</label><select id="staffTeam"></select></div><div class="form-group"><label>Password</label><input type="text" id="staffPassword" value="welcome123"></div></div><button class="btn-primary" onclick="addStaff()">+ Add Staff</button><div id="staffList" style="margin-top:20px;"></div><div class="form-row" style="margin-top: 15px;"><div class="form-group"><button class="btn-secondary" onclick="exportAllData()">📥 Export All Data</button></div><div class="form-group"><button class="btn-secondary" onclick="importDataPrompt()">📤 Import Data</button></div></div></div></div>
+        <div id="panelShiftReport" class="content-panel"><div class="form-card"><h3>📋 End of Shift Handover Report</h3><p style="margin-bottom: 15px;">Fill out this report at the end of your shift. It will be saved to Supabase.</p><form id="shiftReportForm"><div class="form-row"><div class="form-group"><label>Employee Name</label><input type="text" id="shiftEmployeeName" readonly></div><div class="form-group"><label>Date</label><input type="date" id="shiftDate"></div></div><div class="form-row"><div class="form-group"><label>No of Inherited TICKET</label><input type="number" id="shiftInherited" value="0"></div><div class="form-group"><label>No of TICKET presently OPENED</label><input type="number" id="shiftOpened" value="0"></div></div><div class="form-row"><div class="form-group"><label>No of closed TICKET-Noc</label><input type="number" id="shiftClosedNoc" value="0"></div><div class="form-group"><label>No of Logged TICKET-Noc</label><input type="number" id="shiftLoggedNoc" value="0"></div></div><div class="form-row"><div class="form-group"><label>No of Logged TICKET-Call center</label><input type="number" id="shiftLoggedCall" value="0"></div><div class="form-group"><label>TICKET resolved but not closed</label><textarea id="shiftResolvedNotClosed" rows="2"></textarea></div></div><div class="form-row"><div class="form-group"><label>No of visitor at Data Center</label><input type="number" id="shiftVisitorDC" value="0"></div><div class="form-group"><label>No of visitor at Site Access</label><input type="number" id="shiftVisitorSite" value="0"></div></div><div class="form-row"><div class="form-group"><label>No of Calls to Team lead / NOC Manager</label><input type="number" id="shiftCallsLead" value="0"></div><div class="form-group"><label>No of Calls to Operation Team</label><input type="number" id="shiftCallsOpTx" value="0"></div></div><div class="form-row"><div class="form-group"><label>No of Calls to Power Team</label><input type="number" id="shiftCallsPower" value="0"></div><div class="form-group"><label>No of Escalations on Teams App.</label><input type="number" id="shiftEscalations" value="0"></div></div><div class="form-group"><label>Day / Night Activity / (CR) Impacting Service</label><textarea id="shiftActivities" rows="2"></textarea></div><div class="form-group"><label>TO NOTE FOR INCOMING SHIFT</label><textarea id="shiftNotes" rows="2"></textarea></div><div class="form-group"><label>Incoming NOC Engineer</label><input type="text" id="shiftIncomingEngineer"></div><div class="form-group shift-summary"><label>Shift Summary</label><textarea id="shiftSummary" rows="3"></textarea></div><div class="form-group"><label>Outstanding Tasks</label><textarea id="shiftOutstanding" rows="2"></textarea></div><div class="form-group"><label>Other Comments</label><textarea id="shiftOtherComments" rows="2"></textarea></div><div class="form-group"><label>Office Tools/APPs/Inventory Check</label><textarea id="shiftInventory" rows="2"></textarea></div><div class="form-row"><div class="form-group"><label>Send to (Email)</label><input type="email" id="shiftSendToEmail" placeholder="nextengineer@comium.com"></div><div class="form-group"><label>CC (Email)</label><input type="text" id="shiftCcEmails" placeholder="teamlead@comium.com"></div></div><button type="button" class="btn-primary" onclick="submitShiftReport()" style="width:100%;">💾 Save Shift Report to Supabase</button></form></div><div class="form-card"><h3>📜 Previous Shift Reports</h3><div id="shiftReportsList" style="max-height: 300px; overflow-y: auto;"></div></div></div>
+        <div id="panelAdmin" class="content-panel"><div class="form-card"><h3>📎 Upload Excel Template</h3><div class="upload-area" onclick="document.getElementById('excelFile').click()">📂 Click to upload Excel file (.xlsx, .xls)<br><small>Supports Site Reference data</small></div><input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none;" onchange="processExcelFile(this)"></div><div class="form-card"><h3>📍 Site Reference Data</h3><div style="overflow-x:auto;"><table class="data-table" id="siteReferenceTable"><thead><tr><th>Site Name</th><th>Region</th><th>Team</th></tr></thead><tbody><tr><td colspan="3">Loading...</td></tr></tbody>}</div></div><div class="form-card"><h3>👥 Staff Management</h3><div class="form-row"><div class="form-group"><label>Name</label><input type="text" id="staffName"></div><div class="form-group"><label>Email</label><input type="email" id="staffEmail"></div></div><div class="form-row"><div class="form-group"><label>Phone</label><input type="text" id="staffPhone"></div><div class="form-group"><label>Role</label><select id="staffRole"><option>NOC Junior Technician</option><option>NOC Team Lead</option><option>NOC Manager</option><option>Operation team</option></select></div></div><div class="form-row"><div class="form-group"><label>Team</label><select id="staffTeam"></select></div><div class="form-group"><label>Password</label><input type="text" id="staffPassword" value="welcome123"></div></div><button class="btn-primary" onclick="addStaff()">+ Add Staff</button><div id="staffList" style="margin-top:20px;"></div></div></div>
     </div>
 </div>
 </div>
@@ -363,64 +347,194 @@
 <div id="changePwModal" class="modal"><div class="modal-content"><h3>🔑 Change Password</h3><div class="form-group"><label>Current Password</label><input type="password" id="currentPassword"></div><div class="form-group"><label>New Password</label><input type="password" id="newPassword"></div><button class="btn-primary" onclick="changePassword()">Update</button><button class="btn-secondary" onclick="closeModal('changePwModal')">Cancel</button></div></div>
 
 <script>
-    let currentUser = null, tickets = [], sites = [], staffs = [], shiftReports = [], charts = {};
-    const defaultSites = [{siteName:"HQ Main",region:"Lagos",team:"Core Network"},{siteName:"Lekki DC",region:"Lagos",team:"Datacenter"},{siteName:"Abuja Hub",region:"Abuja",team:"Transmission"}];
-    const defaultStaff = [{name:"Admin User",email:"admin@comium.com",role:"NOC Manager",team:"Management",password:"admin123",isAdmin:true}];
+    // Supabase Configuration - REPLACE WITH YOUR OWN CREDENTIALS
+    const SUPABASE_URL = 'https://your-project.supabase.co';
+    const SUPABASE_ANON_KEY = 'your-anon-key';
     
-    function saveData(){ localStorage.setItem("comium_tickets",JSON.stringify(tickets)); localStorage.setItem("comium_sites",JSON.stringify(sites)); localStorage.setItem("comium_staffs",JSON.stringify(staffs)); localStorage.setItem("comium_shiftReports",JSON.stringify(shiftReports)); }
-    function loadData(){ tickets = JSON.parse(localStorage.getItem("comium_tickets")||"[]"); sites = JSON.parse(localStorage.getItem("comium_sites")||JSON.stringify(defaultSites)); staffs = JSON.parse(localStorage.getItem("comium_staffs")||JSON.stringify(defaultStaff)); shiftReports = JSON.parse(localStorage.getItem("comium_shiftReports")||"[]"); }
-    loadData();
-    
-    function doLogin(){ 
+    let supabase;
+    let currentUser = null;
+    let tickets = [], sites = [], staffs = [], shiftReports = [];
+    let charts = {};
+
+    async function initSupabase() {
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            document.getElementById('syncIndicator').className = 'sync-status sync-online';
+            document.getElementById('syncText').innerText = 'Supabase Connected';
+            await loadAllData();
+            return true;
+        } catch(e) {
+            document.getElementById('syncIndicator').className = 'sync-status sync-offline';
+            document.getElementById('syncText').innerText = 'Supabase Offline';
+            console.error('Supabase connection failed:', e);
+            return false;
+        }
+    }
+
+    async function loadAllData() {
+        try {
+            const [ticketsRes, sitesRes, staffsRes, reportsRes] = await Promise.all([
+                supabase.from('tickets').select('*').order('created_at', {ascending: false}),
+                supabase.from('sites').select('*'),
+                supabase.from('staffs').select('*'),
+                supabase.from('shift_reports').select('*').order('created_at', {ascending: false})
+            ]);
+            if(ticketsRes.data) tickets = ticketsRes.data;
+            if(sitesRes.data) sites = sitesRes.data;
+            if(staffsRes.data) staffs = staffsRes.data;
+            if(reportsRes.data) shiftReports = reportsRes.data;
+            refreshUI();
+        } catch(e) { console.error('Load error:', e); }
+    }
+
+    async function doLogin() {
         let email = document.getElementById("loginEmail").value.trim();
         let pwd = document.getElementById("loginPassword").value;
-        let user = staffs.find(s=>s.email===email && s.password===pwd); 
-        if(user){ 
-            currentUser = user; 
-            document.getElementById("loginPage").style.display = "none"; 
-            document.getElementById("appContainer").style.display = "block"; 
-            document.getElementById("userDisplay").innerHTML = `👤 ${user.name}${user.isAdmin ? ' (Admin)' : ''}`; 
-            if(user.isAdmin) document.getElementById("adminNav").style.display = "flex"; 
-            document.getElementById("shiftEmployeeName").value = user.name; 
-            document.getElementById("shiftDate").valueAsDate = new Date(); 
-            refreshUI(); 
-        } else { 
-            document.getElementById("loginError").innerText = "Invalid credentials. Use admin@comium.com / admin123"; 
-            document.getElementById("loginError").style.display = "block"; 
-        } 
+        let user = staffs.find(s => s.email === email && s.password === pwd);
+        if(user) {
+            currentUser = user;
+            document.getElementById("loginPage").style.display = "none";
+            document.getElementById("appContainer").style.display = "block";
+            document.getElementById("userDisplay").innerHTML = `👤 ${user.name}${user.is_admin ? ' (Admin)' : ''}`;
+            if(user.is_admin) document.getElementById("adminNav").style.display = "flex";
+            document.getElementById("shiftEmployeeName").value = user.name;
+            document.getElementById("shiftDate").valueAsDate = new Date();
+            await loadAllData();
+        } else {
+            document.getElementById("loginError").innerText = "Invalid credentials. Use admin@comium.com / admin123";
+            document.getElementById("loginError").style.display = "block";
+        }
     }
-    function doLogout(){ currentUser=null; document.getElementById("loginPage").style.display="flex"; document.getElementById("appContainer").style.display="none"; document.getElementById("loginEmail").value=""; document.getElementById("loginPassword").value=""; document.getElementById("loginError").style.display="none"; }
-    function navigateTo(page){ document.querySelectorAll('.content-panel').forEach(p=>p.classList.remove('active')); document.getElementById(`panel${page.charAt(0).toUpperCase()+page.slice(1)}`).classList.add('active'); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); if(page==='home') document.querySelector('.nav-item').classList.add('active'); else if(page==='analytics') document.querySelectorAll('.nav-item')[1].classList.add('active'); else if(page==='tickets') document.querySelectorAll('.nav-item')[2].classList.add('active'); else if(page==='create') document.querySelectorAll('.nav-item')[3].classList.add('active'); else if(page==='report') document.querySelectorAll('.nav-item')[4].classList.add('active'); else if(page==='shiftReport') document.querySelectorAll('.nav-item')[5].classList.add('active'); else if(page==='admin') document.getElementById("adminNav").classList.add('active'); refreshUI(); }
-    function refreshUI(){ loadDropdowns(); renderHomeDashboard(); renderTicketGrid(); renderReportTable(); renderAnalytics(); renderStaffList(); renderShiftReports(); populateTeamFilters(); populateSiteSelect(); updateAssigneeList(); renderSiteTable(); }
-    function renderSiteTable(){ let tbody = document.querySelector('#siteReferenceTable tbody'); if(tbody) tbody.innerHTML = sites.map(s=>`<tr><td>${s.siteName}</td><td>${s.region}</td><td>${s.team}</td></tr>`).join('') || '<tr><td colspan="3">No data</td></tr>'; }
-    function loadDropdowns(){ let teams=[...new Set(sites.map(s=>s.team))]; let teamSelects=['analyticsTeam','reportTeam','staffTeam','assignTeam']; teamSelects.forEach(id=>{ let sel=document.getElementById(id); if(sel){ let old=sel.value; sel.innerHTML='<option value="ALL">All Teams</option>'+teams.map(t=>`<option value="${t}">${t}</option>`).join(''); if(old && old!='ALL') sel.value=old; } }); }
-    function populateSiteSelect(){ let sel=document.getElementById('ticketSite'); if(sel){ sel.innerHTML='<option value="">Select Site</option>'+sites.map(s=>`<option value="${s.siteName}" data-region="${s.region}" data-team="${s.team}">${s.siteName}</option>`).join(''); } }
-    function updateSiteDetails(){ let sel=document.getElementById('ticketSite'); let opt=sel.options[sel.selectedIndex]; if(opt && opt.value){ document.getElementById('ticketRegion').value=opt.getAttribute('data-region')||''; document.getElementById('ticketTeamDisplay').value=opt.getAttribute('data-team')||''; } else { document.getElementById('ticketRegion').value=''; document.getElementById('ticketTeamDisplay').value=''; } }
-    function updateAssigneeList(){ let team=document.getElementById('assignTeam').value; let userSel=document.getElementById('assignIndividual'); if(team && team!='ALL'){ let members=staffs.filter(s=>s.team===team && !s.isAdmin); userSel.innerHTML='<option value="">Select</option>'+members.map(m=>`<option value="${m.email}">${m.name}</option>`).join(''); } else userSel.innerHTML='<option value="">Select Team First</option>'; }
-    function createTicket(){ let site=document.getElementById('ticketSite').value, desc=document.getElementById('ticketDesc').value, priority=document.getElementById('ticketPriority').value, status=document.getElementById('ticketStatus').value, team=document.getElementById('assignTeam').value, assignee=document.getElementById('assignIndividual').value, rca=document.getElementById('ticketRcaCategory').value; if(!site||!desc){ alert("Fill Site and Description"); return; } let newTicket={ id:'TT'+Date.now(), site, region:document.getElementById('ticketRegion').value, team:team||'Unassigned', description:desc, impact:document.getElementById('ticketImpact').value, rootCause:document.getElementById('ticketRootCause').value, rcaCategory:rca, priority, status, resolution:document.getElementById('ticketResolution').value, assignedTo:assignee, createdBy:currentUser.email, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), resolutionTime:null }; if(status==='Closed') newTicket.resolutionTime=0; tickets.unshift(newTicket); saveData(); refreshUI(); alert("Ticket Created"); navigateTo('tickets'); }
-    function renderHomeDashboard(){ let total=tickets.length, open=tickets.filter(t=>t.status!=='Closed').length, closed=tickets.filter(t=>t.status==='Closed').length; document.getElementById('statsGrid').innerHTML=`<div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">Total Tickets</div></div><div class="stat-card"><div class="stat-number">${open}</div><div class="stat-label">Open Tickets</div></div><div class="stat-card"><div class="stat-number">${closed}</div><div class="stat-label">Closed</div></div>`; let statusCounts={Open:0,Assigned:0,Handling:0,Processed:0,Closed:0}; let rcaCounts={}; tickets.forEach(t=>{ statusCounts[t.status]=(statusCounts[t.status]||0)+1; if(t.rcaCategory) rcaCounts[t.rcaCategory]=(rcaCounts[t.rcaCategory]||0)+1; }); if(charts.statusChart) charts.statusChart.destroy(); if(charts.rcaChart) charts.rcaChart.destroy(); charts.statusChart=new Chart(document.getElementById('statusChart'),{type:'doughnut',data:{labels:Object.keys(statusCounts),datasets:[{data:Object.values(statusCounts),backgroundColor:['#dc2626','#3b82f6','#f59e0b','#10b981','#94a3b8']}]}}); charts.rcaChart=new Chart(document.getElementById('rcaChart'),{type:'bar',data:{labels:Object.keys(rcaCounts),datasets:[{label:'Tickets',data:Object.values(rcaCounts)}]}}); let recent=tickets.slice(0,5).map(t=>`<div>🎫 ${t.id} - ${t.site} (${t.status})</div>`).join(''); document.getElementById('recentList').innerHTML=recent||'<div>No tickets</div>'; }
-    function renderTicketGrid(){ let statusFilter=document.getElementById('filterStatus').value; let filtered=tickets.filter(t=>statusFilter==='ALL'||t.status===statusFilter); let html=filtered.map(t=>`<div class="ticket-card"><div class="ticket-header"><span class="ticket-id">${t.id}</span><span class="ticket-status status-${t.status}">${t.status}</span></div><div><strong>${t.site}</strong> | ${t.description.substring(0,60)}</div><div>Priority: ${t.priority} | Team: ${t.team}</div><div class="comment-section">Created: ${new Date(t.createdAt).toLocaleString()}</div><div><button class="btn-warning" onclick="updateTicketStatus('${t.id}')">Update Status</button></div></div>`).join(''); document.getElementById('ticketGrid').innerHTML=html||'<div>No tickets found</div>'; }
-    function updateTicketStatus(id){ let newStatus=prompt("Enter new status: Open, Assigned, Handling, Processed, Closed"); if(newStatus && ['Open','Assigned','Handling','Processed','Closed'].includes(newStatus)){ let t=tickets.find(t=>t.id===id); if(t){ t.status=newStatus; t.updatedAt=new Date().toISOString(); if(newStatus==='Closed') t.resolutionTime=Math.floor((new Date()-new Date(t.createdAt))/60000); saveData(); refreshUI(); } } }
-    function renderAnalytics(){ let teamMap={}; tickets.forEach(t=>{ if(!teamMap[t.team]) teamMap[t.team]={total:0,open:0,closed:0,resolutionSum:0,closedCount:0}; teamMap[t.team].total++; if(t.status!=='Closed') teamMap[t.team].open++; else { teamMap[t.team].closed++; if(t.resolutionTime) { teamMap[t.team].resolutionSum+=t.resolutionTime; teamMap[t.team].closedCount++; } } }); let tableBody=document.querySelector('#analyticsTable tbody'); tableBody.innerHTML=''; for(let [team,data] of Object.entries(teamMap)){ let avgRes=data.closedCount?Math.round(data.resolutionSum/data.closedCount):0; let sla=data.closedCount?Math.round((data.closed/data.total)*100):0; tableBody.innerHTML+=`<tr><td>${team}</td><td>${data.total}</td><td>${data.open}</td><td>${data.closed}</td><td>${avgRes}</td><td>${sla}</td></tr>`; } document.getElementById('kpiTotal').innerHTML=tickets.length; document.getElementById('kpiOpen').innerHTML=tickets.filter(t=>t.status!=='Closed').length; let avgAll=tickets.filter(t=>t.resolutionTime).reduce((a,b)=>a+b.resolutionTime,0)/tickets.filter(t=>t.resolutionTime).length||0; document.getElementById('kpiAvgResolution').innerHTML=Math.round(avgAll); document.getElementById('kpiSLA').innerHTML=Math.round((tickets.filter(t=>t.status==='Closed').length/tickets.length||0)*100); if(charts.teamChart) charts.teamChart.destroy(); charts.teamChart=new Chart(document.getElementById('teamChart'),{type:'bar',data:{labels:Object.keys(teamMap),datasets:[{label:'Incidents',data:Object.values(teamMap).map(d=>d.total)}]}}); if(charts.mttrChart) charts.mttrChart.destroy(); charts.mttrChart=new Chart(document.getElementById('mttrChart'),{type:'line',data:{labels:Object.keys(teamMap),datasets:[{label:'MTTR (min)',data:Object.values(teamMap).map(d=>d.closedCount?Math.round(d.resolutionSum/d.closedCount):0)}]}}); }
-    function renderReportTable(){ let search=document.getElementById('reportSearch').value.toLowerCase(); let team=document.getElementById('reportTeam').value; let status=document.getElementById('reportStatus').value; let filtered=tickets.filter(t=>(team==='ALL'||t.team===team)&&(status==='ALL'||t.status===status)&&(t.id.toLowerCase().includes(search)||t.site.toLowerCase().includes(search))); document.getElementById('reportTableBody').innerHTML=filtered.map(t=>`<tr><td>${t.id}</td><td>${t.site}</td><td>${t.team}</td><td>${t.status}</td><td>${t.priority}</td><td>${new Date(t.createdAt).toLocaleDateString()}</td></tr>`).join(''); }
-    function exportToExcel(){ let wsData=[["ID","Site","Team","Status","Priority","Created","Description"]]; tickets.forEach(t=>wsData.push([t.id,t.site,t.team,t.status,t.priority,new Date(t.createdAt).toLocaleString(),t.description])); let wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(wsData); XLSX.utils.book_append_sheet(wb,ws,"Incidents"); XLSX.writeFile(wb,"comium_incidents.xlsx"); }
-    function processExcelFile(input){ let file=input.files[0]; let reader=new FileReader(); reader.onload=function(e){ let data=new Uint8Array(e.target.result); let workbook=XLSX.read(data,{type:'array'}); let sheet=workbook.Sheets[workbook.SheetNames[0]]; let rows=XLSX.utils.sheet_to_json(sheet); let newSites=rows.map(r=>({siteName:r['Site Name']||r['Site']||'Unknown',region:r['Region']||'Lagos',team:r['Team']||'General'})); if(newSites.length) sites=newSites; saveData(); refreshUI(); alert("Site data updated"); }; reader.readAsArrayBuffer(file); }
-    function submitShiftReport(){ let report={ id:Date.now(), employeeName:currentUser.name, date:document.getElementById('shiftDate').value, inherited:document.getElementById('shiftInherited').value, opened:document.getElementById('shiftOpened').value, closedNoc:document.getElementById('shiftClosedNoc').value, loggedNoc:document.getElementById('shiftLoggedNoc').value, loggedCall:document.getElementById('shiftLoggedCall').value, resolvedNotClosed:document.getElementById('shiftResolvedNotClosed').value, visitorDC:document.getElementById('shiftVisitorDC').value, visitorSite:document.getElementById('shiftVisitorSite').value, callsLead:document.getElementById('shiftCallsLead').value, callsOpTx:document.getElementById('shiftCallsOpTx').value, callsPower:document.getElementById('shiftCallsPower').value, escalations:document.getElementById('shiftEscalations').value, activities:document.getElementById('shiftActivities').value, notes:document.getElementById('shiftNotes').value, incomingEngineer:document.getElementById('shiftIncomingEngineer').value, summary:document.getElementById('shiftSummary').value, outstanding:document.getElementById('shiftOutstanding').value, otherComments:document.getElementById('shiftOtherComments').value, inventory:document.getElementById('shiftInventory').value, sendTo:document.getElementById('shiftSendToEmail').value, cc:document.getElementById('shiftCcEmails').value, createdAt:new Date().toISOString() }; shiftReports.unshift(report); saveData(); renderShiftReports(); alert("Shift report saved (Email notification simulated)"); }
-    function renderShiftReports(){ let container=document.getElementById('shiftReportsList'); container.innerHTML=shiftReports.slice(0,10).map(r=>`<div style="border-bottom:1px solid #ccc; padding:8px;"><strong>${r.date}</strong> - ${r.employeeName}<br>Incoming: ${r.incomingEngineer}<br>Summary: ${r.summary.substring(0,80)}</div>`).join(''); if(shiftReports.length===0) container.innerHTML='<div>No reports yet</div>'; }
-    function addStaff(){ let name=document.getElementById('staffName').value, email=document.getElementById('staffEmail').value, phone=document.getElementById('staffPhone').value, role=document.getElementById('staffRole').value, team=document.getElementById('staffTeam').value, pwd=document.getElementById('staffPassword').value; if(!name||!email){ alert("Name and Email required"); return; } if(staffs.find(s=>s.email===email)){ alert("Email exists"); return; } staffs.push({name,email,phone,role,team,password:pwd,isAdmin:false}); saveData(); refreshUI(); alert("Staff added"); }
-    function renderStaffList(){ let list=staffs.filter(s=>!s.isAdmin).map(s=>`<div>${s.name} - ${s.role} (${s.team}) <button class="btn-danger" onclick="deleteStaff('${s.email}')">Del</button></div>`).join(''); document.getElementById('staffList').innerHTML=list||'<div>No staff</div>'; }
-    function deleteStaff(email){ staffs=staffs.filter(s=>s.email!==email); saveData(); refreshUI(); }
-    function populateTeamFilters(){ let teams=[...new Set(sites.map(s=>s.team))]; let reportTeam=document.getElementById('reportTeam'); if(reportTeam) reportTeam.innerHTML='<option value="ALL">All Teams</option>'+teams.map(t=>`<option value="${t}">${t}</option>`).join(''); let reportStatus=document.getElementById('reportStatus'); if(reportStatus) reportStatus.innerHTML='<option value="ALL">All Status</option><option>Open</option><option>Assigned</option><option>Handling</option><option>Processed</option><option>Closed</option>'; }
-    function applyTicketFilter(){ renderTicketGrid(); }
-    function applyReportFilter(){ renderReportTable(); }
-    function applyAnalyticsFilter(){ renderAnalytics(); }
-    function exportAllData(){ let data={tickets,sites,staffs,shiftReports}; let blob=new Blob([JSON.stringify(data)],{type:"application/json"}); let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download="comium_backup.json"; a.click(); }
-    function importDataPrompt(){ let input=document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange=e=>{ let file=e.target.files[0]; let reader=new FileReader(); reader.onload=ev=>{ let data=JSON.parse(ev.target.result); if(data.tickets) tickets=data.tickets; if(data.sites) sites=data.sites; if(data.staffs) staffs=data.staffs; if(data.shiftReports) shiftReports=data.shiftReports; saveData(); refreshUI(); alert("Data restored"); }; reader.readAsText(file); }; input.click(); }
-    function openChangePasswordModal(){ document.getElementById('changePwModal').style.display='flex'; }
-    function closeModal(id){ document.getElementById(id).style.display='none'; }
-    function changePassword(){ let curr=document.getElementById('currentPassword').value; let newPw=document.getElementById('newPassword').value; if(curr===currentUser.password){ currentUser.password=newPw; let idx=staffs.findIndex(s=>s.email===currentUser.email); if(idx!==-1) staffs[idx].password=newPw; saveData(); alert("Password changed"); closeModal('changePwModal'); } else alert("Current password wrong"); }
-    function toggleTheme(){ document.body.classList.toggle('dark'); }
-    refreshUI();
+
+    function doLogout() { currentUser = null; document.getElementById("loginPage").style.display = "flex"; document.getElementById("appContainer").style.display = "none"; }
+
+    function navigateTo(page) {
+        document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById(`panel${page.charAt(0).toUpperCase() + page.slice(1)}`).classList.add('active');
+        refreshUI();
+    }
+
+    function refreshUI() { loadDropdowns(); renderHomeDashboard(); renderTicketGrid(); renderReportTable(); renderAnalytics(); renderStaffList(); renderShiftReports(); populateTeamFilters(); populateSiteSelect(); updateAssigneeList(); renderSiteTable(); }
+
+    function renderSiteTable() { let tbody = document.querySelector('#siteReferenceTable tbody'); if(tbody) tbody.innerHTML = sites.map(s => `<tr><td>${s.site_name}</td><td>${s.region}</td><td>${s.team}</td></tr>`).join('') || '<tr><td colspan="3">No data</td></tr>'; }
+
+    function loadDropdowns() { let teams = [...new Set(sites.map(s => s.team))]; ['analyticsTeam', 'reportTeam', 'staffTeam', 'assignTeam'].forEach(id => { let sel = document.getElementById(id); if(sel) { sel.innerHTML = '<option value="ALL">All Teams</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join(''); } }); }
+
+    function populateSiteSelect() { let sel = document.getElementById('ticketSite'); if(sel) sel.innerHTML = '<option value="">Select Site</option>' + sites.map(s => `<option value="${s.site_name}" data-region="${s.region}" data-team="${s.team}">${s.site_name}</option>`).join(''); }
+
+    function updateSiteDetails() { let sel = document.getElementById('ticketSite'); let opt = sel.options[sel.selectedIndex]; if(opt && opt.value) { document.getElementById('ticketRegion').value = opt.getAttribute('data-region') || ''; document.getElementById('ticketTeamDisplay').value = opt.getAttribute('data-team') || ''; } else { document.getElementById('ticketRegion').value = ''; document.getElementById('ticketTeamDisplay').value = ''; } }
+
+    function updateAssigneeList() { let team = document.getElementById('assignTeam').value; let userSel = document.getElementById('assignIndividual'); if(team && team != 'ALL') { let members = staffs.filter(s => s.team === team && !s.is_admin); userSel.innerHTML = '<option value="">Select</option>' + members.map(m => `<option value="${m.email}">${m.name}</option>`).join(''); } else userSel.innerHTML = '<option value="">Select Team First</option>'; }
+
+    async function createTicket() {
+        let site = document.getElementById('ticketSite').value, desc = document.getElementById('ticketDesc').value, priority = document.getElementById('ticketPriority').value, status = document.getElementById('ticketStatus').value, team = document.getElementById('assignTeam').value, assignee = document.getElementById('assignIndividual').value, rca = document.getElementById('ticketRcaCategory').value;
+        if(!site || !desc) { alert("Fill Site and Description"); return; }
+        let newTicket = { id: 'TT' + Date.now(), site_name: site, region: document.getElementById('ticketRegion').value, team: team || 'Unassigned', description: desc, impact: document.getElementById('ticketImpact').value, root_cause: document.getElementById('ticketRootCause').value, rca_category: rca, priority: priority, status: status, resolution: document.getElementById('ticketResolution').value, assigned_to: assignee, created_by: currentUser.email, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), resolution_time: null };
+        if(status === 'Closed') newTicket.resolution_time = 0;
+        const { error } = await supabase.from('tickets').insert([newTicket]);
+        if(error) { alert('Error: ' + error.message); return; }
+        await loadAllData(); alert("Ticket Created"); navigateTo('tickets');
+    }
+
+    function renderHomeDashboard() {
+        let total = tickets.length, open = tickets.filter(t => t.status !== 'Closed').length, closed = tickets.filter(t => t.status === 'Closed').length;
+        document.getElementById('statsGrid').innerHTML = `<div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">Total Tickets</div></div><div class="stat-card"><div class="stat-number">${open}</div><div class="stat-label">Open Tickets</div></div><div class="stat-card"><div class="stat-number">${closed}</div><div class="stat-label">Closed</div></div>`;
+        let statusCounts = {Open:0, Assigned:0, Handling:0, Processed:0, Closed:0}; let rcaCounts = {};
+        tickets.forEach(t => { statusCounts[t.status] = (statusCounts[t.status] || 0) + 1; if(t.rca_category) rcaCounts[t.rca_category] = (rcaCounts[t.rca_category] || 0) + 1; });
+        if(charts.statusChart) charts.statusChart.destroy(); if(charts.rcaChart) charts.rcaChart.destroy();
+        charts.statusChart = new Chart(document.getElementById('statusChart'), {type:'doughnut', data:{labels:Object.keys(statusCounts), datasets:[{data:Object.values(statusCounts), backgroundColor:['#dc2626','#3b82f6','#f59e0b','#10b981','#94a3b8']}]}});
+        charts.rcaChart = new Chart(document.getElementById('rcaChart'), {type:'bar', data:{labels:Object.keys(rcaCounts), datasets:[{label:'Tickets', data:Object.values(rcaCounts)}]}});
+        let recent = tickets.slice(0,5).map(t => `<div>🎫 ${t.id} - ${t.site_name} (${t.status})</div>`).join('');
+        document.getElementById('recentList').innerHTML = recent || '<div>No tickets</div>';
+    }
+
+    function renderTicketGrid() {
+        let statusFilter = document.getElementById('filterStatus').value;
+        let filtered = tickets.filter(t => statusFilter === 'ALL' || t.status === statusFilter);
+        let html = filtered.map(t => `<div class="ticket-card"><div class="ticket-header"><span class="ticket-id">${t.id}</span><span class="ticket-status status-${t.status}">${t.status}</span></div><div><strong>${t.site_name}</strong> | ${t.description.substring(0,60)}</div><div>Priority: ${t.priority} | Team: ${t.team}</div><div class="comment-section">Created: ${new Date(t.created_at).toLocaleString()}</div><div><button class="btn-warning" onclick="updateTicketStatus('${t.id}')">Update Status</button></div></div>`).join('');
+        document.getElementById('ticketGrid').innerHTML = html || '<div>No tickets found</div>';
+    }
+
+    async function updateTicketStatus(id) {
+        let newStatus = prompt("Enter new status: Open, Assigned, Handling, Processed, Closed");
+        if(newStatus && ['Open','Assigned','Handling','Processed','Closed'].includes(newStatus)) {
+            let updateData = { status: newStatus, updated_at: new Date().toISOString() };
+            if(newStatus === 'Closed') { let ticket = tickets.find(t => t.id === id); if(ticket) updateData.resolution_time = Math.floor((new Date() - new Date(ticket.created_at)) / 60000); }
+            const { error } = await supabase.from('tickets').update(updateData).eq('id', id);
+            if(error) alert('Error: ' + error.message);
+            else await loadAllData();
+        }
+    }
+
+    function renderAnalytics() {
+        let teamMap = {}; tickets.forEach(t => { if(!teamMap[t.team]) teamMap[t.team] = {total:0, open:0, closed:0, resolutionSum:0, closedCount:0}; teamMap[t.team].total++; if(t.status !== 'Closed') teamMap[t.team].open++; else { teamMap[t.team].closed++; if(t.resolution_time) { teamMap[t.team].resolutionSum += t.resolution_time; teamMap[t.team].closedCount++; } } });
+        let tableBody = document.querySelector('#analyticsTable tbody'); tableBody.innerHTML = '';
+        for(let [team, data] of Object.entries(teamMap)) { let avgRes = data.closedCount ? Math.round(data.resolutionSum / data.closedCount) : 0; let sla = data.closedCount ? Math.round((data.closed / data.total) * 100) : 0; tableBody.innerHTML += `<tr><td>${team}</td><td>${data.total}</td><td>${data.open}</td><td>${data.closed}</td><td>${avgRes}</td><td>${sla}</td></tr>`; }
+        document.getElementById('kpiTotal').innerHTML = tickets.length; document.getElementById('kpiOpen').innerHTML = tickets.filter(t => t.status !== 'Closed').length;
+        let avgAll = tickets.filter(t => t.resolution_time).reduce((a,b) => a + b.resolution_time, 0) / (tickets.filter(t => t.resolution_time).length || 1) || 0;
+        document.getElementById('kpiAvgResolution').innerHTML = Math.round(avgAll); document.getElementById('kpiSLA').innerHTML = Math.round((tickets.filter(t => t.status === 'Closed').length / (tickets.length || 1)) * 100);
+        if(charts.teamChart) charts.teamChart.destroy(); charts.teamChart = new Chart(document.getElementById('teamChart'), {type:'bar', data:{labels:Object.keys(teamMap), datasets:[{label:'Incidents', data:Object.values(teamMap).map(d => d.total)}]}});
+        if(charts.mttrChart) charts.mttrChart.destroy(); charts.mttrChart = new Chart(document.getElementById('mttrChart'), {type:'line', data:{labels:Object.keys(teamMap), datasets:[{label:'MTTR (min)', data:Object.values(teamMap).map(d => d.closedCount ? Math.round(d.resolutionSum/d.closedCount) : 0)}]}});
+    }
+
+    function renderReportTable() {
+        let search = document.getElementById('reportSearch').value.toLowerCase(); let team = document.getElementById('reportTeam').value; let status = document.getElementById('reportStatus').value;
+        let filtered = tickets.filter(t => (team === 'ALL' || t.team === team) && (status === 'ALL' || t.status === status) && (t.id.toLowerCase().includes(search) || t.site_name.toLowerCase().includes(search)));
+        document.getElementById('reportTableBody').innerHTML = filtered.map(t => `<tr><td>${t.id}</td><td>${t.site_name}</td><td>${t.team}</td><td>${t.status}</td><td>${t.priority}</td><td>${new Date(t.created_at).toLocaleDateString()}</td></tr>`).join('');
+    }
+
+    function exportToExcel() {
+        let wsData = [["ID","Site","Team","Status","Priority","Created","Description"]];
+        tickets.forEach(t => wsData.push([t.id, t.site_name, t.team, t.status, t.priority, new Date(t.created_at).toLocaleString(), t.description]));
+        let wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet(wsData); XLSX.utils.book_append_sheet(wb, ws, "Incidents"); XLSX.writeFile(wb, "comium_incidents.xlsx");
+    }
+
+    async function processExcelFile(input) {
+        let file = input.files[0]; let reader = new FileReader();
+        reader.onload = async function(e) {
+            let data = new Uint8Array(e.target.result); let workbook = XLSX.read(data, {type:'array'}); let sheet = workbook.Sheets[workbook.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet);
+            let newSites = rows.map(r => ({ site_name: r['Site Name'] || r['Site'] || 'Unknown', region: r['Region'] || 'Lagos', team: r['Team'] || 'General' }));
+            for(let site of newSites) { await supabase.from('sites').upsert([site], {onConflict: 'site_name'}); }
+            await loadAllData(); alert("Site data updated");
+        }; reader.readAsArrayBuffer(file);
+    }
+
+    async function submitShiftReport() {
+        let report = { id: Date.now().toString(), employee_name: currentUser.name, date: document.getElementById('shiftDate').value, inherited: parseInt(document.getElementById('shiftInherited').value), opened: parseInt(document.getElementById('shiftOpened').value), closed_noc: parseInt(document.getElementById('shiftClosedNoc').value), logged_noc: parseInt(document.getElementById('shiftLoggedNoc').value), logged_call: parseInt(document.getElementById('shiftLoggedCall').value), resolved_not_closed: document.getElementById('shiftResolvedNotClosed').value, visitor_dc: parseInt(document.getElementById('shiftVisitorDC').value), visitor_site: parseInt(document.getElementById('shiftVisitorSite').value), calls_lead: parseInt(document.getElementById('shiftCallsLead').value), calls_op_tx: parseInt(document.getElementById('shiftCallsOpTx').value), calls_power: parseInt(document.getElementById('shiftCallsPower').value), escalations: parseInt(document.getElementById('shiftEscalations').value), activities: document.getElementById('shiftActivities').value, notes: document.getElementById('shiftNotes').value, incoming_engineer: document.getElementById('shiftIncomingEngineer').value, summary: document.getElementById('shiftSummary').value, outstanding: document.getElementById('shiftOutstanding').value, other_comments: document.getElementById('shiftOtherComments').value, inventory: document.getElementById('shiftInventory').value, send_to: document.getElementById('shiftSendToEmail').value, cc: document.getElementById('shiftCcEmails').value, created_at: new Date().toISOString() };
+        const { error } = await supabase.from('shift_reports').insert([report]);
+        if(error) alert('Error: ' + error.message);
+        else { await loadAllData(); alert("Shift report saved to Supabase"); }
+    }
+
+    function renderShiftReports() { let container = document.getElementById('shiftReportsList'); container.innerHTML = shiftReports.slice(0,10).map(r => `<div style="border-bottom:1px solid #ccc; padding:8px;"><strong>${r.date}</strong> - ${r.employee_name}<br>Incoming: ${r.incoming_engineer}<br>Summary: ${r.summary?.substring(0,80) || ''}</div>`).join('') || '<div>No reports yet</div>'; }
+
+    async function addStaff() {
+        let name = document.getElementById('staffName').value, email = document.getElementById('staffEmail').value, phone = document.getElementById('staffPhone').value, role = document.getElementById('staffRole').value, team = document.getElementById('staffTeam').value, pwd = document.getElementById('staffPassword').value;
+        if(!name || !email) { alert("Name and Email required"); return; }
+        let newStaff = { name, email, phone, role, team, password: pwd, is_admin: false };
+        const { error } = await supabase.from('staffs').insert([newStaff]);
+        if(error) alert('Error: ' + error.message);
+        else await loadAllData();
+    }
+
+    function renderStaffList() { let list = staffs.filter(s => !s.is_admin).map(s => `<div>${s.name} - ${s.role} (${s.team}) <button class="btn-danger" onclick="deleteStaff('${s.email}')">Del</button></div>`).join(''); document.getElementById('staffList').innerHTML = list || '<div>No staff</div>'; }
+
+    async function deleteStaff(email) { await supabase.from('staffs').delete().eq('email', email); await loadAllData(); }
+
+    function populateTeamFilters() { let teams = [...new Set(sites.map(s => s.team))]; let reportTeam = document.getElementById('reportTeam'); if(reportTeam) reportTeam.innerHTML = '<option value="ALL">All Teams</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join(''); let reportStatus = document.getElementById('reportStatus'); if(reportStatus) reportStatus.innerHTML = '<option value="ALL">All Status</option><option>Open</option><option>Assigned</option><option>Handling</option><option>Processed</option><option>Closed</option>'; }
+
+    function applyTicketFilter() { renderTicketGrid(); }
+    function applyReportFilter() { renderReportTable(); }
+    function applyAnalyticsFilter() { renderAnalytics(); }
+    function openChangePasswordModal() { document.getElementById('changePwModal').style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    async function changePassword() {
+        let curr = document.getElementById('currentPassword').value; let newPw = document.getElementById('newPassword').value;
+        if(curr === currentUser.password) { await supabase.from('staffs').update({ password: newPw }).eq('email', currentUser.email); currentUser.password = newPw; alert("Password changed"); closeModal('changePwModal'); }
+        else alert("Current password wrong");
+    }
+    function toggleTheme() { document.body.classList.toggle('dark'); }
+    initSupabase();
 </script>
 </body>
 </html>
