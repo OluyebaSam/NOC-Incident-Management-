@@ -3,17 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comium NOC | Complete Ticket Workflow System</title>
+    <title>Comium NOC | Advanced Ticket Workflow System</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .login-container {
             min-height: 100vh;
             display: flex;
@@ -97,13 +91,14 @@
         .dark .top-bar { background: #1e293b; border-color: #334155; }
         .page-title { font-size: 20px; font-weight: 600; }
         .user-info { display: flex; gap: 15px; align-items: center; }
-        .theme-toggle, .logout-btn {
+        .theme-toggle, .logout-btn, .changepw-btn {
             background: #f1f5f9;
             border: 1px solid #e2e8f0;
             padding: 8px 18px;
             border-radius: 40px;
             cursor: pointer;
         }
+        .changepw-btn { background: #3b82f6; color: white; border: none; }
         .dark .theme-toggle, .dark .logout-btn { background: #334155; border-color: #475569; color: white; }
 
         .content-panel { display: none; padding: 30px; }
@@ -147,7 +142,7 @@
 
         .ticket-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
             gap: 20px;
             margin-top: 20px;
         }
@@ -172,8 +167,10 @@
         .status-Handling { background: #fef3c7; color: #d97706; }
         .status-Processed { background: #d1fae5; color: #059669; }
         .status-Closed { background: #e2e8f0; color: #475569; }
-        .dark .status-Closed { background: #334155; color: #94a3b8; }
-
+        .comment-section { margin-top: 12px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 12px; }
+        .comment-input { display: flex; gap: 8px; margin-top: 8px; }
+        .comment-input input { flex: 1; padding: 6px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; }
+        .comment-list { max-height: 100px; overflow-y: auto; margin-bottom: 6px; background: #f1f5f9; padding: 6px; border-radius: 8px; }
         .workflow-bar {
             display: flex;
             align-items: center;
@@ -184,7 +181,6 @@
             border-radius: 12px;
             flex-wrap: wrap;
         }
-        .dark .workflow-bar { background: #0f172a; }
         .workflow-stage {
             text-align: center;
             padding: 8px 12px;
@@ -209,7 +205,6 @@
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 13px; color: #64748b; }
-        .dark .form-group label { color: #94a3b8; }
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 12px;
@@ -219,7 +214,7 @@
         }
         .dark .form-group input, .dark .form-group select, .dark .form-group textarea { background: #334155; border-color: #475569; color: white; }
 
-        .btn-primary, .btn-success, .btn-warning, .btn-danger {
+        .btn-primary, .btn-success, .btn-warning, .btn-danger, .btn-secondary {
             padding: 8px 16px;
             border: none;
             border-radius: 8px;
@@ -232,6 +227,7 @@
         .btn-success { background: #27ae60; color: white; }
         .btn-warning { background: #f39c12; color: white; }
         .btn-danger { background: #ef4444; color: white; }
+        .btn-secondary { background: #64748b; color: white; }
 
         .upload-area {
             border: 2px dashed #cbd5e1;
@@ -250,20 +246,29 @@
             overflow-x: auto;
             border: 1px solid #e2e8f0;
         }
-        .dark .data-table { background: #1e293b; border-color: #334155; }
-        .data-table th, .data-table td {
-            padding: 12px 10px;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 12px;
-        }
-        .dark .data-table th, .dark .data-table td { border-color: #334155; }
+        .data-table th, .data-table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 12px; }
         .data-table th { background: #f8fafc; font-weight: 600; position: sticky; top: 0; }
-        .dark .data-table th { background: #0f172a; color: #f1f5f9; }
-
         .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
         .admin-badge { background: #c0392b; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; margin-left: 10px; }
-
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--bg-card, white);
+            border-radius: 20px;
+            padding: 30px;
+            width: 450px;
+            max-width: 90%;
+        }
         @media (max-width: 768px) {
             .sidebar { width: 70px; }
             .sidebar-header h2, .nav-item span:last-child { display: none; }
@@ -271,7 +276,6 @@
             .form-row { grid-template-columns: 1fr; }
             .workflow-bar { flex-direction: column; gap: 8px; }
             .workflow-arrow { transform: rotate(90deg); }
-            .charts-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -281,7 +285,7 @@
     <div class="login-card">
         <h2>COMIUM OPERATION SERVICE</h2>
         <h1>Comium NOC</h1>
-        <div class="subtitle">Complete Ticket Workflow System</div>
+        <div class="subtitle">Advanced Ticket Workflow System</div>
         <input type="text" id="loginEmail" placeholder="Account" value="admin@comium.com">
         <input type="password" id="loginPassword" placeholder="Password" value="admin123">
         <div class="forgot-pw"><a href="#" onclick="alert('Contact your system administrator for password reset.')">Forget Password</a></div>
@@ -299,8 +303,7 @@
             <div class="nav-item" onclick="navigateTo('tickets')"><span>🎫</span> <span>My Tickets</span></div>
             <div class="nav-item" onclick="navigateTo('create')"><span>➕</span> <span>Create Ticket</span></div>
             <div class="nav-item" onclick="navigateTo('report')"><span>📋</span> <span>Incident Report</span></div>
-            <div class="nav-item admin-only" id="adminUploadNav" onclick="navigateTo('upload')" style="display:none;"><span>📎</span> <span>Upload Excel</span></div>
-            <div class="nav-item admin-only" id="adminNav" onclick="navigateTo('admin')" style="display:none;"><span>⚙️</span> <span>Admin</span></div>
+            <div class="nav-item admin-only" id="adminNav" onclick="navigateTo('admin')" style="display:none;"><span>⚙️</span> <span>Admin Panel</span></div>
         </div>
     </div>
 
@@ -309,70 +312,34 @@
             <div class="page-title" id="pageTitle">📊 Dashboard</div>
             <div class="user-info">
                 <button class="theme-toggle" onclick="toggleTheme()">🌓 Theme</button>
+                <button class="changepw-btn" onclick="openChangePasswordModal()">🔑 Change Password</button>
                 <div class="user-badge" id="userDisplay"></div>
                 <button class="logout-btn" onclick="doLogout()">Logout</button>
             </div>
         </div>
 
-        <!-- Dashboard Panel -->
         <div id="panelHome" class="content-panel active">
             <div class="stats-grid" id="statsGrid"></div>
             <div class="charts-row">
                 <div class="chart-card"><h3>📊 Ticket Status Distribution</h3><canvas id="statusChart"></canvas></div>
                 <div class="chart-card"><h3>📈 RCA Category Breakdown</h3><canvas id="rcaChart"></canvas></div>
             </div>
-            <div class="form-card"><h3>📋 Recent Tickets (Most Recent First)</h3><div id="recentList"></div></div>
+            <div class="form-card"><h3>📋 Recent Tickets</h3><div id="recentList"></div></div>
         </div>
 
-        <!-- Upload Excel Panel (Admin Only) -->
-        <div id="panelUpload" class="content-panel">
-            <div class="form-card">
-                <h3>📎 Upload Excel Template <span class="admin-badge">Admin Only</span></h3>
-                <p style="margin-bottom: 15px;">Upload your Excel file with Site Reference data for XLOOKUP functionality.</p>
-                <div class="upload-area" onclick="document.getElementById('excelFile').click()">
-                    📂 Click to upload Excel file (.xlsx, .xls)<br>
-                    <small>Supports sheets: Site Reference, Raw Data</small>
-                </div>
-                <input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none;" onchange="processExcelFile(this)">
-                <div id="uploadStatus" style="margin-top:15px;"></div>
-            </div>
-            <div class="form-card">
-                <h3>📍 Site Reference Data (XLOOKUP Source)</h3>
-                <div style="overflow-x:auto; max-height:300px;">
-                    <table class="data-table" id="siteReferenceTable">
-                        <thead><tr><th>Site Name</th><th>Region</th><th>Team</th></tr></thead>
-                        <tbody><tr><td colspan="3">Upload Excel to load site reference data</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tickets Panel -->
         <div id="panelTickets" class="content-panel">
             <div class="filter-bar">
-                <select id="filterStatus">
-                    <option value="ALL">All Status</option>
-                    <option value="Open">Open</option>
-                    <option value="Assigned">Assigned</option>
-                    <option value="Handling">Handling</option>
-                    <option value="Processed">Processed</option>
-                    <option value="Closed">Closed</option>
-                </select>
-                <button class="btn-primary" onclick="applyTicketFilter()">Apply Filter</button>
+                <select id="filterStatus"><option value="ALL">All Status</option><option value="Open">Open</option><option value="Assigned">Assigned</option><option value="Handling">Handling</option><option value="Processed">Processed</option><option value="Closed">Closed</option></select>
+                <button class="btn-primary" onclick="applyTicketFilter()">Apply</button>
             </div>
             <div class="ticket-grid" id="ticketGrid"></div>
         </div>
 
-        <!-- Create Ticket Panel -->
         <div id="panelCreate" class="content-panel">
             <div class="form-card">
                 <h3>➕ Create New Incident Ticket</h3>
                 <div class="form-row">
-                    <div class="form-group"><label>Site Name *</label>
-                        <select id="ticketSite" onchange="updateSiteDetails()">
-                            <option value="">Select Site</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Site Name *</label><select id="ticketSite" onchange="updateSiteDetails()"><option value="">Select Site</option></select></div>
                     <div class="form-group"><label>Region (Auto)</label><input type="text" id="ticketRegion" readonly placeholder="Auto-filled"></div>
                 </div>
                 <div class="form-row">
@@ -384,599 +351,238 @@
                     <div class="form-group"><label>Severity / Priority</label><select id="ticketPriority"><option>Critical</option><option>Major</option><option>Minor</option></select></div>
                     <div class="form-group"><label>RCA Category</label><select id="ticketRca"><option>Power Failure</option><option>Transmission Fault</option><option>Hardware Fault</option><option>Environmental</option></select></div>
                 </div>
-                <button class="btn-primary" onclick="createTicket()">✅ Generate Incident TT (Auto TT)</button>
-                <p style="margin-top: 10px; font-size: 12px; color: #64748b;">Ticket will follow workflow: Open → Assigned → Handling → Processed → Closed</p>
+                <button class="btn-primary" onclick="createTicket()">✅ Generate Incident TT</button>
             </div>
         </div>
 
-        <!-- Incident Report Panel -->
         <div id="panelReport" class="content-panel">
             <div class="form-card">
-                <h3>📋 Complete Incident Report</h3>
+                <h3>📋 Incident Report</h3>
                 <div class="filter-bar">
-                    <input type="text" id="reportSearch" placeholder="Search by Site or ID" style="width:200px;">
+                    <input type="text" id="reportSearch" placeholder="Search..." style="width:200px;">
                     <select id="reportTeam"><option value="ALL">All Teams</option></select>
                     <select id="reportStatus"><option value="ALL">All Status</option><option>Open</option><option>Assigned</option><option>Handling</option><option>Processed</option><option>Closed</option></select>
                     <button class="btn-primary" onclick="applyReportFilter()">Apply</button>
-                    <button class="btn-success" onclick="exportToExcel()">📊 Export to Excel</button>
+                    <button class="btn-success" onclick="exportToExcel()">📊 Export Excel</button>
                 </div>
             </div>
-            <div style="overflow-x:auto; max-height:60vh; overflow-y:auto;">
-                <table class="data-table" id="reportTable">
-                    <thead><tr><th>Ticket ID</th><th>Site</th><th>Region</th><th>Team</th><th>Description</th><th>Assignee</th><th>Status</th><th>RCA</th><th>Resolution</th><th>Created</th><th>Closed</th></tr></thead>
-                    <tbody id="reportTableBody"></tbody>
-                </table>
-            </div>
+            <div style="overflow-x:auto;"><table class="data-table" id="reportTable"><thead><tr><th>ID</th><th>Site</th><th>Team</th><th>Status</th><th>Assignee</th><th>Created</th></tr></thead><tbody id="reportTableBody"></tbody></table></div>
         </div>
 
-        <!-- Admin Panel (Staff Management) -->
         <div id="panelAdmin" class="content-panel">
-            <div class="form-card">
-                <h3>👥 Staff Management <span class="admin-badge">Admin Only</span></h3>
-                <div class="form-row">
-                    <div class="form-group"><label>Name</label><input type="text" id="staffName"></div>
-                    <div class="form-group"><label>Email</label><input type="email" id="staffEmail"></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group"><label>Phone</label><input type="text" id="staffPhone"></div>
-                    <div class="form-group"><label>Role</label>
-                        <select id="staffRole">
-                            <option value="NOC Junior Technician">NOC Junior Technician</option>
-                            <option value="NOC Team Lead">NOC Team Lead</option>
-                            <option value="NOC Manager">NOC Manager</option>
-                            <option value="Operation team">Operation team</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group"><label>Team</label>
-                        <select id="staffTeam">
-                            <option value="NOC Team">NOC Team</option>
-                            <option value="Transmission Team">Transmission Team</option>
-                            <option value="Wireless Team">Wireless Team</option>
-                            <option value="Operation Team">Operation Team</option>
-                            <option value="Power Team">Power Team</option>
-                            <option value="Tx Team">Tx Team</option>
-                            <option value="IPRAN Team">IPRAN Team</option>
-                            <option value="Core Network Team">Core Network Team</option>
-                            <option value="OCS Team">OCS Team</option>
-                        </select>
-                    </div>
-                    <div class="form-group"><label>Password</label><input type="text" id="staffPassword" value="welcome123"></div>
-                </div>
+            <div class="form-card"><h3>👥 Staff Management <span class="admin-badge">Admin Only</span></h3>
+                <div class="form-row"><div class="form-group"><label>Name</label><input type="text" id="staffName"></div><div class="form-group"><label>Email</label><input type="email" id="staffEmail"></div></div>
+                <div class="form-row"><div class="form-group"><label>Phone</label><input type="text" id="staffPhone"></div><div class="form-group"><label>Role</label><select id="staffRole"><option value="NOC Junior Technician">NOC Junior Technician</option><option value="NOC Team Lead">NOC Team Lead</option><option value="NOC Manager">NOC Manager</option><option value="Operation team">Operation team</option></select></div></div>
+                <div class="form-row"><div class="form-group"><label>Team</label><select id="staffTeam"><option value="NOC Team">NOC Team</option><option value="Transmission Team">Transmission Team</option><option value="Wireless Team">Wireless Team</option><option value="Operation Team">Operation Team</option><option value="Power Team">Power Team</option><option value="Tx Team">Tx Team</option><option value="IPRAN Team">IPRAN Team</option><option value="Core Network Team">Core Network Team</option><option value="OCS Team">OCS Team</option></select></div><div class="form-group"><label>Password</label><input type="text" id="staffPassword" value="welcome123"></div></div>
                 <button class="btn-primary" onclick="addStaff()">+ Add Staff</button>
+                <div class="staff-list" id="staffList" style="margin-top:20px;"></div>
             </div>
-            <div class="form-card"><h3>📋 Staff Directory</h3><div id="staffList"></div></div>
         </div>
     </div>
 </div>
 </div>
 
+<!-- Change Password Modal -->
+<div id="changePwModal" class="modal"><div class="modal-content"><h3>🔑 Change Your Password</h3><div class="form-group"><label>Current Password</label><input type="password" id="currentPassword"></div><div class="form-group"><label>New Password</label><input type="password" id="newPassword"></div><div class="form-group"><label>Confirm Password</label><input type="password" id="confirmPassword"></div><div id="pwMessage" style="color:red; margin-bottom:10px;"></div><div style="display:flex; gap:10px;"><button class="btn-primary" onclick="changeOwnPassword()">Update</button><button class="btn-secondary" onclick="closeChangePasswordModal()">Cancel</button></div></div></div>
+
+<!-- Admin Reset Password Modal -->
+<div id="adminResetModal" class="modal"><div class="modal-content"><h3>🔐 Admin Reset Password</h3><div id="resetUserInfo"></div><div class="form-group"><label>New Password</label><input type="text" id="resetNewPassword" value="welcome123"></div><div style="display:flex; gap:10px;"><button class="btn-primary" onclick="confirmAdminReset()">Reset</button><button class="btn-secondary" onclick="closeAdminResetModal()">Cancel</button></div></div></div>
+
+<!-- Edit Staff Modal -->
+<div id="editStaffModal" class="modal"><div class="modal-content"><h3>✏️ Edit Staff</h3><input type="hidden" id="editStaffEmailOrig"><div class="form-group"><label>Name</label><input type="text" id="editStaffName"></div><div class="form-group"><label>Email</label><input type="email" id="editStaffEmail"></div><div class="form-group"><label>Phone</label><input type="text" id="editStaffPhone"></div><div class="form-group"><label>Role</label><select id="editStaffRole"><option value="NOC Junior Technician">NOC Junior Technician</option><option value="NOC Team Lead">NOC Team Lead</option><option value="NOC Manager">NOC Manager</option><option value="Operation team">Operation team</option></select></div><div class="form-group"><label>Team</label><select id="editStaffTeam"><option value="NOC Team">NOC Team</option><option value="Transmission Team">Transmission Team</option><option value="Wireless Team">Wireless Team</option><option value="Operation Team">Operation Team</option><option value="Power Team">Power Team</option><option value="Tx Team">Tx Team</option><option value="IPRAN Team">IPRAN Team</option><option value="Core Network Team">Core Network Team</option><option value="OCS Team">OCS Team</option></select></div><div class="form-group"><label>New Password (optional)</label><input type="password" id="editStaffPassword"></div><div style="display:flex; gap:10px;"><button class="btn-primary" onclick="saveStaffEdit()">Save</button><button class="btn-secondary" onclick="closeEditStaffModal()">Cancel</button></div></div></div>
+
 <script>
-    // ============= WORKFLOW STAGES =============
+    let tickets = [], staffMembers = [], teams = ["NOC Team", "Transmission Team", "Wireless Team", "Operation Team", "Power Team", "Tx Team", "IPRAN Team", "Core Network Team", "OCS Team"];
+    let siteReference = {}, currentUser = null, currentTicketFilter = 'ALL', currentReportFilter = { search: '', team: 'ALL', status: 'ALL' };
+    let statusChart = null, rcaChart = null;
+    let pendingResetEmail = null;
+
     const WORKFLOW_STAGES = ['Open', 'Assigned', 'Handling', 'Processed', 'Closed'];
     const STAGE_NAMES = { 'Open': 'Open', 'Assigned': 'Assigned', 'Handling': 'Handling', 'Processed': 'Processed', 'Closed': 'Closed' };
-
-    // ============= DATA =============
-    let tickets = [];
-    let staffMembers = [];
-    let teams = ["NOC Team", "Transmission Team", "Wireless Team", "Operation Team", "Power Team", "Tx Team", "IPRAN Team", "Core Network Team", "OCS Team"];
-    let siteReference = {};
-    let currentUser = null;
-    let currentTicketFilter = 'ALL';
-    let currentReportFilter = { search: '', team: 'ALL', status: 'ALL' };
-    let statusChart = null, rcaChart = null;
-    let rcaOptions = ["Power Failure", "Transmission Fault", "Hardware Fault", "Environmental"];
-
-    // ============= SAMPLE SITE REFERENCE (XLOOKUP Source) =============
-    const defaultSiteReference = {
-        "Old Yundum 4": { region: "West Coast", team: "HQ" },
-        "Latriya": { region: "West Coast", team: "HQ" },
-        "Bwiam": { region: "West Coast", team: "Brikama House" },
-        "Brufut TAF Estate": { region: "West Coast", team: "HQ" },
-        "Sukuta 2": { region: "West Coast", team: "HQ" },
-        "Jalambang": { region: "West Coast", team: "HQ" },
-        "Kerewan": { region: "North Bank", team: "Barra House" },
-        "Pirang": { region: "West Coast", team: "Brikama House" },
-        "Banjul Hope Street": { region: "Banjul", team: "HQ" },
-        "Sinchu Alagie 3": { region: "West Coast", team: "HQ" },
-        "Brusubi 2": { region: "West Coast", team: "HQ" }
-    };
-
-    // ============= SAMPLE INCIDENTS =============
+    const defaultSiteReference = { "Old Yundum 4": { region: "West Coast", team: "HQ" }, "Latriya": { region: "West Coast", team: "HQ" }, "Bwiam": { region: "West Coast", team: "Brikama House" }, "Brufut TAF Estate": { region: "West Coast", team: "HQ" }, "Sukuta 2": { region: "West Coast", team: "HQ" }, "Jalambang": { region: "West Coast", team: "HQ" }, "Kerewan": { region: "North Bank", team: "Barra House" }, "Pirang": { region: "West Coast", team: "Brikama House" } };
     const sampleTickets = [
-        { id: "TT-001", site: "Old Yundum 4", createdAt: new Date().toISOString(), description: "NE Is Disconnected - Power failure detected", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", teamAssigned: "NOC Team", resolution: "Generator started manually", rca: "NAWEC Mains Failure", closedAt: new Date().toISOString() },
-        { id: "TT-002", site: "Latriya", createdAt: new Date(Date.now() - 1*24*60*60*1000).toISOString(), description: "NE Is Disconnected - Transmission link down", priority: "Major", rcaCategory: "Transmission Fault", status: "Processed", assignee: "Sarah Lead", teamAssigned: "Tx Team", resolution: "Fiber spliced", rca: "Fiber cut", closedAt: "" },
-        { id: "TT-003", site: "Bwiam", createdAt: new Date(Date.now() - 2*24*60*60*1000).toISOString(), description: "Site Down - Power outage", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", teamAssigned: "Power Team", resolution: "Generator started", rca: "NAWEC outage", closedAt: new Date().toISOString() },
-        { id: "TT-004", site: "Brufut TAF Estate", createdAt: new Date(Date.now() - 3*24*60*60*1000).toISOString(), description: "NE Is Disconnected - No connectivity", priority: "Major", rcaCategory: "Power Failure", status: "Handling", assignee: "John Engineer", teamAssigned: "Power Team", resolution: "", rca: "", closedAt: "" },
-        { id: "TT-005", site: "Sukuta 2", createdAt: new Date(Date.now() - 4*24*60*60*1000).toISOString(), description: "Site Down - Mains failure", priority: "Critical", rcaCategory: "Power Failure", status: "Assigned", assignee: "Sarah Lead", teamAssigned: "Core Network Team", resolution: "", rca: "", closedAt: "" },
-        { id: "TT-006", site: "Jalambang", createdAt: new Date(Date.now() - 5*24*60*60*1000).toISOString(), description: "NE Is Disconnected - Power issue", priority: "Major", rcaCategory: "Power Failure", status: "Open", assignee: "", teamAssigned: "IPRAN Team", resolution: "", rca: "", closedAt: "" },
-        { id: "TT-007", site: "Kerewan", createdAt: new Date(Date.now() - 6*24*60*60*1000).toISOString(), description: "Generator fail - Impacting 13 sites", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", teamAssigned: "Power Team", resolution: "Generator started manually", rca: "Fuel empty", closedAt: new Date().toISOString() },
-        { id: "TT-008", site: "Pirang", createdAt: new Date(Date.now() - 7*24*60*60*1000).toISOString(), description: "Transmission link down", priority: "Major", rcaCategory: "Transmission Fault", status: "Processed", assignee: "Sarah Lead", teamAssigned: "Tx Team", resolution: "Link restored", rca: "Equipment fault", closedAt: "" }
+        { id: "TT-001", site: "Old Yundum 4", createdAt: new Date().toISOString(), description: "Power failure", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", teamAssigned: "NOC Team", resolution: "Generator started", rca: "NAWEC outage", closedAt: new Date().toISOString(), comments: [] },
+        { id: "TT-002", site: "Latriya", createdAt: new Date(Date.now() - 1*24*60*60*1000).toISOString(), description: "Transmission link down", priority: "Major", rcaCategory: "Transmission Fault", status: "Processed", assignee: "Sarah Lead", teamAssigned: "Tx Team", resolution: "Fiber spliced", rca: "Fiber cut", closedAt: "", comments: [] },
+        { id: "TT-003", site: "Bwiam", createdAt: new Date(Date.now() - 2*24*60*60*1000).toISOString(), description: "NE Is Disconnected", priority: "Major", rcaCategory: "Power Failure", status: "Handling", assignee: "John Engineer", teamAssigned: "Power Team", resolution: "", rca: "", closedAt: "", comments: [] },
+        { id: "TT-004", site: "Sukuta 2", createdAt: new Date(Date.now() - 3*24*60*60*1000).toISOString(), description: "Site Down", priority: "Critical", rcaCategory: "Power Failure", status: "Assigned", assignee: "Sarah Lead", teamAssigned: "Core Network Team", resolution: "", rca: "", closedAt: "", comments: [] },
+        { id: "TT-005", site: "Jalambang", createdAt: new Date(Date.now() - 4*24*60*60*1000).toISOString(), description: "No connectivity", priority: "Major", rcaCategory: "Hardware Fault", status: "Open", assignee: "", teamAssigned: "IPRAN Team", resolution: "", rca: "", closedAt: "", comments: [] }
     ];
 
-    // ============= INITIALIZE FUNCTIONS =============
     function initializeData() {
-        const savedTickets = localStorage.getItem('comium_tickets');
-        const savedStaff = localStorage.getItem('comium_staff');
-        const savedSiteRef = localStorage.getItem('comium_siteRef');
-        
-        if (savedTickets) tickets = JSON.parse(savedTickets);
-        else tickets = [...sampleTickets];
-        
+        const saved = localStorage.getItem('comium_tickets'); if (saved) tickets = JSON.parse(saved); else tickets = [...sampleTickets];
+        const savedStaff = localStorage.getItem('comium_staff'); 
         if (savedStaff) staffMembers = JSON.parse(savedStaff);
-        else {
-            staffMembers = [
-                { name: "Administrator", email: "admin@comium.com", phone: "+2209998888", role: "Admin", team: "Management", password: "admin123", isAdmin: true },
-                { name: "Viewer User", email: "viewer@comium.com", phone: "+2209997777", role: "Viewer", team: "View Only", password: "view123", isViewer: true },
-                { name: "John Engineer", email: "john@comium.com", phone: "+2207771111", role: "NOC Junior Technician", team: "NOC Team", password: "john123" },
-                { name: "Sarah Lead", email: "sarah@comium.com", phone: "+2207772222", role: "NOC Team Lead", team: "NOC Team", password: "sarah123" },
-                { name: "Power Specialist", email: "power@comium.com", phone: "+2207773333", role: "Operation team", team: "Power Team", password: "power123" },
-                { name: "Tx Engineer", email: "tx@comium.com", phone: "+2207774444", role: "Operation team", team: "Tx Team", password: "tx123" }
-            ];
-        }
-        
-        if (savedSiteRef) siteReference = JSON.parse(savedSiteRef);
-        else siteReference = {...defaultSiteReference};
-        
-        saveData();
-        updateDropdowns();
-        updateSiteSelectors();
+        else staffMembers = [
+            { name: "Administrator", email: "admin@comium.com", phone: "+2209998888", role: "Admin", team: "Management", password: "admin123", isAdmin: true },
+            { name: "Viewer User", email: "viewer@comium.com", phone: "+2209997777", role: "Viewer", team: "View Only", password: "view123", isViewer: true },
+            { name: "John Engineer", email: "john@comium.com", phone: "+2207771111", role: "NOC Junior Technician", team: "NOC Team", password: "john123" },
+            { name: "Sarah Lead", email: "sarah@comium.com", phone: "+2207772222", role: "NOC Team Lead", team: "NOC Team", password: "sarah123" }
+        ];
+        const savedRef = localStorage.getItem('comium_siteRef'); if (savedRef) siteReference = JSON.parse(savedRef); else siteReference = {...defaultSiteReference};
+        saveData(); updateDropdowns(); updateSiteSelectors();
     }
-
-    function saveData() {
-        localStorage.setItem('comium_tickets', JSON.stringify(tickets));
-        localStorage.setItem('comium_staff', JSON.stringify(staffMembers));
-        localStorage.setItem('comium_siteRef', JSON.stringify(siteReference));
-    }
-
-    // ============= XLOOKUP FUNCTION =============
-    function xlookup(site, field) {
-        return siteReference[site]?.[field] || "—";
-    }
-
-    function updateSiteSelectors() {
-        const siteSelect = document.getElementById('ticketSite');
-        if (siteSelect) {
-            siteSelect.innerHTML = '<option value="">Select Site</option>' + Object.keys(siteReference).map(s => `<option value="${s}">${s}</option>`).join('');
-        }
-        displaySiteReference();
-    }
-
-    function updateSiteDetails() {
-        const site = document.getElementById('ticketSite').value;
-        document.getElementById('ticketRegion').value = xlookup(site, 'region');
-        document.getElementById('ticketTeamDisplay').value = xlookup(site, 'team');
-    }
-
-    function displaySiteReference() {
-        const tbody = document.querySelector('#siteReferenceTable tbody');
-        if (!tbody) return;
-        const sites = Object.entries(siteReference);
-        if (sites.length === 0) tbody.innerHTML = '<tr><td colspan="3">Upload Excel to load site reference data</td></tr>';
-        else tbody.innerHTML = sites.slice(0, 50).map(([site, data]) => `<tr><td>${site}</td><td>${data.region}</td><td>${data.team}</td></tr>`).join('');
-    }
-
-    // ============= TEAM-BASED VISIBILITY =============
-    function canUserSeeTicket(ticket) {
-        if (!currentUser) return false;
-        // NOC Manager, NOC Team Lead, NOC Junior Technician can see all tickets
-        if (currentUser.role === 'NOC Manager' || currentUser.role === 'NOC Team Lead' || currentUser.role === 'NOC Junior Technician') {
-            return true;
-        }
-        // Otherwise, user can see only tickets assigned to their team
-        return ticket.teamAssigned === currentUser.team;
-    }
-
-    // ============= EXCEL UPLOAD FUNCTION =============
-    function processExcelFile(input) {
-        if (currentUser?.role !== 'Admin') { alert("Only Admin can upload Excel"); return; }
-        const file = input.files[0];
-        if (!file) return;
-        document.getElementById('uploadStatus').innerHTML = '<span style="color:blue;">⏳ Processing Excel...</span>';
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            
-            for (let sheetName of workbook.SheetNames) {
-                const sheet = workbook.Sheets[sheetName];
-                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-                
-                if (sheetName.toLowerCase().includes('site') || (rows[0] && rows[0].includes('Site'))) {
-                    siteReference = {};
-                    for (let i = 1; i < rows.length; i++) {
-                        if (rows[i] && rows[i][0]) {
-                            siteReference[rows[i][0].trim()] = { 
-                                region: rows[i][2] || rows[i][1] || "—", 
-                                team: rows[i][5] || rows[i][4] || "—" 
-                            };
-                        }
-                    }
-                }
-                
-                if (rows[0] && (rows[0].includes('Incident ID') || rows[0].includes('Ticket'))) {
-                    const headers = rows[0];
-                    const newTickets = [];
-                    for (let i = 1; i < rows.length; i++) {
-                        const row = rows[i];
-                        if (row && row[0]) {
-                            newTickets.push({
-                                id: row[0], site: row[1] || "Unknown",
-                                createdAt: new Date().toISOString(), description: row[2] || "",
-                                priority: row[3] || "Medium", rcaCategory: row[4] || "Power Failure",
-                                status: "Open", assignee: "", teamAssigned: row[5] || "NOC Team",
-                                resolution: "", rca: "", closedAt: ""
-                            });
-                        }
-                    }
-                    if (newTickets.length) tickets = [...newTickets, ...tickets];
-                }
-            }
-            
-            saveData();
-            updateSiteSelectors();
-            renderAll();
-            document.getElementById('uploadStatus').innerHTML = `<span style="color:green;">✅ Loaded ${Object.keys(siteReference).length} sites, ${tickets.length} tickets</span>`;
-            setTimeout(() => document.getElementById('uploadStatus').innerHTML = '', 3000);
-        };
-        reader.readAsArrayBuffer(file);
-    }
-
-    // ============= TICKET WORKFLOW FUNCTIONS =============
+    function saveData() { localStorage.setItem('comium_tickets', JSON.stringify(tickets)); localStorage.setItem('comium_staff', JSON.stringify(staffMembers)); localStorage.setItem('comium_siteRef', JSON.stringify(siteReference)); }
+    function xlookup(site, field) { return siteReference[site]?.[field] || "—"; }
+    function updateSiteSelectors() { const siteSelect = document.getElementById('ticketSite'); if (siteSelect) siteSelect.innerHTML = '<option value="">Select Site</option>' + Object.keys(siteReference).map(s => `<option value="${s}">${s}</option>`).join(''); displaySiteReference(); }
+    function updateSiteDetails() { const site = document.getElementById('ticketSite').value; document.getElementById('ticketRegion').value = xlookup(site, 'region'); document.getElementById('ticketTeamDisplay').value = xlookup(site, 'team'); }
+    function displaySiteReference() { const tbody = document.querySelector('#siteReferenceTable tbody'); if(tbody) tbody.innerHTML = Object.entries(siteReference).slice(0,30).map(([s,d]) => `<tr><td>${s}</td><td>${d.region}</td><td>${d.team}</td></tr>`).join(''); }
     function generateTicketId() { return `TT-${String(tickets.length + 1).padStart(4, '0')}`; }
 
     function createTicket() {
-        if (currentUser?.role === 'Viewer') { alert("Viewer accounts cannot create tickets."); return; }
-        const site = document.getElementById('ticketSite').value;
-        const desc = document.getElementById('ticketDesc').value;
-        if (!site || !desc) { alert("Please fill Site and Description"); return; }
-        
-        // Get the team from the auto-filled team display (from XLOOKUP)
-        const assignedTeam = document.getElementById('ticketTeamDisplay').value;
-        const finalTeam = (assignedTeam && assignedTeam !== "—" && assignedTeam !== "Auto-filled") ? assignedTeam : "NOC Team";
-        
+        if (currentUser?.role === 'Viewer') { alert("Viewer cannot create tickets."); return; }
+        const site = document.getElementById('ticketSite').value, desc = document.getElementById('ticketDesc').value;
+        if (!site || !desc) { alert("Fill required fields"); return; }
+        const teamAssigned = document.getElementById('ticketTeamDisplay').value;
+        const finalTeam = (teamAssigned && teamAssigned !== "—" && teamAssigned !== "Auto-filled") ? teamAssigned : "NOC Team";
         const newTicket = {
-            id: generateTicketId(),
-            site: site,
-            createdAt: new Date().toISOString(),
-            description: desc,
-            priority: document.getElementById('ticketPriority').value,
-            rcaCategory: document.getElementById('ticketRca').value,
-            status: 'Open',
-            assignee: '',
-            teamAssigned: finalTeam,
-            resolution: '',
-            rca: '',
-            closedAt: '',
-            createdBy: currentUser?.name || "System",
-            region: xlookup(site, 'region'),
-            team: xlookup(site, 'team')
+            id: generateTicketId(), site: site, createdAt: new Date().toISOString(), description: desc,
+            priority: document.getElementById('ticketPriority').value, rcaCategory: document.getElementById('ticketRca').value,
+            status: 'Open', assignee: '', teamAssigned: finalTeam, resolution: '', rca: '', closedAt: '', comments: [],
+            createdBy: currentUser?.name || "System", region: xlookup(site, 'region')
         };
-        
-        tickets.unshift(newTicket);
-        saveData();
-        renderAll();
-        navigateTo('home');
-        alert(`✅ Ticket ${newTicket.id} created! Assigned to team: ${finalTeam}. Workflow started.`);
-        
-        document.getElementById('ticketSite').value = '';
-        document.getElementById('ticketDesc').value = '';
+        tickets.unshift(newTicket); saveData(); renderAll(); navigateTo('home');
+        alert(`✅ Ticket ${newTicket.id} created!`);
+        document.getElementById('ticketSite').value = ''; document.getElementById('ticketDesc').value = '';
+        document.getElementById('ticketRegion').value = ''; document.getElementById('ticketTeamDisplay').value = '';
     }
 
-    // Workflow Actions: Assign, Handle, Process, Escalate, Close
+    function canUserSeeTicket(ticket) {
+        if (!currentUser) return false;
+        if (currentUser.role === 'Admin' || currentUser.role === 'NOC Manager' || currentUser.role === 'NOC Team Lead' || currentUser.role === 'NOC Junior Technician') return true;
+        return ticket.teamAssigned === currentUser.team;
+    }
+    function canEditTicket(ticket) {
+        if (!currentUser) return false;
+        if (ticket.status === 'Closed') return false;
+        if (currentUser.role === 'Admin' || currentUser.role === 'NOC Manager' || currentUser.role === 'NOC Team Lead') return true;
+        return ticket.assignee === currentUser.name && (ticket.status === 'Open' || ticket.status === 'Assigned' || ticket.status === 'Handling');
+    }
+
     function assignTicket(ticketId) {
         const ticket = tickets.find(t => t.id === ticketId);
-        if (!ticket || ticket.status !== 'Open') { alert("Ticket must be in 'Open' status to assign"); return; }
-        if (currentUser?.role === 'Viewer') { alert("Viewer cannot assign tickets"); return; }
-        
-        // Get engineers from the ticket's assigned team
+        if (!ticket || ticket.status !== 'Open') { alert("Ticket must be Open to assign"); return; }
         const engineers = staffMembers.filter(s => s.team === ticket.teamAssigned && s.role !== 'Viewer' && s.role !== 'Admin');
-        if (engineers.length === 0) { alert(`No engineers available in team ${ticket.teamAssigned}. Add engineers in Admin panel.`); return; }
-        
-        const assignee = prompt(`Select assignee from team ${ticket.teamAssigned}:\n${engineers.map(e => e.name).join(', ')}\n\nEnter engineer name:`, engineers[0]?.name);
-        
-        if (assignee && staffMembers.find(s => s.name === assignee && s.team === ticket.teamAssigned)) {
-            ticket.assignee = assignee;
-            ticket.status = 'Assigned';
-            saveData();
-            renderAll();
-            alert(`✅ Ticket ${ticketId} assigned to ${assignee} (${ticket.teamAssigned})`);
-        } else if (assignee) {
-            alert("Invalid engineer name for this team.");
-        }
+        if (engineers.length === 0) { alert(`No engineers in team ${ticket.teamAssigned}`); return; }
+        const assignee = prompt(`Select assignee from ${ticket.teamAssigned}:\n${engineers.map(e=>e.name).join(', ')}`);
+        if (assignee && staffMembers.find(s=>s.name===assignee && s.team===ticket.teamAssigned)) {
+            ticket.assignee = assignee; ticket.status = 'Assigned'; saveData(); renderAll(); alert(`Assigned to ${assignee}`);
+        } else if(assignee) alert("Invalid engineer");
     }
-
     function startHandling(ticketId) {
         const ticket = tickets.find(t => t.id === ticketId);
-        if (!ticket || ticket.status !== 'Assigned') { alert("Ticket must be in 'Assigned' status"); return; }
-        if (ticket.assignee !== currentUser?.name && currentUser?.role !== 'Admin' && currentUser?.role !== 'NOC Manager' && currentUser?.role !== 'NOC Team Lead') { 
-            alert("Only assigned engineer or NOC management can start handling"); 
-            return; 
-        }
-        
-        ticket.status = 'Handling';
-        saveData();
-        renderAll();
-        alert(`🔧 Ticket ${ticketId} is now in HANDLING stage.`);
+        if (!ticket || ticket.status !== 'Assigned') { alert("Must be Assigned"); return; }
+        if (!canEditTicket(ticket)) { alert("Only assignee or NOC management can handle"); return; }
+        ticket.status = 'Handling'; saveData(); renderAll(); alert("Handling started");
     }
-
     function processTicket(ticketId) {
         const ticket = tickets.find(t => t.id === ticketId);
-        if (!ticket || ticket.status !== 'Handling') { alert("Ticket must be in 'Handling' status"); return; }
-        if (ticket.assignee !== currentUser?.name && currentUser?.role !== 'Admin' && currentUser?.role !== 'NOC Manager' && currentUser?.role !== 'NOC Team Lead') { 
-            alert("Only assigned engineer or NOC management can process/fix"); 
-            return; 
-        }
-        
-        const resolution = prompt("Enter Resolution Details (Fix action taken):");
-        const rca = prompt("Enter Root Cause Analysis (RCA):");
-        
-        if (resolution && rca) {
-            ticket.resolution = resolution;
-            ticket.rca = rca;
-            ticket.status = 'Processed';
-            saveData();
-            renderAll();
-            alert(`✅ Ticket ${ticketId} PROCESSED! Ready for final closure.`);
-        } else {
-            alert("Both Resolution and RCA are required.");
-        }
+        if (!ticket || ticket.status !== 'Handling') { alert("Must be Handling"); return; }
+        if (!canEditTicket(ticket)) { alert("Only assignee or NOC management can process"); return; }
+        const resolution = prompt("Resolution details:"); const rca = prompt("Root Cause Analysis:");
+        if (resolution && rca) { ticket.resolution = resolution; ticket.rca = rca; ticket.status = 'Processed'; saveData(); renderAll(); alert("Ticket Processed"); }
+        else alert("Both required");
     }
-
     function escalateTicket(ticketId) {
         const ticket = tickets.find(t => t.id === ticketId);
-        if (!ticket || ticket.status !== 'Handling') { alert("Ticket must be in 'Handling' status to escalate"); return; }
-        if (confirm(`Escalate ticket ${ticketId}? This will mark it for management review.`)) {
-            ticket.status = 'Assigned';
-            ticket.assignee = "Management - Escalated";
-            saveData();
-            renderAll();
-            alert(`⚠️ Ticket ${ticketId} escalated back to Assigned for management review.`);
-        }
+        if (!ticket || ticket.status !== 'Handling') { alert("Must be Handling to escalate"); return; }
+        if (confirm("Escalate for management review?")) { ticket.status = 'Assigned'; ticket.assignee = "Management - Escalated"; saveData(); renderAll(); alert("Escalated"); }
     }
-
     function closeTicket(ticketId) {
         const ticket = tickets.find(t => t.id === ticketId);
-        if (!ticket || ticket.status !== 'Processed') { alert("Ticket must be in 'Processed' status"); return; }
-        if (ticket.assignee !== currentUser?.name && currentUser?.role !== 'Admin' && currentUser?.role !== 'NOC Manager' && currentUser?.role !== 'NOC Team Lead') { 
-            alert("Only assigned engineer or NOC management can close"); 
-            return; 
-        }
-        
-        if (confirm(`Close ticket ${ticketId}? This will complete the workflow and make it read-only.`)) {
-            ticket.status = 'Closed';
-            ticket.closedAt = new Date().toISOString();
-            saveData();
-            renderAll();
-            alert(`🔒 Ticket ${ticketId} CLOSED. Workflow complete.`);
-        }
+        if (!ticket || ticket.status !== 'Processed') { alert("Must be Processed"); return; }
+        if (!canEditTicket(ticket)) { alert("Only assignee or NOC management can close"); return; }
+        if (confirm("Close ticket? No further edits allowed.")) { ticket.status = 'Closed'; ticket.closedAt = new Date().toISOString(); saveData(); renderAll(); alert("Closed"); }
+    }
+    function addComment(ticketId) {
+        const ticket = tickets.find(t => t.id === ticketId);
+        if (!ticket) return;
+        const comment = prompt("Add a comment:");
+        if (comment) { if (!ticket.comments) ticket.comments = []; ticket.comments.push({ user: currentUser.name, text: comment, time: new Date().toLocaleString() }); saveData(); renderAll(); }
     }
 
-    // ============= RENDER FUNCTIONS =============
     function renderDashboard() {
-        const stats = {
-            total: tickets.length,
-            open: tickets.filter(t => t.status === 'Open').length,
-            assigned: tickets.filter(t => t.status === 'Assigned').length,
-            handling: tickets.filter(t => t.status === 'Handling').length,
-            processed: tickets.filter(t => t.status === 'Processed').length,
-            closed: tickets.filter(t => t.status === 'Closed').length
-        };
-        
-        document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card" onclick="filterAndGo('Open')"><div class="stat-number">${stats.open}</div><div class="stat-label">🔴 Open</div></div>
-            <div class="stat-card" onclick="filterAndGo('Assigned')"><div class="stat-number">${stats.assigned}</div><div class="stat-label">📋 Assigned</div></div>
-            <div class="stat-card" onclick="filterAndGo('Handling')"><div class="stat-number">${stats.handling}</div><div class="stat-label">🔧 Handling</div></div>
-            <div class="stat-card" onclick="filterAndGo('Processed')"><div class="stat-number">${stats.processed}</div><div class="stat-label">✅ Processed</div></div>
-            <div class="stat-card" onclick="filterAndGo('Closed')"><div class="stat-number">${stats.closed}</div><div class="stat-label">🔒 Closed</div></div>
-            <div class="stat-card"><div class="stat-number">${stats.total}</div><div class="stat-label">📋 Total Tickets</div></div>`;
-        
-        // Status Chart
+        const stats = { total: tickets.length, open: tickets.filter(t=>t.status==='Open').length, assigned: tickets.filter(t=>t.status==='Assigned').length, handling: tickets.filter(t=>t.status==='Handling').length, processed: tickets.filter(t=>t.status==='Processed').length, closed: tickets.filter(t=>t.status==='Closed').length };
+        document.getElementById('statsGrid').innerHTML = `<div class="stat-card" onclick="filterAndGo('Open')"><div class="stat-number">${stats.open}</div><div class="stat-label">🔴 Open</div></div><div class="stat-card" onclick="filterAndGo('Assigned')"><div class="stat-number">${stats.assigned}</div><div class="stat-label">📋 Assigned</div></div><div class="stat-card" onclick="filterAndGo('Handling')"><div class="stat-number">${stats.handling}</div><div class="stat-label">🔧 Handling</div></div><div class="stat-card" onclick="filterAndGo('Processed')"><div class="stat-number">${stats.processed}</div><div class="stat-label">✅ Processed</div></div><div class="stat-card" onclick="filterAndGo('Closed')"><div class="stat-number">${stats.closed}</div><div class="stat-label">🔒 Closed</div></div>`;
         if (statusChart) statusChart.destroy();
-        statusChart = new Chart(document.getElementById('statusChart'), {
-            type: 'doughnut',
-            data: { labels: ['Open', 'Assigned', 'Handling', 'Processed', 'Closed'], 
-                    datasets: [{ data: [stats.open, stats.assigned, stats.handling, stats.processed, stats.closed], 
-                                backgroundColor: ['#dc2626', '#3b82f6', '#f59e0b', '#10b981', '#64748b'] }] },
-            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-        });
-        
-        // RCA Chart
-        const rcaCounts = rcaOptions.map(rca => tickets.filter(t => t.rcaCategory === rca).length);
+        statusChart = new Chart(document.getElementById('statusChart'), { type: 'doughnut', data: { labels: ['Open','Assigned','Handling','Processed','Closed'], datasets: [{ data: [stats.open,stats.assigned,stats.handling,stats.processed,stats.closed], backgroundColor: ['#dc2626','#3b82f6','#f59e0b','#10b981','#64748b'] }] }, options: { responsive: true, plugins: { legend: { position: 'bottom' } } } });
+        const rcaCounts = ["Power Failure","Transmission Fault","Hardware Fault","Environmental"].map(r => tickets.filter(t=>t.rcaCategory===r).length);
         if (rcaChart) rcaChart.destroy();
-        rcaChart = new Chart(document.getElementById('rcaChart'), {
-            type: 'bar',
-            data: { labels: rcaOptions, datasets: [{ label: 'Incidents', data: rcaCounts, backgroundColor: '#c0392b' }] },
-            options: { responsive: true, plugins: { legend: { display: false } } }
-        });
-        
-        document.getElementById('recentList').innerHTML = tickets.slice(0, 8).map(t => `
-            <div style="padding:12px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between;">
-                <span><strong>${t.id}</strong> - ${t.site} (${t.teamAssigned})</span>
-                <span class="status-${t.status}">${STAGE_NAMES[t.status]}</span>
-            </div>
-        `).join('');
+        rcaChart = new Chart(document.getElementById('rcaChart'), { type: 'bar', data: { labels: ["Power Failure","Transmission Fault","Hardware Fault","Environmental"], datasets: [{ label: 'Incidents', data: rcaCounts, backgroundColor: '#c0392b' }] }, options: { responsive: true } });
+        document.getElementById('recentList').innerHTML = tickets.slice(0,5).map(t=>`<div style="padding:10px; border-bottom:1px solid #e2e8f0;"><strong>${t.id}</strong> - ${t.site} (${t.teamAssigned}) | ${t.status}</div>`).join('');
     }
 
     function renderTickets() {
-        const container = document.getElementById('ticketGrid');
-        if (!container) return;
-        
-        let filtered = tickets.filter(t => canUserSeeTicket(t));
+        const container = document.getElementById('ticketGrid'); if (!container) return;
+        let filtered = tickets.filter(canUserSeeTicket);
         if (currentTicketFilter !== 'ALL') filtered = filtered.filter(t => t.status === currentTicketFilter);
-        
         container.innerHTML = filtered.map(ticket => {
-            const currentStageIndex = WORKFLOW_STAGES.indexOf(ticket.status);
+            const idx = WORKFLOW_STAGES.indexOf(ticket.status);
             const isClosed = ticket.status === 'Closed';
-            const canAssign = (currentUser?.role === 'Admin' || currentUser?.role === 'NOC Manager' || currentUser?.role === 'NOC Team Lead') && ticket.status === 'Open';
-            const canHandle = (ticket.assignee === currentUser?.name || currentUser?.role === 'Admin' || currentUser?.role === 'NOC Manager' || currentUser?.role === 'NOC Team Lead') && ticket.status === 'Assigned';
-            const canProcess = (ticket.assignee === currentUser?.name || currentUser?.role === 'Admin' || currentUser?.role === 'NOC Manager' || currentUser?.role === 'NOC Team Lead') && ticket.status === 'Handling';
-            const canClose = (ticket.assignee === currentUser?.name || currentUser?.role === 'Admin' || currentUser?.role === 'NOC Manager' || currentUser?.role === 'NOC Team Lead') && ticket.status === 'Processed';
-            
-            return `
-            <div class="ticket-card" style="${isClosed ? 'opacity:0.8;' : ''}">
-                <div class="ticket-header">
-                    <span class="ticket-id">${ticket.id}</span>
-                    <span class="ticket-status status-${ticket.status}">${STAGE_NAMES[ticket.status]}</span>
+            return `<div class="ticket-card">
+                <div class="ticket-header"><span class="ticket-id">${ticket.id}</span><span class="ticket-status status-${ticket.status}">${ticket.status}</span></div>
+                <div><strong>📍 ${ticket.site}</strong> | ⚡ ${ticket.priority} | 🏢 ${ticket.teamAssigned}</div>
+                <div>📝 ${ticket.description.substring(0,80)}</div><div>👤 Assignee: ${ticket.assignee || 'Unassigned'}</div>
+                <div class="workflow-bar">${WORKFLOW_STAGES.map((s,i)=>`<div class="workflow-stage ${i<idx?'completed':''} ${ticket.status===s?'active':''}">${s}</div>${i<4?'<span class="workflow-arrow">→</span>':''}`).join('')}</div>
+                ${ticket.rca?`<div><strong>🔍 RCA:</strong> ${ticket.rca}</div>`:''}
+                ${ticket.resolution?`<div><strong>📝 Resolution:</strong> ${ticket.resolution}</div>`:''}
+                <div class="comment-section"><div class="comment-list">${(ticket.comments||[]).map(c=>`<div><strong>${c.user}</strong>: ${c.text}<br><small>${c.time}</small></div>`).join('')}</div>
+                ${!isClosed?`<div class="comment-input"><input type="text" id="comment_${ticket.id}" placeholder="Add comment..."><button class="btn-secondary" onclick="addComment('${ticket.id}')">Post</button></div>`:''}</div>
+                <div class="ticket-actions">
+                    ${ticket.status === 'Open' && canEditTicket(ticket) ? `<button class="btn-primary" onclick="assignTicket('${ticket.id}')">Assign</button>` : ''}
+                    ${ticket.status === 'Assigned' && canEditTicket(ticket) ? `<button class="btn-primary" onclick="startHandling('${ticket.id}')">Handle</button>` : ''}
+                    ${ticket.status === 'Handling' && canEditTicket(ticket) ? `<button class="btn-success" onclick="processTicket('${ticket.id}')">Fix</button><button class="btn-danger" onclick="escalateTicket('${ticket.id}')">Escalate</button>` : ''}
+                    ${ticket.status === 'Processed' && canEditTicket(ticket) ? `<button class="btn-primary" onclick="closeTicket('${ticket.id}')">Close</button>` : ''}
                 </div>
-                <div><strong>📍 ${ticket.site}</strong> | ⚡ ${ticket.priority}</div>
-                <div>🏢 ${ticket.teamAssigned || 'Unassigned'} | 📍 ${xlookup(ticket.site, 'region')}</div>
-                <div>📝 ${ticket.description.substring(0, 80)}</div>
-                <div>👤 Assignee: ${ticket.assignee || 'Not assigned yet'}</div>
-                <div>📅 Created: ${new Date(ticket.createdAt).toLocaleString()}</div>
-                
-                <div class="workflow-bar">
-                    ${WORKFLOW_STAGES.map((stage, idx) => `
-                        <div class="workflow-stage ${idx < currentStageIndex ? 'completed' : ''} ${ticket.status === stage ? 'active' : ''}">${stage}</div>
-                        ${idx < WORKFLOW_STAGES.length - 1 ? '<span class="workflow-arrow">→</span>' : ''}
-                    `).join('')}
-                </div>
-                
-                ${ticket.rca ? `<div><strong>🔍 RCA:</strong> ${ticket.rca}</div>` : ''}
-                ${ticket.resolution ? `<div><strong>📝 Resolution:</strong> ${ticket.resolution}</div>` : ''}
-                
-                <div class="ticket-actions" style="margin-top:15px;">
-                    ${canAssign ? `<button class="btn-primary" onclick="assignTicket('${ticket.id}')">📋 Assign</button>` : ''}
-                    ${canHandle ? `<button class="btn-primary" onclick="startHandling('${ticket.id}')">🔧 Handle</button>` : ''}
-                    ${canProcess ? `<button class="btn-success" onclick="processTicket('${ticket.id}')">✅ Fix</button>
-                                   <button class="btn-danger" onclick="escalateTicket('${ticket.id}')">📢 Escalate</button>` : ''}
-                    ${canClose ? `<button class="btn-primary" onclick="closeTicket('${ticket.id}')">🔒 Close</button>` : ''}
-                </div>
-                ${isClosed ? `<div style="margin-top:10px; font-size:11px;">🔒 Closed on: ${new Date(ticket.closedAt).toLocaleString()}</div>` : ''}
+                ${isClosed?`<div style="margin-top:8px; font-size:11px;">🔒 Closed: ${new Date(ticket.closedAt).toLocaleString()}</div>`:''}
             </div>`;
         }).join('');
-        if (filtered.length === 0) container.innerHTML = '<div style="text-align:center; padding:40px;">No tickets found.</div>';
     }
 
     function renderReport() {
         const tbody = document.getElementById('reportTableBody');
-        if (!tbody) return;
-        
-        let filtered = tickets.filter(t => canUserSeeTicket(t));
-        if (currentReportFilter.search) filtered = filtered.filter(t => t.site.toLowerCase().includes(currentReportFilter.search) || t.id.toLowerCase().includes(currentReportFilter.search));
-        if (currentReportFilter.team !== 'ALL') filtered = filtered.filter(t => t.teamAssigned === currentReportFilter.team);
-        if (currentReportFilter.status !== 'ALL') filtered = filtered.filter(t => t.status === currentReportFilter.status);
-        
-        tbody.innerHTML = filtered.map(t => `
-            <tr>
-                <td>${t.id}</td>
-                <td>${t.site}</td>
-                <td>${xlookup(t.site, 'region')}</td>
-                <td>${t.teamAssigned || '—'}</td>
-                <td>${t.description.substring(0, 40)}...</td>
-                <td>${t.assignee || '—'}</td>
-                <td><span class="status-${t.status}">${STAGE_NAMES[t.status]}</span></td>
-                <td>${t.rca || '—'}</td>
-                <td>${t.resolution || '—'}</td>
-                <td>${new Date(t.createdAt).toLocaleDateString()}</td>
-                <td>${t.closedAt ? new Date(t.closedAt).toLocaleDateString() : '—'}</td>
-            </tr>
-        `).join('');
+        let filtered = tickets.filter(canUserSeeTicket);
+        if (currentReportFilter.search) filtered = filtered.filter(t=>t.site.toLowerCase().includes(currentReportFilter.search)||t.id.toLowerCase().includes(currentReportFilter.search));
+        if (currentReportFilter.team !== 'ALL') filtered = filtered.filter(t=>t.teamAssigned === currentReportFilter.team);
+        if (currentReportFilter.status !== 'ALL') filtered = filtered.filter(t=>t.status === currentReportFilter.status);
+        tbody.innerHTML = filtered.map(t=>`<tr><td>${t.id}</td><td>${t.site}</td><td>${t.teamAssigned}</td><td>${t.status}</td><td>${t.assignee||'—'}</td><td>${new Date(t.createdAt).toLocaleDateString()}</td></tr>`).join('');
     }
-
-    function exportToExcel() {
-        let filtered = tickets.filter(t => canUserSeeTicket(t));
-        if (currentReportFilter.search) filtered = filtered.filter(t => t.site.toLowerCase().includes(currentReportFilter.search) || t.id.toLowerCase().includes(currentReportFilter.search));
-        if (currentReportFilter.team !== 'ALL') filtered = filtered.filter(t => t.teamAssigned === currentReportFilter.team);
-        if (currentReportFilter.status !== 'ALL') filtered = filtered.filter(t => t.status === currentReportFilter.status);
-        
-        const data = filtered.map(t => ({
-            'Ticket ID': t.id, 'Site Name': t.site, 'Region': xlookup(t.site, 'region'), 'Team': t.teamAssigned,
-            'Description': t.description, 'Priority': t.priority, 'Assignee': t.assignee, 'Status': STAGE_NAMES[t.status],
-            'RCA Category': t.rcaCategory, 'Root Cause Analysis': t.rca, 'Resolution': t.resolution,
-            'Created At': new Date(t.createdAt).toLocaleString(), 'Closed At': t.closedAt ? new Date(t.closedAt).toLocaleString() : ''
-        }));
-        
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Incident Report');
-        XLSX.writeFile(wb, `Ticket_Report_${new Date().toISOString().slice(0,19)}.xlsx`);
-        alert('Report exported to Excel!');
-    }
-
-    // ============= HELPER FUNCTIONS =============
-    function filterAndGo(status) { currentTicketFilter = status; document.getElementById('filterStatus').value = status; renderTickets(); navigateTo('tickets'); }
+    function exportToExcel() { let filtered = tickets.filter(canUserSeeTicket); const ws = XLSX.utils.json_to_sheet(filtered.map(t=>({ID:t.id,Site:t.site,Team:t.teamAssigned,Status:t.status,Assignee:t.assignee,RCA:t.rca,Resolution:t.resolution}))); XLSX.writeFile(XLSX.utils.book_new(XLSX.utils.book_append_sheet(ws,'Report')),`Tickets_${Date.now()}.xlsx`); alert('Exported'); }
+    function filterAndGo(s) { currentTicketFilter = s; document.getElementById('filterStatus').value = s; renderTickets(); navigateTo('tickets'); }
     function applyTicketFilter() { currentTicketFilter = document.getElementById('filterStatus').value; renderTickets(); }
     function applyReportFilter() { currentReportFilter.search = document.getElementById('reportSearch').value.toLowerCase(); currentReportFilter.team = document.getElementById('reportTeam').value; currentReportFilter.status = document.getElementById('reportStatus').value; renderReport(); }
-    
-    function updateDropdowns() {
-        const teamSelect = document.getElementById('reportTeam');
-        if (teamSelect) teamSelect.innerHTML = '<option value="ALL">All Teams</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join('');
-        const staffTeamSelect = document.getElementById('staffTeam');
-        if (staffTeamSelect) staffTeamSelect.innerHTML = teams.map(t => `<option value="${t}">${t}</option>`).join('');
-    }
-
-    function addStaff() {
-        if (currentUser?.role !== 'Admin') { alert("Only Admin can add staff"); return; }
-        const name = document.getElementById('staffName').value.trim();
-        const email = document.getElementById('staffEmail').value.trim();
-        const phone = document.getElementById('staffPhone').value.trim();
-        const role = document.getElementById('staffRole').value;
-        const team = document.getElementById('staffTeam').value;
-        const password = document.getElementById('staffPassword').value;
-        if (!name || !email) { alert("Fill fields"); return; }
-        if (staffMembers.find(s => s.email === email)) { alert("User exists"); return; }
-        staffMembers.push({ name, email, phone, role, team, password });
-        saveData(); renderStaffList(); alert(`✅ Staff ${name} added to team ${team}`);
-    }
-    
-    function renderStaffList() {
-        const container = document.getElementById('staffList');
-        if (!container) return;
-        const nonAdmin = staffMembers.filter(s => !s.isAdmin && !s.isViewer);
-        container.innerHTML = nonAdmin.map(s => `<div style="padding:12px; border-bottom:1px solid #e2e8f0;"><strong>${s.name}</strong><br>📧 ${s.email}<br>🎯 ${s.role}<br>🏢 ${s.team}<br><button onclick="deleteStaff('${s.email}')" style="background:#e74c3c; padding:5px 12px; margin-top:5px;">Delete</button></div>`).join('');
-    }
-    
-    function deleteStaff(email) { if (confirm("Delete?")) { staffMembers = staffMembers.filter(s => s.email !== email); saveData(); renderStaffList(); } }
-
-    function renderAll() { renderDashboard(); renderTickets(); renderReport(); displaySiteReference(); }
-    
+    function updateDropdowns() { const teamSelect = document.getElementById('reportTeam'); if(teamSelect) teamSelect.innerHTML = '<option value="ALL">All Teams</option>'+teams.map(t=>`<option value="${t}">${t}</option>`).join(''); }
+    function addStaff() { if(currentUser?.role !== 'Admin'){ alert("Admin only"); return; } const name=document.getElementById('staffName').value.trim(), email=document.getElementById('staffEmail').value.trim(), phone=document.getElementById('staffPhone').value.trim(), role=document.getElementById('staffRole').value, team=document.getElementById('staffTeam').value, password=document.getElementById('staffPassword').value; if(!name||!email){ alert("Fill name and email"); return; } if(staffMembers.find(s=>s.email===email)){ alert("User exists"); return; } staffMembers.push({ name, email, phone, role, team, password }); saveData(); renderStaffList(); alert(`Staff ${name} added`); document.getElementById('staffName').value=''; document.getElementById('staffEmail').value=''; }
+    function renderStaffList() { const container = document.getElementById('staffList'); if(!container) return; const nonAdmin = staffMembers.filter(s=>!s.isAdmin && !s.isViewer); container.innerHTML = nonAdmin.map(s=>`<div style="padding:10px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between;"><div><strong>${s.name}</strong><br>${s.email}<br>${s.role} | ${s.team}</div><div><button class="btn-secondary" onclick="openEditStaff('${s.email}')">Edit</button> <button class="btn-danger" onclick="openAdminReset('${s.email}')">Reset PW</button> <button class="btn-danger" onclick="deleteStaff('${s.email}')">Delete</button></div></div>`).join(''); }
+    function openEditStaff(email){ const u=staffMembers.find(s=>s.email===email); if(!u)return; document.getElementById('editStaffEmailOrig').value=email; document.getElementById('editStaffName').value=u.name; document.getElementById('editStaffEmail').value=u.email; document.getElementById('editStaffPhone').value=u.phone||''; document.getElementById('editStaffRole').value=u.role; document.getElementById('editStaffTeam').value=u.team; document.getElementById('editStaffPassword').value=''; document.getElementById('editStaffModal').style.display='flex'; }
+    function saveStaffEdit(){ const orig=document.getElementById('editStaffEmailOrig').value; const u=staffMembers.find(s=>s.email===orig); if(!u)return; u.name=document.getElementById('editStaffName').value; u.email=document.getElementById('editStaffEmail').value; u.phone=document.getElementById('editStaffPhone').value; u.role=document.getElementById('editStaffRole').value; u.team=document.getElementById('editStaffTeam').value; const newPw=document.getElementById('editStaffPassword').value; if(newPw) u.password=newPw; saveData(); renderStaffList(); closeEditStaffModal(); alert("Staff updated"); }
+    function deleteStaff(email){ if(email==='admin@comium.com'){ alert("Cannot delete main admin"); return; } if(confirm("Delete?")){ staffMembers=staffMembers.filter(s=>s.email!==email); saveData(); renderStaffList(); } }
+    function openAdminReset(email){ pendingResetEmail=email; const u=staffMembers.find(s=>s.email===email); document.getElementById('resetUserInfo').innerHTML=`<strong>${u?.name}</strong> (${email})`; document.getElementById('resetNewPassword').value='welcome123'; document.getElementById('adminResetModal').style.display='flex'; }
+    function confirmAdminReset(){ if(pendingResetEmail){ const u=staffMembers.find(s=>s.email===pendingResetEmail); if(u){ u.password=document.getElementById('resetNewPassword').value; saveData(); alert(`Password reset for ${u.name}`); renderStaffList(); } } closeAdminResetModal(); }
+    function closeAdminResetModal(){ document.getElementById('adminResetModal').style.display='none'; pendingResetEmail=null; }
+    function openChangePasswordModal(){ document.getElementById('changePwModal').style.display='flex'; document.getElementById('currentPassword').value=''; document.getElementById('newPassword').value=''; document.getElementById('confirmPassword').value=''; document.getElementById('pwMessage').innerHTML=''; }
+    function closeChangePasswordModal(){ document.getElementById('changePwModal').style.display='none'; }
+    function closeEditStaffModal(){ document.getElementById('editStaffModal').style.display='none'; }
+    function changeOwnPassword(){ const cur=document.getElementById('currentPassword').value, newPw=document.getElementById('newPassword').value, conf=document.getElementById('confirmPassword').value; if(!cur||!newPw||!conf){ document.getElementById('pwMessage').innerHTML="All fields required"; return; } if(newPw!==conf){ document.getElementById('pwMessage').innerHTML="Passwords don't match"; return; } if(newPw.length<4){ document.getElementById('pwMessage').innerHTML="Min 4 chars"; return; } if(currentUser.password!==cur){ document.getElementById('pwMessage').innerHTML="Current password incorrect"; return; } currentUser.password=newPw; const idx=staffMembers.findIndex(s=>s.email===currentUser.email); if(idx!==-1) staffMembers[idx].password=newPw; saveData(); alert("Password changed! Please login again."); closeChangePasswordModal(); doLogout(); }
+    function renderAll(){ renderDashboard(); renderTickets(); renderReport(); displaySiteReference(); }
     function navigateTo(page) {
-        document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.getElementById(`panel${page.charAt(0).toUpperCase() + page.slice(1)}`).classList.add('active');
-        if (event?.target) event.target.closest('.nav-item').classList.add('active');
-        const titles = { home: '📊 Dashboard', tickets: '🎫 My Tickets', create: '➕ Create Ticket', report: '📋 Incident Report', upload: '📎 Upload Excel', admin: '⚙️ Admin' };
-        document.getElementById('pageTitle').innerHTML = titles[page] || 'Dashboard';
-        if (page === 'home') renderDashboard();
-        if (page === 'tickets') renderTickets();
-        if (page === 'report') renderReport();
-        if (page === 'admin') renderStaffList();
-        if (page === 'upload') displaySiteReference();
-        if (page === 'create') document.getElementById('ticketDate').value = new Date().toISOString().slice(0,16);
+        document.querySelectorAll('.content-panel').forEach(p=>p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+        document.getElementById(`panel${page.charAt(0).toUpperCase()+page.slice(1)}`).classList.add('active');
+        if(event?.target) event.target.closest('.nav-item').classList.add('active');
+        const titles={home:'📊 Dashboard',tickets:'🎫 My Tickets',create:'➕ Create Ticket',report:'📋 Incident Report',admin:'⚙️ Admin'};
+        document.getElementById('pageTitle').innerHTML=titles[page]||'Dashboard';
+        if(page==='home') renderDashboard(); if(page==='tickets') renderTickets(); if(page==='report') renderReport(); if(page==='admin') renderStaffList(); if(page==='create') document.getElementById('ticketDate').value=new Date().toISOString().slice(0,16);
     }
-
-    function toggleTheme() { document.body.classList.toggle('dark'); renderAll(); }
-
+    function toggleTheme(){ document.body.classList.toggle('dark'); renderAll(); }
     function doLogin() {
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPassword').value;
-        const user = staffMembers.find(s => s.email === email);
-        
-        if (user && user.password === password) {
-            currentUser = user;
-            const isAdmin = user.role === 'Admin';
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'block';
-            document.getElementById('userDisplay').innerHTML = `👤 ${user.name}${isAdmin ? ' <span class="admin-badge">Admin</span>' : ' (Viewer)'}`;
-            document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'flex' : 'none');
-            updateDropdowns();
-            updateSiteSelectors();
-            renderAll();
-        } else {
-            document.getElementById('loginError').innerHTML = '❌ Invalid credentials';
-            document.getElementById('loginError').style.display = 'block';
-            setTimeout(() => { document.getElementById('loginError').style.display = 'none'; }, 3000);
-        }
+        const email=document.getElementById('loginEmail').value.trim(), password=document.getElementById('loginPassword').value;
+        const user=staffMembers.find(s=>s.email===email);
+        if(user && user.password===password){ currentUser=user; const isAdmin=user.role==='Admin'; document.getElementById('loginPage').style.display='none'; document.getElementById('appContainer').style.display='block'; document.getElementById('userDisplay').innerHTML=`👤 ${user.name}${isAdmin?' <span class="admin-badge">Admin</span>':''}`; document.querySelectorAll('.admin-only').forEach(el=>el.style.display=isAdmin?'flex':'none'); updateDropdowns(); updateSiteSelectors(); renderAll(); }
+        else { document.getElementById('loginError').innerHTML='❌ Invalid credentials'; document.getElementById('loginError').style.display='block'; setTimeout(()=>document.getElementById('loginError').style.display='none',3000); }
     }
-    
-    function doLogout() { currentUser = null; document.getElementById('loginPage').style.display = 'flex'; document.getElementById('appContainer').style.display = 'none'; }
+    function doLogout(){ currentUser=null; document.getElementById('loginPage').style.display='flex'; document.getElementById('appContainer').style.display='none'; }
 
-    initializeData();
-    updateDropdowns();
-    updateSiteSelectors();
-    renderAll();
+    initializeData(); updateDropdowns(); updateSiteSelectors(); renderAll();
 </script>
 </body>
 </html>
