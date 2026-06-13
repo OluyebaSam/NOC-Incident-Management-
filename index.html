@@ -328,7 +328,6 @@
             </div>
         </div>
 
-        <!-- Dashboard Panel -->
         <div id="panelHome" class="content-panel active">
             <div class="stats-grid" id="statsGrid"></div>
             <div class="charts-row">
@@ -338,7 +337,6 @@
             <div class="form-card"><h3>📋 Recent Tickets</h3><div id="recentList"></div></div>
         </div>
 
-        <!-- My Tickets Panel -->
         <div id="panelTickets" class="content-panel">
             <div class="filter-bar">
                 <select id="filterStatus"><option value="ALL">All Status</option><option value="Open">Open</option><option value="Assigned">Assigned</option><option value="Handling">Handling</option><option value="Processed">Processed</option><option value="Closed">Closed</option></select>
@@ -347,7 +345,6 @@
             <div class="ticket-grid" id="ticketGrid"></div>
         </div>
 
-        <!-- Create Ticket Panel -->
         <div id="panelCreate" class="content-panel">
             <div class="form-card">
                 <h3>➕ Create New Incident Ticket</h3>
@@ -380,7 +377,6 @@
             </div>
         </div>
 
-        <!-- Incident Report Panel -->
         <div id="panelReport" class="content-panel">
             <div class="form-card">
                 <h3>📋 Incident Report</h3>
@@ -395,7 +391,6 @@
             <div style="overflow-x:auto; max-height:60vh;"><table class="data-table" id="reportTable"><thead><tr><th>ID</th><th>Site</th><th>Team</th><th>Status</th><th>Priority</th><th>Created</th></thead><tbody id="reportTableBody"></tbody></table></div>
         </div>
 
-        <!-- End of Shift Handover Report Panel -->
         <div id="panelShiftReport" class="content-panel">
             <div class="form-card">
                 <h3>📋 End of Shift Handover Report</h3>
@@ -454,7 +449,6 @@
             </div>
         </div>
 
-        <!-- Admin Panel -->
         <div id="panelAdmin" class="content-panel">
             <div class="form-card">
                 <h3>📎 Upload Excel Template <span class="admin-badge">Admin Only</span></h3>
@@ -479,7 +473,6 @@
 </div>
 </div>
 
-<!-- Modals -->
 <div id="changePwModal" class="modal"><div class="modal-content"><h3>🔑 Change Password</h3><div class="form-group"><label>Current Password</label><input type="password" id="currentPassword"></div><div class="form-group"><label>New Password</label><input type="password" id="newPassword"></div><div class="form-group"><label>Confirm Password</label><input type="password" id="confirmPassword"></div><div id="pwMessage" style="color:red;"></div><div style="display:flex; gap:10px; margin-top:15px;"><button class="btn-primary" onclick="changeOwnPassword()">Update</button><button class="btn-secondary" onclick="closeChangePasswordModal()">Cancel</button></div></div></div>
 <div id="adminResetModal" class="modal"><div class="modal-content"><h3>🔐 Admin Reset Password</h3><div id="resetUserInfo"></div><div class="form-group"><label>New Password</label><input type="text" id="resetNewPassword" value="welcome123"></div><div style="display:flex; gap:10px; margin-top:15px;"><button class="btn-primary" onclick="confirmAdminReset()">Reset</button><button class="btn-secondary" onclick="closeAdminResetModal()">Cancel</button></div></div></div>
 <div id="editStaffModal" class="modal"><div class="modal-content"><h3>✏️ Edit Staff</h3><input type="hidden" id="editStaffEmailOrig"><div class="form-group"><label>Name</label><input type="text" id="editStaffName"></div><div class="form-group"><label>Email</label><input type="email" id="editStaffEmail"></div><div class="form-group"><label>Phone</label><input type="text" id="editStaffPhone"></div><div class="form-group"><label>Role</label><select id="editStaffRole"></select></div><div class="form-group"><label>Team</label><select id="editStaffTeam"></select></div><div class="form-group"><label>New Password</label><input type="password" id="editStaffPassword"></div><div style="display:flex; gap:10px; margin-top:15px;"><button class="btn-primary" onclick="saveStaffEdit()">Save</button><button class="btn-secondary" onclick="closeEditStaffModal()">Cancel</button></div></div></div>
@@ -518,4 +511,208 @@
     function xlookup(site, field) { return siteReference[site]?.[field] || "—"; }
     function updateSiteSelectors() { const siteSelect = document.getElementById('ticketSite'); if (siteSelect) siteSelect.innerHTML = '<option value="">Select Site</option>' + Object.keys(siteReference).map(s => `<option value="${s}">${s}</option>`).join(''); displaySiteReference(); }
     function updateSiteDetails() { const site = document.getElementById('ticketSite').value; document.getElementById('ticketRegion').value = xlookup(site, 'region'); document.getElementById('ticketTeamDisplay').value = xlookup(site, 'team'); }
-    function displaySiteReference() { const tbody = document.querySelector('#siteReferenceTable tbody'); if(tbody) tbody.innerHTML = Object.entries(siteReference).slice(0,50).map(([s,d]) => `<tr>
+    function displaySiteReference() { const tbody = document.querySelector('#siteReferenceTable tbody'); if(tbody) tbody.innerHTML = Object.entries(siteReference).slice(0,50).map(([s,d]) => `<tr><td>${s}</td><td>${d.region}</td><td>${d.team}</td></tr>`).join(''); }
+    function updateTeamSelector() { const teamSelect = document.getElementById('assignTeam'); if(teamSelect) teamSelect.innerHTML = '<option value="">Select Team</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join(''); updateAssigneeList(); }
+    function updateAssigneeList() { const selectedTeam = document.getElementById('assignTeam').value; const individualSelect = document.getElementById('assignIndividual'); if(!individualSelect) return; const engineers = staffMembers.filter(s => s.team === selectedTeam && s.role !== 'Admin' && s.role !== 'Viewer'); individualSelect.innerHTML = '<option value="">Select Individual</option>' + engineers.map(e => `<option value="${e.name}">${e.name}</option>`).join(''); }
+
+    function processExcelFile(input) {
+        if (currentUser?.role !== 'Admin') { alert("Only Admin can upload Excel"); return; }
+        const file = input.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            for (let sheetName of workbook.SheetNames) {
+                const sheet = workbook.Sheets[sheetName];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+                if (sheetName.toLowerCase().includes('site') || (rows[0] && rows[0].includes('Site'))) {
+                    siteReference = {};
+                    for (let i = 1; i < rows.length; i++) {
+                        if (rows[i] && rows[i][0]) siteReference[rows[i][0].trim()] = { region: rows[i][2] || rows[i][1] || "—", team: rows[i][5] || rows[i][4] || "—" };
+                    }
+                }
+            }
+            saveData(); updateSiteSelectors(); displaySiteReference();
+            document.getElementById('uploadStatus').innerHTML = `<span style="color:green;">✅ Loaded ${Object.keys(siteReference).length} sites</span>`;
+            setTimeout(() => document.getElementById('uploadStatus').innerHTML = '', 3000);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function createTicket() {
+        if (currentUser?.role === 'Viewer') { alert("Viewer cannot create tickets."); return; }
+        const site = document.getElementById('ticketSite').value, desc = document.getElementById('ticketDesc').value;
+        const selectedTeam = document.getElementById('assignTeam').value, selectedIndividual = document.getElementById('assignIndividual').value;
+        if (!site || !desc) { alert("Fill site and description"); return; }
+        if (!selectedTeam) { alert("Please select a team"); return; }
+        const now = new Date().toISOString();
+        const newTicket = {
+            id: generateTicketId(), site: site, createdAt: now, description: desc,
+            status: document.getElementById('ticketStatus').value, priority: document.getElementById('ticketPriority').value,
+            teamAssigned: selectedTeam, assignee: selectedIndividual || "Unassigned", comments: [],
+            rootCause: document.getElementById('ticketRootCause').value || "", resolution: document.getElementById('ticketResolution').value || "",
+            rcaCategory: document.getElementById('ticketRcaCategory').value
+        };
+        tickets.unshift(newTicket); saveData(); renderAll(); navigateTo('home');
+        alert(`✅ Ticket ${newTicket.id} created!`);
+        document.getElementById('ticketSite').value = ''; document.getElementById('ticketDesc').value = '';
+    }
+
+    function canUserSeeTicket(ticket) {
+        if (!currentUser) return false;
+        if (currentUser.role === 'Admin' || currentUser.role === 'NOC Manager' || currentUser.role === 'NOC Team Lead' || currentUser.role === 'NOC Junior Technician') return true;
+        return ticket.teamAssigned === currentUser.team;
+    }
+    function canEditTicket(ticket) {
+        if (!currentUser) return false;
+        if (ticket.status === 'Closed') return false;
+        if (currentUser.role === 'Admin' || currentUser.role === 'NOC Manager' || currentUser.role === 'NOC Team Lead') return true;
+        return ticket.assignee === currentUser.name && (ticket.status === 'Assigned' || ticket.status === 'Handling');
+    }
+    function startHandling(id) { const t = tickets.find(x=>x.id===id); if(t&&t.status==='Assigned'&&canEditTicket(t)){ t.status='Handling'; saveData(); renderAll(); alert("Handling started"); } }
+    function processTicket(id) { const t = tickets.find(x=>x.id===id); if(t&&t.status==='Handling'&&canEditTicket(t)){ const res=prompt("Resolution:"), rca=prompt("RCA:"); if(res&&rca){ t.resolution=res; t.rootCause=rca; t.status='Processed'; saveData(); renderAll(); alert("Processed"); } } }
+    function escalateTicket(id) { const t = tickets.find(x=>x.id===id); if(t&&t.status==='Handling'&&confirm("Escalate?")){ t.status='Assigned'; t.assignee="Management"; saveData(); renderAll(); } }
+    function closeTicket(id) { const t = tickets.find(x=>x.id===id); if(t&&t.status==='Processed'&&canEditTicket(t)&&confirm("Close?")){ t.status='Closed'; t.clearedAt=new Date().toISOString(); saveData(); renderAll(); } }
+    function addComment(id) { const t = tickets.find(x=>x.id===id); if(t){ const c=prompt("Add comment:"); if(c){ if(!t.comments) t.comments=[]; t.comments.push({user:currentUser.name,text:c,time:new Date().toLocaleString()}); saveData(); renderAll(); } } }
+
+    function submitShiftReport() {
+        if (currentUser?.role !== 'NOC Junior Technician' && currentUser?.role !== 'NOC Manager' && currentUser?.role !== 'Admin') {
+            alert("Only NOC Junior Technician, NOC Manager, and Admin can submit shift reports");
+            return;
+        }
+        const report = {
+            id: Date.now(), employeeName: document.getElementById('shiftEmployeeName').value || currentUser?.name,
+            date: document.getElementById('shiftDate').value || new Date().toISOString().slice(0,10),
+            inherited: document.getElementById('shiftInherited').value, opened: document.getElementById('shiftOpened').value,
+            closedNoc: document.getElementById('shiftClosedNoc').value, loggedNoc: document.getElementById('shiftLoggedNoc').value,
+            loggedCall: document.getElementById('shiftLoggedCall').value, resolvedNotClosed: document.getElementById('shiftResolvedNotClosed').value,
+            visitorDC: document.getElementById('shiftVisitorDC').value, visitorSite: document.getElementById('shiftVisitorSite').value,
+            callsLead: document.getElementById('shiftCallsLead').value, callsOpTx: document.getElementById('shiftCallsOpTx').value,
+            callsPower: document.getElementById('shiftCallsPower').value, escalations: document.getElementById('shiftEscalations').value,
+            activities: document.getElementById('shiftActivities').value, notes: document.getElementById('shiftNotes').value,
+            incomingEngineer: document.getElementById('shiftIncomingEngineer').value, summary: document.getElementById('shiftSummary').value,
+            outstanding: document.getElementById('shiftOutstanding').value, otherComments: document.getElementById('shiftOtherComments').value,
+            inventory: document.getElementById('shiftInventory').value, sendToEmail: document.getElementById('shiftSendToEmail').value,
+            ccEmails: document.getElementById('shiftCcEmails').value, submittedBy: currentUser?.name, submittedAt: new Date().toISOString()
+        };
+        shiftReports.unshift(report); saveData(); renderShiftReportsList();
+        const emailBody = `End of Shift Handover Report\n\nEmployee: ${report.employeeName}\nDate: ${report.date}\n\n--- Shift Statistics ---\nInherited Tickets: ${report.inherited}\nOpened Tickets: ${report.opened}\nClosed Tickets (NOC): ${report.closedNoc}\nLogged Tickets (NOC): ${report.loggedNoc}\nLogged Tickets (Call Center): ${report.loggedCall}\n\nResolved but not closed: ${report.resolvedNotClosed}\nVisitors Data Center: ${report.visitorDC}\nVisitors Site Access: ${report.visitorSite}\nCalls to Team Lead/NOC Manager: ${report.callsLead}\nCalls to Operation Team: ${report.callsOpTx}\nCalls to Power Team: ${report.callsPower}\nEscalations: ${report.escalations}\n\nActivities: ${report.activities}\nNotes for Incoming: ${report.notes}\nIncoming Engineer: ${report.incomingEngineer}\nShift Summary: ${report.summary}\nOutstanding Tasks: ${report.outstanding}\nOther Comments: ${report.otherComments}\nInventory Check: ${report.inventory}`;
+        console.log(`📧 Email sent to:\nTo: ${report.sendToEmail}\nCC: ${report.ccEmails}\n\nSubject: End of Shift Handover Report - ${report.employeeName}\n\n${emailBody}`);
+        alert(`✅ Shift Report submitted!\n\nReport sent to:\n- Next Shift Engineer: ${report.sendToEmail || 'Not provided'}\n- CC: ${report.ccEmails || 'Not provided'}`);
+        document.getElementById('shiftInherited').value = '0'; document.getElementById('shiftOpened').value = '0';
+        document.getElementById('shiftClosedNoc').value = '0'; document.getElementById('shiftLoggedNoc').value = '0';
+        document.getElementById('shiftLoggedCall').value = '0'; document.getElementById('shiftResolvedNotClosed').value = '';
+        document.getElementById('shiftVisitorDC').value = '0'; document.getElementById('shiftVisitorSite').value = '0';
+        document.getElementById('shiftCallsLead').value = '0'; document.getElementById('shiftCallsOpTx').value = '0';
+        document.getElementById('shiftCallsPower').value = '0'; document.getElementById('shiftEscalations').value = '0';
+        document.getElementById('shiftActivities').value = ''; document.getElementById('shiftNotes').value = '';
+        document.getElementById('shiftIncomingEngineer').value = ''; document.getElementById('shiftSummary').value = '';
+        document.getElementById('shiftOutstanding').value = ''; document.getElementById('shiftOtherComments').value = '';
+        document.getElementById('shiftInventory').value = ''; document.getElementById('shiftSendToEmail').value = '';
+        document.getElementById('shiftCcEmails').value = '';
+    }
+
+    function renderShiftReportsList() {
+        const container = document.getElementById('shiftReportsList');
+        if (!container) return;
+        const userCanView = (currentUser?.role === 'NOC Junior Technician' || currentUser?.role === 'NOC Manager' || currentUser?.role === 'Admin');
+        if (!userCanView) { container.innerHTML = '<p>Access restricted.</p>'; return; }
+        if (shiftReports.length === 0) { container.innerHTML = '<p>No shift reports submitted yet.</p>'; return; }
+        container.innerHTML = shiftReports.slice(0, 20).map(r => `<div style="padding: 12px; border-bottom: 1px solid #e2e8f0; margin-bottom: 8px;"><div><strong>${r.employeeName}</strong> - ${r.date}</div><div style="font-size: 12px; color: #64748b;">Inherited: ${r.inherited} | Opened: ${r.opened} | Closed: ${r.closedNoc}</div><div style="font-size: 11px; margin-top: 5px;">📧 Sent to: ${r.sendToEmail || 'N/A'} | CC: ${r.ccEmails || 'N/A'}</div><details><summary>View Details</summary><pre style="font-size: 11px; white-space: pre-wrap; margin-top: 8px;">Summary: ${r.summary}\nOutstanding: ${r.outstanding}</pre></details></div>`).join('');
+    }
+
+    function renderDashboard() {
+        const stats = { total: tickets.length, open: tickets.filter(t=>t.status==='Open').length, assigned: tickets.filter(t=>t.status==='Assigned').length, handling: tickets.filter(t=>t.status==='Handling').length, processed: tickets.filter(t=>t.status==='Processed').length, closed: tickets.filter(t=>t.status==='Closed').length };
+        document.getElementById('statsGrid').innerHTML = `<div class="stat-card" onclick="filterAndGo('Open')"><div class="stat-number">${stats.open}</div><div class="stat-label">🔴 Open</div></div><div class="stat-card" onclick="filterAndGo('Assigned')"><div class="stat-number">${stats.assigned}</div><div class="stat-label">📋 Assigned</div></div><div class="stat-card" onclick="filterAndGo('Handling')"><div class="stat-number">${stats.handling}</div><div class="stat-label">🔧 Handling</div></div><div class="stat-card" onclick="filterAndGo('Processed')"><div class="stat-number">${stats.processed}</div><div class="stat-label">✅ Processed</div></div><div class="stat-card" onclick="filterAndGo('Closed')"><div class="stat-number">${stats.closed}</div><div class="stat-label">🔒 Closed</div></div>`;
+        if (statusChart) statusChart.destroy();
+        statusChart = new Chart(document.getElementById('statusChart'), { type: 'doughnut', data: { labels: ['Open','Assigned','Handling','Processed','Closed'], datasets: [{ data: [stats.open,stats.assigned,stats.handling,stats.processed,stats.closed], backgroundColor: ['#dc2626','#3b82f6','#f59e0b','#10b981','#64748b'] }] }, options: { responsive: true } });
+        const rcaCounts = ["Power Failure","Transmission Fault","Hardware Fault","Environmental"].map(r => tickets.filter(t=>t.rcaCategory===r).length);
+        if (rcaChart) rcaChart.destroy();
+        rcaChart = new Chart(document.getElementById('rcaChart'), { type: 'bar', data: { labels: ["Power Failure","Transmission Fault","Hardware Fault","Environmental"], datasets: [{ label: 'Incidents', data: rcaCounts, backgroundColor: '#c0392b' }] }, options: { responsive: true } });
+        document.getElementById('recentList').innerHTML = tickets.slice(0,5).map(t=>`<div style="padding:10px; border-bottom:1px solid #e2e8f0;"><strong>${t.id}</strong> - ${t.site} (${t.teamAssigned}) | ${t.status}</div>`).join('');
+    }
+
+    function renderTickets() {
+        const container = document.getElementById('ticketGrid'); if (!container) return;
+        let filtered = tickets.filter(canUserSeeTicket);
+        if (currentTicketFilter !== 'ALL') filtered = filtered.filter(t => t.status === currentTicketFilter);
+        container.innerHTML = filtered.map(ticket => `<div class="ticket-card"><div class="ticket-header"><span class="ticket-id">${ticket.id}</span><span class="ticket-status status-${ticket.status}">${ticket.status}</span></div><div><strong>📍 ${ticket.site}</strong> | ⚡ ${ticket.priority} | 🏢 ${ticket.teamAssigned}</div><div>📝 ${ticket.description?.substring(0,80)}</div><div>👤 Assignee: ${ticket.assignee || 'Unassigned'}</div><div class="workflow-bar">${WORKFLOW_STAGES.map((s,i)=>`<div class="workflow-stage ${i<WORKFLOW_STAGES.indexOf(ticket.status)?'completed':''} ${ticket.status===s?'active':''}">${s}</div>${i<4?'→':''}`).join('')}</div><div class="comment-section"><div class="comment-list">${(ticket.comments||[]).map(c=>`<div><strong>${c.user}</strong>: ${c.text}<br><small>${c.time}</small></div>`).join('')}</div><div class="comment-input"><input type="text" id="comment_${ticket.id}" placeholder="Add comment..."><button class="btn-secondary" onclick="addComment('${ticket.id}')">Post</button></div></div><div class="ticket-actions">${ticket.status === 'Assigned' && canEditTicket(ticket) ? `<button class="btn-primary" onclick="startHandling('${ticket.id}')">Handle</button>` : ''}${ticket.status === 'Handling' && canEditTicket(ticket) ? `<button class="btn-success" onclick="processTicket('${ticket.id}')">Fix</button><button class="btn-danger" onclick="escalateTicket('${ticket.id}')">Escalate</button>` : ''}${ticket.status === 'Processed' && canEditTicket(ticket) ? `<button class="btn-primary" onclick="closeTicket('${ticket.id}')">Close</button>` : ''}</div></div>`).join('');
+    }
+
+    function renderReport() {
+        const tbody = document.getElementById('reportTableBody');
+        let filtered = tickets.filter(canUserSeeTicket);
+        if (currentReportFilter.search) filtered = filtered.filter(t=>t.site?.toLowerCase().includes(currentReportFilter.search)||t.id?.toLowerCase().includes(currentReportFilter.search));
+        if (currentReportFilter.team !== 'ALL') filtered = filtered.filter(t=>t.teamAssigned === currentReportFilter.team);
+        if (currentReportFilter.status !== 'ALL') filtered = filtered.filter(t=>t.status === currentReportFilter.status);
+        tbody.innerHTML = filtered.map(t=>`<tr><td>${t.id}</td><td>${t.site}</td><td>${t.teamAssigned}</td><td class="status-${t.status}">${t.status}</td><td>${t.priority}</td><td>${new Date(t.createdAt).toLocaleDateString()}</td></tr>`).join('');
+    }
+
+    function exportToExcel() {
+        let filtered = tickets.filter(canUserSeeTicket);
+        const data = filtered.map(t => ({ 'ID': t.id, 'Site': t.site, 'Team': t.teamAssigned, 'Status': t.status, 'Priority': t.priority, 'Created': new Date(t.createdAt).toLocaleString() }));
+        const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Report'); XLSX.writeFile(wb, `Incident_Report_${Date.now()}.xlsx`); alert('Exported!');
+    }
+
+    function filterAndGo(s) { currentTicketFilter = s; document.getElementById('filterStatus').value = s; renderTickets(); navigateTo('tickets'); }
+    function applyTicketFilter() { currentTicketFilter = document.getElementById('filterStatus').value; renderTickets(); }
+    function applyReportFilter() { currentReportFilter.search = document.getElementById('reportSearch').value.toLowerCase(); currentReportFilter.team = document.getElementById('reportTeam').value; currentReportFilter.status = document.getElementById('reportStatus').value; renderReport(); }
+    function updateDropdowns() { const teamSelect = document.getElementById('reportTeam'); if(teamSelect) teamSelect.innerHTML = '<option value="ALL">All Teams</option>'+teams.map(t=>`<option value="${t}">${t}</option>`).join(''); updateTeamSelector(); }
+
+    function addStaff() { if(currentUser?.role !== 'Admin'){ alert("Admin only"); return; } const name=document.getElementById('staffName').value.trim(), email=document.getElementById('staffEmail').value.trim(), phone=document.getElementById('staffPhone').value.trim(), role=document.getElementById('staffRole').value, team=document.getElementById('staffTeam').value, password=document.getElementById('staffPassword').value; if(!name||!email){ alert("Fill name and email"); return; } if(staffMembers.find(s=>s.email===email)){ alert("User exists"); return; } staffMembers.push({ name, email, phone, role, team, password }); saveData(); renderStaffList(); alert(`Staff ${name} added`); document.getElementById('staffName').value=''; document.getElementById('staffEmail').value=''; updateTeamSelector(); }
+    function renderStaffList() { const container = document.getElementById('staffList'); if(!container) return; const nonAdmin = staffMembers.filter(s=>!s.isAdmin); container.innerHTML = nonAdmin.map(s=>`<div style="padding:10px; border-bottom:1px solid #e2e8f0;"><strong>${s.name}</strong><br>${s.email}<br>${s.role} | ${s.team}<br><button class="btn-secondary" onclick="openEditStaff('${s.email}')">Edit</button> <button class="btn-danger" onclick="openAdminReset('${s.email}')">Reset PW</button> <button class="btn-danger" onclick="deleteStaff('${s.email}')">Delete</button></div>`).join(''); }
+    function openEditStaff(email){ const u=staffMembers.find(s=>s.email===email); if(!u)return; document.getElementById('editStaffEmailOrig').value=email; document.getElementById('editStaffName').value=u.name; document.getElementById('editStaffEmail').value=u.email; document.getElementById('editStaffPhone').value=u.phone||''; document.getElementById('editStaffRole').value=u.role; document.getElementById('editStaffTeam').value=u.team; document.getElementById('editStaffPassword').value=''; document.getElementById('editStaffModal').style.display='flex'; }
+    function saveStaffEdit(){ const orig=document.getElementById('editStaffEmailOrig').value; const u=staffMembers.find(s=>s.email===orig); if(!u)return; u.name=document.getElementById('editStaffName').value; u.email=document.getElementById('editStaffEmail').value; u.phone=document.getElementById('editStaffPhone').value; u.role=document.getElementById('editStaffRole').value; u.team=document.getElementById('editStaffTeam').value; const newPw=document.getElementById('editStaffPassword').value; if(newPw) u.password=newPw; saveData(); renderStaffList(); closeEditStaffModal(); alert("Staff updated"); updateTeamSelector(); }
+    function deleteStaff(email){ if(email==='admin@comium.com'){ alert("Cannot delete main admin"); return; } if(confirm("Delete?")){ staffMembers=staffMembers.filter(s=>s.email!==email); saveData(); renderStaffList(); updateTeamSelector(); } }
+    function openAdminReset(email){ pendingResetEmail=email; const u=staffMembers.find(s=>s.email===email); document.getElementById('resetUserInfo').innerHTML=`<strong>${u?.name}</strong> (${email})`; document.getElementById('resetNewPassword').value='welcome123'; document.getElementById('adminResetModal').style.display='flex'; }
+    function confirmAdminReset(){ if(pendingResetEmail){ const u=staffMembers.find(s=>s.email===pendingResetEmail); if(u){ u.password=document.getElementById('resetNewPassword').value; saveData(); alert(`Password reset for ${u.name}`); renderStaffList(); } } closeAdminResetModal(); }
+    function closeAdminResetModal(){ document.getElementById('adminResetModal').style.display='none'; pendingResetEmail=null; }
+    function openChangePasswordModal(){ document.getElementById('changePwModal').style.display='flex'; }
+    function closeChangePasswordModal(){ document.getElementById('changePwModal').style.display='none'; }
+    function closeEditStaffModal(){ document.getElementById('editStaffModal').style.display='none'; }
+    function changeOwnPassword(){ const cur=document.getElementById('currentPassword').value, newPw=document.getElementById('newPassword').value, conf=document.getElementById('confirmPassword').value; if(!cur||!newPw||!conf){ alert("All fields required"); return; } if(newPw!==conf){ alert("Passwords don't match"); return; } if(newPw.length<4){ alert("Min 4 chars"); return; } if(currentUser.password!==cur){ alert("Current password incorrect"); return; } currentUser.password=newPw; const idx=staffMembers.findIndex(s=>s.email===currentUser.email); if(idx!==-1) staffMembers[idx].password=newPw; saveData(); alert("Password changed! Please login again."); closeChangePasswordModal(); doLogout(); }
+    function renderAll(){ renderDashboard(); renderTickets(); renderReport(); renderShiftReportsList(); displaySiteReference(); }
+    
+    function navigateTo(page) {
+        document.querySelectorAll('.content-panel').forEach(p=>p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+        document.getElementById(`panel${page.charAt(0).toUpperCase()+page.slice(1)}`).classList.add('active');
+        if(event?.target) event.target.closest('.nav-item').classList.add('active');
+        const titles = { home:'📊 Dashboard', tickets:'🎫 My Tickets', create:'➕ Create Ticket', report:'📋 Incident Report', shiftReport:'📋 End of Shift Report', admin:'⚙️ Admin' };
+        document.getElementById('pageTitle').innerHTML = titles[page] || 'Dashboard';
+        if(page === 'home') renderDashboard();
+        if(page === 'tickets') renderTickets();
+        if(page === 'report') renderReport();
+        if(page === 'shiftReport') {
+            document.getElementById('shiftEmployeeName').value = currentUser?.name || '';
+            document.getElementById('shiftDate').value = new Date().toISOString().slice(0,10);
+            renderShiftReportsList();
+        }
+        if(page === 'admin') { renderStaffList(); displaySiteReference(); }
+        if(page === 'create') document.getElementById('ticketDate').value = new Date().toISOString().slice(0,16);
+    }
+    
+    function toggleTheme(){ document.body.classList.toggle('dark'); renderAll(); }
+    function doLogin() {
+        const email = document.getElementById('loginEmail').value.trim(), password = document.getElementById('loginPassword').value;
+        const user = staffMembers.find(s => s.email === email);
+        if(user && user.password === password){
+            currentUser = user;
+            const isAdmin = (user.role === 'Admin');
+            const isNocJunior = (user.role === 'NOC Junior Technician');
+            const isNocManager = (user.role === 'NOC Manager');
+            const showShiftReport = (isAdmin || isNocJunior || isNocManager);
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            document.getElementById('userDisplay').innerHTML = `👤 ${user.name}${isAdmin ? ' <span class="admin-badge">Admin</span>' : ''}`;
+            const shiftNav = document.getElementById('shiftReportNav');
+            if(shiftNav) shiftNav.style.display = showShiftReport ? 'flex' : 'none';
+            updateDropdowns(); updateSiteSelectors(); renderAll();
+        } else { document.getElementById('loginError').innerHTML = '❌ Invalid credentials'; document.getElementById('loginError').style.display = 'block'; setTimeout(()=>document.getElementById('loginError').style.display='none',3000); }
+    }
+    function doLogout(){ currentUser = null; document.getElementById('loginPage').style.display = 'flex'; document.getElementById('appContainer').style.display = 'none'; }
+
+    initializeData(); updateDropdowns(); updateSiteSelectors(); renderAll();
+</script>
+</body>
+</html>
