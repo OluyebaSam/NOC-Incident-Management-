@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comium NOC | End of Shift Handover Report</title>
+    <title>Comium NOC | Incident Management System</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
@@ -294,7 +294,7 @@
     <div class="login-card">
         <h2>COMIUM OPERATION SERVICE</h2>
         <h1>Comium NOC</h1>
-        <div class="subtitle">End of Shift Handover Report</div>
+        <div class="subtitle">Incident Management System</div>
         <input type="text" id="loginEmail" placeholder="Account" value="admin@comium.com">
         <input type="password" id="loginPassword" placeholder="Password" value="admin123">
         <div class="forgot-pw"><a href="#" onclick="alert('Contact your system administrator for password reset.')">Forget Password</a></div>
@@ -464,7 +464,7 @@
             </div>
             <div class="form-card">
                 <h3>📍 Site Reference Data</h3>
-                <div style="overflow-x:auto;"><table class="data-table" id="siteReferenceTable"><thead><tr><th>Site Name</th><th>Region</th><th>Team</th></tr></thead><tbody><tr><td colspan="3">Upload Excel to load data</td></tr></tbody>}</div>
+                <div style="overflow-x:auto;"><table class="data-table" id="siteReferenceTable"><thead><tr><th>Site Name</th><th>Region</th><th>Team</th></tr></thead><tbody><tr><td colspan="3">Upload Excel to load data</tbody></table></div>
             </div>
             <div class="form-card">
                 <h3>👥 Staff Management <span class="admin-badge">Admin Only</span></h3>
@@ -518,4 +518,4 @@
     function xlookup(site, field) { return siteReference[site]?.[field] || "—"; }
     function updateSiteSelectors() { const siteSelect = document.getElementById('ticketSite'); if (siteSelect) siteSelect.innerHTML = '<option value="">Select Site</option>' + Object.keys(siteReference).map(s => `<option value="${s}">${s}</option>`).join(''); displaySiteReference(); }
     function updateSiteDetails() { const site = document.getElementById('ticketSite').value; document.getElementById('ticketRegion').value = xlookup(site, 'region'); document.getElementById('ticketTeamDisplay').value = xlookup(site, 'team'); }
-    function displaySiteReference() { const tbody = document.querySelector('#siteReferenceTable tbody'); if(tbody) tbody.innerHTML = Object.entries(siteReference).slice(0,50).map(([s,d]) => `<tr><td>${s}</td><td>${d.region}</td><td>${d.team}
+    function displaySiteReference() { const tbody = document.querySelector('#siteReferenceTable tbody'); if(tbody) tbody.innerHTML = Object.entries(siteReference).slice(0,50).map(([s,d]) => `<tr>
