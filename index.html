@@ -8,87 +8,268 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .login-container { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
-        .login-card { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 45px 40px; width: 420px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+        .login-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 45px 40px;
+            width: 420px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
+        }
         .login-card h2 { color: #2c3e50; font-size: 14px; letter-spacing: 2px; margin-bottom: 5px; }
         .login-card h1 { color: #c0392b; font-size: 28px; margin-bottom: 10px; }
         .login-card .subtitle { color: #7f8c8d; font-size: 12px; margin-bottom: 30px; }
-        .login-card input { width: 100%; padding: 14px 16px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
-        .login-card button { width: 100%; padding: 14px; background: #c0392b; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 15px; }
+        .login-card input {
+            width: 100%;
+            padding: 14px 16px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .login-card button {
+            width: 100%;
+            padding: 14px;
+            background: #c0392b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+        }
         .forgot-pw { text-align: right; margin: 10px 0; }
         .forgot-pw a { color: #7f8c8d; font-size: 12px; text-decoration: none; cursor: pointer; }
         .error-msg { color: #c0392b; margin-top: 15px; display: none; }
+
         .app-container { display: flex; min-height: 100vh; }
-        .sidebar { width: 280px; background: #1e293b; color: #94a3b8; position: fixed; height: 100vh; overflow-y: auto; }
+        .sidebar {
+            width: 280px;
+            background: #1e293b;
+            color: #94a3b8;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
         .sidebar-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid #334155; }
         .sidebar-header h2 { color: #c0392b; font-size: 20px; }
         .sidebar-nav { padding: 20px 0; }
-        .nav-item { padding: 12px 25px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.3s; margin: 4px 12px; border-radius: 12px; }
+        .nav-item {
+            padding: 12px 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 4px 12px;
+            border-radius: 12px;
+        }
         .nav-item:hover { background: #334155; color: white; }
         .nav-item.active { background: #c0392b; color: white; }
+
         .main-content { flex: 1; margin-left: 280px; min-height: 100vh; background: #f5f7fa; }
         .dark .main-content { background: #0f172a; }
-        .top-bar { background: white; padding: 16px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; }
+        .top-bar {
+            background: white;
+            padding: 16px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
         .dark .top-bar { background: #1e293b; border-color: #334155; }
         .page-title { font-size: 20px; font-weight: 600; }
         .user-info { display: flex; gap: 15px; align-items: center; }
-        .theme-toggle, .logout-btn, .changepw-btn { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 8px 18px; border-radius: 40px; cursor: pointer; }
+        .theme-toggle, .logout-btn, .changepw-btn {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            padding: 8px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
         .changepw-btn { background: #3b82f6; color: white; border: none; }
+
         .content-panel { display: none; padding: 30px; }
         .content-panel.active { display: block; }
-        .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .analytics-card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .analytics-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
         .dark .analytics-card { background: #1e293b; border-color: #334155; }
         .analytics-card h4 { margin-bottom: 15px; font-size: 16px; font-weight: 600; color: #c0392b; }
         .filter-group-inline { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
         .filter-group-inline select, .filter-group-inline input { padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; }
         .kpi-value { font-size: 28px; font-weight: 800; color: #c0392b; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 25px; border-radius: 16px; text-align: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.3s; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
         .dark .stat-card { background: #1e293b; }
         .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
         .stat-number { font-size: 32px; font-weight: 800; color: #c0392b; }
         .stat-label { margin-top: 8px; color: #64748b; font-size: 13px; }
-        .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; margin-bottom: 30px; }
-        .chart-card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #e2e8f0; }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .chart-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
         .dark .chart-card { background: #1e293b; border-color: #334155; }
         .chart-card h3 { margin-bottom: 20px; font-size: 16px; }
-        .ticket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 20px; margin-top: 20px; }
-        .ticket-card { background: white; border-radius: 16px; padding: 20px; border-left: 4px solid #c0392b; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+
+        .ticket-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .ticket-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            border-left: 4px solid #c0392b;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
         .dark .ticket-card { background: #1e293b; }
         .ticket-header { display: flex; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
         .ticket-id { font-weight: 700; color: #c0392b; }
-        .ticket-status { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .ticket-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
         .status-Open { background: #fee2e2; color: #dc2626; }
         .status-Assigned { background: #dbeafe; color: #2563eb; }
         .status-Handling { background: #fef3c7; color: #d97706; }
         .status-Processed { background: #d1fae5; color: #059669; }
         .status-Closed { background: #e2e8f0; color: #475569; }
         .comment-section { margin-top: 12px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 12px; }
-        .form-card { background: white; border-radius: 20px; padding: 25px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+
+        .form-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
         .dark .form-card { background: #1e293b; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 13px; color: #64748b; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
         .dark .form-group input, .dark .form-group select, .dark .form-group textarea { background: #334155; border-color: #475569; color: white; }
-        .btn-primary, .btn-success, .btn-warning, .btn-danger, .btn-secondary { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; margin: 3px; }
+
+        .btn-primary, .btn-success, .btn-warning, .btn-danger, .btn-secondary {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            margin: 3px;
+        }
         .btn-primary { background: #c0392b; color: white; }
         .btn-success { background: #27ae60; color: white; }
         .btn-warning { background: #f39c12; color: white; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-secondary { background: #64748b; color: white; }
-        .upload-area { border: 2px dashed #cbd5e1; border-radius: 16px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; margin-bottom: 20px; }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
         .upload-area:hover { border-color: #c0392b; background: rgba(192,57,43,0.05); }
-        .data-table { width: 100%; background: white; border-radius: 16px; overflow-x: auto; border: 1px solid #e2e8f0; }
+
+        .data-table {
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+        }
         .data-table th, .data-table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 12px; }
         .data-table th { background: #f8fafc; font-weight: 600; position: sticky; top: 0; }
         .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
         .admin-badge { background: #c0392b; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; margin-left: 10px; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; border-radius: 20px; padding: 30px; width: 500px; max-width: 90%; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 500px;
+            max-width: 90%;
+        }
         .dark .modal-content { background: #1e293b; }
+
         .shift-report-form { max-height: 70vh; overflow-y: auto; }
         .shift-report-form .form-row { margin-bottom: 12px; }
         .shift-report-form input, .shift-report-form textarea, .shift-report-form select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; }
@@ -96,6 +277,7 @@
         .sync-status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
         .sync-online { background-color: #10b981; box-shadow: 0 0 5px #10b981; }
         .sync-offline { background-color: #ef4444; }
+
         @media (max-width: 768px) {
             .sidebar { width: 70px; }
             .sidebar-header h2, .nav-item span:last-child { display: none; }
@@ -152,7 +334,7 @@
         </div>
 
         <div id="panelHome" class="content-panel active"><div class="stats-grid" id="statsGrid"></div><div class="charts-row"><div class="chart-card"><h3>📊 Ticket Status Distribution</h3><canvas id="statusChart"></canvas></div><div class="chart-card"><h3>📈 RCA Category Breakdown</h3><canvas id="rcaChart"></canvas></div></div><div class="form-card"><h3>📋 Recent Tickets</h3><div id="recentList"></div></div></div>
-        <div id="panelAnalytics" class="content-panel"><div class="analytics-grid"><div class="analytics-card"><h4>🔍 Filter Data</h4><div class="filter-group-inline"><select id="analyticsDateRange"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="all">All time</option></select><select id="analyticsTeam"><option value="ALL">All Teams</option></select><select id="analyticsStatus"><option value="ALL">All Status</option></select><button class="btn-primary" onclick="applyAnalyticsFilter()">Apply</button></div></div><div class="analytics-card"><h4>📈 Key Metrics</h4><div><span>Total Incidents:</span> <span class="kpi-value" id="kpiTotal">0</span></div><div><span>Avg Resolution Time:</span> <span class="kpi-value" id="kpiAvgResolution">0</span> <small>min</small></div><div><span>SLA Compliance:</span> <span class="kpi-value" id="kpiSLA">0</span><small>%</small></div><div><span>Open Incidents:</span> <span class="kpi-value" id="kpiOpen">0</span></div></div><div class="analytics-card"><h4>📊 Trend Analysis</h4><canvas id="trendChart" height="120"></canvas></div></div><div class="charts-row"><div class="chart-card"><h3>🏢 Incidents by Team</h3><canvas id="teamChart"></canvas></div><div class="chart-card"><h3>📅 MTTR by Team</h3><canvas id="mttrChart"></canvas></div></div><div class="form-card"><h3>📋 Detailed Analytics Table</h3><div style="overflow-x:auto;"><table class="data-table" id="analyticsTable"><thead><tr><th>Team</th><th>Total Incidents</th><th>Open</th><th>Closed</th><th>Avg Resolution (min)</th><th>SLA %</th></tr></thead><tbody></tbody></td></div></div></div>
+        <div id="panelAnalytics" class="content-panel"><div class="analytics-grid"><div class="analytics-card"><h4>🔍 Filter Data</h4><div class="filter-group-inline"><select id="analyticsDateRange"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="all">All time</option></select><select id="analyticsTeam"><option value="ALL">All Teams</option></select><select id="analyticsStatus"><option value="ALL">All Status</option></select><button class="btn-primary" onclick="applyAnalyticsFilter()">Apply</button></div></div><div class="analytics-card"><h4>📈 Key Metrics</h4><div><span>Total Incidents:</span> <span class="kpi-value" id="kpiTotal">0</span></div><div><span>Avg Resolution Time:</span> <span class="kpi-value" id="kpiAvgResolution">0</span> <small>min</small></div><div><span>SLA Compliance:</span> <span class="kpi-value" id="kpiSLA">0</span><small>%</small></div><div><span>Open Incidents:</span> <span class="kpi-value" id="kpiOpen">0</span></div></div><div class="analytics-card"><h4>📊 Trend Analysis</h4><canvas id="trendChart" height="120"></canvas></div></div><div class="charts-row"><div class="chart-card"><h3>🏢 Incidents by Team</h3><canvas id="teamChart"></canvas></div><div class="chart-card"><h3>📅 MTTR by Team</h3><canvas id="mttrChart"></canvas></div></div><div class="form-card"><h3>📋 Detailed Analytics Table</h3><div style="overflow-x:auto;"><table class="data-table" id="analyticsTable"><thead><tr><th>Team</th><th>Total Incidents</th><th>Open</th><th>Closed</th><th>Avg Resolution (min)</th><th>SLA %</th></tr></thead><tbody></tbody></table></div></div></div>
         <div id="panelTickets" class="content-panel"><div class="filter-bar"><select id="filterStatus"><option value="ALL">All Status</option><option value="Open">Open</option><option value="Assigned">Assigned</option><option value="Handling">Handling</option><option value="Processed">Processed</option><option value="Closed">Closed</option></select><button class="btn-primary" onclick="applyTicketFilter()">Apply</button></div><div class="ticket-grid" id="ticketGrid"></div></div>
         <div id="panelCreate" class="content-panel"><div class="form-card"><h3>➕ Create New Incident Ticket</h3><div class="form-row"><div class="form-group"><label>Site Name *</label><select id="ticketSite" onchange="updateSiteDetails()"><option value="">Select Site</option></select></div><div class="form-group"><label>Region (Auto)</label><input type="text" id="ticketRegion" readonly placeholder="Auto-filled"></div></div><div class="form-row"><div class="form-group"><label>Team (Auto)</label><input type="text" id="ticketTeamDisplay" readonly placeholder="Auto-filled"></div><div class="form-group"><label>Incident Date</label><input type="datetime-local" id="ticketDate"></div></div><div class="form-group"><label>Alarm Name / Description *</label><textarea id="ticketDesc" rows="2"></textarea></div><div class="form-row"><div class="form-group"><label>Impact</label><input type="text" id="ticketImpact" placeholder="e.g., Site Down"></div><div class="form-group"><label>Root Cause</label><input type="text" id="ticketRootCause"></div></div><div class="form-row"><div class="form-group"><label>RCA Category</label><select id="ticketRcaCategory"><option>Power Failure</option><option>Transmission Fault</option><option>Hardware Fault</option><option>Environmental</option></select></div><div class="form-group"><label>Severity</label><select id="ticketPriority"><option>Critical</option><option>Major</option><option>Minor</option></select></div></div><div class="form-row"><div class="form-group"><label>Resolution Notes</label><input type="text" id="ticketResolution"></div><div class="form-group"><label>Status</label><select id="ticketStatus"><option>Open</option><option>Assigned</option><option>Handling</option><option>Processed</option><option>Closed</option></select></div></div><div class="form-row"><div class="form-group"><label>Assign to Team *</label><select id="assignTeam" onchange="updateAssigneeList()"><option value="">Select Team</option></select></div><div class="form-group"><label>Assign to Individual *</label><select id="assignIndividual"><option value="">Select Individual</option></select></div></div><button class="btn-primary" onclick="createTicket()">✅ Generate Incident TT</button></div></div>
         <div id="panelReport" class="content-panel"><div class="form-card"><h3>📋 Incident Report</h3><div class="filter-bar"><input type="text" id="reportSearch" placeholder="Search..." style="width:200px;"><select id="reportTeam"><option value="ALL">All Teams</option></select><select id="reportStatus"><option value="ALL">All Status</option></select><button class="btn-primary" onclick="applyReportFilter()">Apply</button><button class="btn-success" onclick="exportToExcel()">📊 Export Excel</button></div></div><div style="overflow-x:auto; max-height:60vh;"><table class="data-table" id="reportTable"><thead><tr><th>ID</th><th>Site</th><th>Team</th><th>Status</th><th>Priority</th><th>Created</th></tr></thead><tbody id="reportTableBody"></tbody></table></div></div>
@@ -165,9 +347,9 @@
 <div id="changePwModal" class="modal"><div class="modal-content"><h3>🔑 Change Password</h3><div class="form-group"><label>Current Password</label><input type="password" id="currentPassword"></div><div class="form-group"><label>New Password</label><input type="password" id="newPassword"></div><button class="btn-primary" onclick="changePassword()">Update</button><button class="btn-secondary" onclick="closeModal('changePwModal')">Cancel</button></div></div>
 
 <script>
-    // CORRECTED SUPABASE CREDENTIALS - From your image
+    // CORRECTED SUPABASE CREDENTIALS - Using your actual key
     const SUPABASE_URL = 'https://sytichlbyvsacrppukrm.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_pubLISHable_JS7-kq4_T_Wn-1cRodyUEA_M8X2L_';
+    const SUPABASE_ANON_KEY = 'sb_publishable_j57-kq4_T_Wn-IcRodyUEA_M8XZMiMx';
     
     let supabase;
     let currentUser = null;
@@ -177,6 +359,7 @@
     async function initSupabase() {
         try {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            // Test the connection by trying to fetch from staffs table
             const { data, error } = await supabase.from('staffs').select('count', { count: 'exact', head: true });
             if (error) throw error;
             document.getElementById('syncIndicator').className = 'sync-status sync-online';
@@ -221,7 +404,7 @@
             document.getElementById("shiftDate").valueAsDate = new Date();
             await loadAllData();
         } else {
-            document.getElementById("loginError").innerText = "Invalid credentials. Use admin@comium.com / admin123";
+            document.getElementById("loginError").innerText = "Invalid credentials. Make sure staffs table has admin@comium.com / admin123";
             document.getElementById("loginError").style.display = "block";
         }
     }
@@ -236,7 +419,7 @@
 
     function refreshUI() { loadDropdowns(); renderHomeDashboard(); renderTicketGrid(); renderReportTable(); renderAnalytics(); renderStaffList(); renderShiftReports(); populateTeamFilters(); populateSiteSelect(); updateAssigneeList(); renderSiteTable(); }
 
-    function renderSiteTable() { let tbody = document.querySelector('#siteReferenceTable tbody'); if(tbody) tbody.innerHTML = sites.map(s => `<tr><td>${s.site_name}</td><td>${s.region}</td><td>${s.team}</td><tr>`).join('') || '<tr><td colspan="3">No data - Run SQL setup first</td></tr>'; }
+    function renderSiteTable() { let tbody = document.querySelector('#siteReferenceTable tbody'); if(tbody) tbody.innerHTML = sites.map(s => `<tr><td>${s.site_name}</td><td>${s.region}</td><td>${s.team}</td></tr>`).join('') || '<tr><td colspan="3">No data - Run SQL setup first</div>'; }
 
     function loadDropdowns() { let teams = [...new Set(sites.map(s => s.team))]; ['analyticsTeam', 'reportTeam', 'staffTeam', 'assignTeam'].forEach(id => { let sel = document.getElementById(id); if(sel) { sel.innerHTML = '<option value="ALL">All Teams</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join(''); } }); }
 
@@ -289,12 +472,18 @@
     function renderAnalytics() {
         let teamMap = {}; tickets.forEach(t => { if(!teamMap[t.team]) teamMap[t.team] = {total:0, open:0, closed:0, resolutionSum:0, closedCount:0}; teamMap[t.team].total++; if(t.status !== 'Closed') teamMap[t.team].open++; else { teamMap[t.team].closed++; if(t.resolution_time) { teamMap[t.team].resolutionSum += t.resolution_time; teamMap[t.team].closedCount++; } } });
         let tableBody = document.querySelector('#analyticsTable tbody'); tableBody.innerHTML = '';
-        for(let [team, data] of Object.entries(teamMap)) { let avgRes = data.closedCount ? Math.round(data.resolutionSum / data.closedCount) : 0; let sla = data.closedCount ? Math.round((data.closed / data.total) * 100) : 0; tableBody.innerHTML += `<tr><td>${team}</td><td>${data.total}</td><td>${data.open}</td><td>${data.closed}</td><td>${avgRes}</td><td>${sla}%</div>`
+        for(let [team, data] of Object.entries(teamMap)) { let avgRes = data.closedCount ? Math.round(data.resolutionSum / data.closedCount) : 0; let sla = data.closedCount ? Math.round((data.closed / data.total) * 100) : 0; tableBody.innerHTML += `<tr><td>${team}</div></td><td>${data.total}</div></td><td>${data.open}</div></td><td>${data.closed}</div></td><td>${avgRes}</div></td><td>${sla}%</div></tr>`; }
+        document.getElementById('kpiTotal').innerHTML = tickets.length; document.getElementById('kpiOpen').innerHTML = tickets.filter(t => t.status !== 'Closed').length;
+        let avgAll = tickets.filter(t => t.resolution_time).reduce((a,b) => a + b.resolution_time, 0) / (tickets.filter(t => t.resolution_time).length || 1) || 0;
+        document.getElementById('kpiAvgResolution').innerHTML = Math.round(avgAll); document.getElementById('kpiSLA').innerHTML = Math.round((tickets.filter(t => t.status === 'Closed').length / (tickets.length || 1)) * 100);
+        if(charts.teamChart) charts.teamChart.destroy(); charts.teamChart = new Chart(document.getElementById('teamChart'), {type:'bar', data:{labels:Object.keys(teamMap), datasets:[{label:'Incidents', data:Object.values(teamMap).map(d => d.total)}]}});
+        if(charts.mttrChart) charts.mttrChart.destroy(); charts.mttrChart = new Chart(document.getElementById('mttrChart'), {type:'line', data:{labels:Object.keys(teamMap), datasets:[{label:'MTTR (min)', data:Object.values(teamMap).map(d => d.closedCount ? Math.round(d.resolutionSum/d.closedCount) : 0)}]}});
+    }
 
     function renderReportTable() {
         let search = document.getElementById('reportSearch').value.toLowerCase(); let team = document.getElementById('reportTeam').value; let status = document.getElementById('reportStatus').value;
         let filtered = tickets.filter(t => (team === 'ALL' || t.team === team) && (status === 'ALL' || t.status === status) && (t.id.toLowerCase().includes(search) || t.site_name.toLowerCase().includes(search)));
-        document.getElementById('reportTableBody').innerHTML = filtered.map(t => `<tr><td>${t.id}</td><td>${t.site_name}</span></td><span>${t.team}</span></td><span>${t.status}</span></span></td><span>${t.priority}</span></td><span>${new Date(t.created_at).toLocaleDateString()}</span></td>`).join('');
+        document.getElementById('reportTableBody').innerHTML = filtered.map(t => `<tr><td>${t.id}</td><td>${t.site_name}</td><td>${t.team}</td><td>${t.status}</td><td>${t.priority}</td><td>${new Date(t.created_at).toLocaleDateString()}</td></tr>`).join('');
     }
 
     function exportToExcel() {
@@ -349,6 +538,7 @@
     }
     function toggleTheme() { document.body.classList.toggle('dark'); }
     
+    // Initialize
     initSupabase();
 </script>
 </body>
