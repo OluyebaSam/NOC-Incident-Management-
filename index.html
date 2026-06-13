@@ -173,6 +173,7 @@
         .status-Handling { background: #fef3c7; color: #d97706; }
         .status-Processed { background: #d1fae5; color: #059669; }
         .status-Closed { background: #e2e8f0; color: #475569; }
+        .timestamp { font-size: 10px; color: #64748b; margin-top: 4px; }
         .comment-section { margin-top: 12px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 12px; }
         .comment-input { display: flex; gap: 8px; margin-top: 8px; }
         .comment-input input { flex: 1; padding: 6px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; }
@@ -234,6 +235,17 @@
         .btn-warning { background: #f39c12; color: white; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-secondary { background: #64748b; color: white; }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover { border-color: #c0392b; background: rgba(192,57,43,0.05); }
 
         .data-table {
             width: 100%;
@@ -331,7 +343,7 @@
             <div class="ticket-grid" id="ticketGrid"></div>
         </div>
 
-        <!-- Create Ticket Panel with Team & Assignee Dropdowns -->
+        <!-- Create Ticket Panel -->
         <div id="panelCreate" class="content-panel">
             <div class="form-card">
                 <h3>➕ Create New Incident Ticket</h3>
@@ -348,7 +360,6 @@
                     <div class="form-group"><label>Severity / Priority</label><select id="ticketPriority"><option>Critical</option><option>Major</option><option>Minor</option></select></div>
                     <div class="form-group"><label>RCA Category</label><select id="ticketRca"><option>Power Failure</option><option>Transmission Fault</option><option>Hardware Fault</option><option>Environmental</option></select></div>
                 </div>
-                <!-- Team Selection Dropdown (Manual Override) -->
                 <div class="form-row">
                     <div class="form-group"><label>Assign to Team *</label>
                         <select id="assignTeam" onchange="updateAssigneeList()">
@@ -365,22 +376,66 @@
             </div>
         </div>
 
+        <!-- Incident Report Panel - Excel Raw Data Format -->
         <div id="panelReport" class="content-panel">
             <div class="form-card">
-                <h3>📋 Incident Report</h3>
+                <h3>📋 Incident Report (Excel Raw Data Format)</h3>
                 <div class="filter-bar">
-                    <input type="text" id="reportSearch" placeholder="Search..." style="width:200px;">
+                    <input type="text" id="reportSearch" placeholder="Search by Site or ID" style="width:200px;">
                     <select id="reportTeam"><option value="ALL">All Teams</option></select>
                     <select id="reportStatus"><option value="ALL">All Status</option><option>Open</option><option>Assigned</option><option>Handling</option><option>Processed</option><option>Closed</option></select>
                     <button class="btn-primary" onclick="applyReportFilter()">Apply</button>
-                    <button class="btn-success" onclick="exportToExcel()">📊 Export Excel</button>
+                    <button class="btn-success" onclick="exportToExcel()">📊 Export to Excel</button>
                 </div>
             </div>
-            <div style="overflow-x:auto;"><table class="data-table" id="reportTable"><thead><tr><th>ID</th><th>Site</th><th>Team</th><th>Status</th><th>Assignee</th><th>Created</th></tr></thead><tbody id="reportTableBody"></tbody></table></div>
+            <div style="overflow-x:auto; max-height:60vh; overflow-y:auto;">
+                <table class="data-table" id="reportTable">
+                    <thead>
+                        <tr>
+                            <th>Incident ID</th>
+                            <th>Alarm Name (Incident Title)</th>
+                            <th>Alarm Source (Service/Network Element)</th>
+                            <th>Region/Site</th>
+                            <th>Occurred (NT)</th>
+                            <th>Cleared (NT)</th>
+                            <th>Outage Duration</th>
+                            <th>Impact (Outage Count)</th>
+                            <th>Root Cause Analysis</th>
+                            <th>RCA Category</th>
+                            <th>Status</th>
+                            <th>Severity / Priority</th>
+                            <th>Responsible Team (region team)</th>
+                            <th>Resolution Notes (Action taken)</th>
+                            <th>OPENED BY</th>
+                            <th>CLOSED BY</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody"></tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Admin Panel - Fully Visible for Admin -->
+        <!-- Admin Panel with Excel Upload -->
         <div id="panelAdmin" class="content-panel">
+            <div class="form-card">
+                <h3>📎 Upload Excel Template <span class="admin-badge">Admin Only</span></h3>
+                <p style="margin-bottom: 15px;">Upload your Excel file with Site Reference data for XLOOKUP functionality.</p>
+                <div class="upload-area" onclick="document.getElementById('excelFile').click()">
+                    📂 Click to upload Excel file (.xlsx, .xls)<br>
+                    <small>Supports sheets: Site Reference, Raw Data</small>
+                </div>
+                <input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none;" onchange="processExcelFile(this)">
+                <div id="uploadStatus" style="margin-top:15px;"></div>
+            </div>
+            <div class="form-card">
+                <h3>📍 Site Reference Data (XLOOKUP Source)</h3>
+                <div style="overflow-x:auto; max-height:300px;">
+                    <table class="data-table" id="siteReferenceTable">
+                        <thead><tr><th>Site Name</th><th>Region</th><th>Team</th></tr></thead>
+                        <tbody><tr><td colspan="3">Upload Excel to load site reference data</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
             <div class="form-card">
                 <h3>👥 Staff Management <span class="admin-badge">Admin Only</span></h3>
                 <div class="form-row">
@@ -422,13 +477,9 @@
 </div>
 </div>
 
-<!-- Change Password Modal -->
+<!-- Modals (unchanged) -->
 <div id="changePwModal" class="modal"><div class="modal-content"><h3>🔑 Change Your Password</h3><div class="form-group"><label>Current Password</label><input type="password" id="currentPassword"></div><div class="form-group"><label>New Password</label><input type="password" id="newPassword"></div><div class="form-group"><label>Confirm Password</label><input type="password" id="confirmPassword"></div><div id="pwMessage" style="color:red; margin-bottom:10px;"></div><div style="display:flex; gap:10px;"><button class="btn-primary" onclick="changeOwnPassword()">Update</button><button class="btn-secondary" onclick="closeChangePasswordModal()">Cancel</button></div></div></div>
-
-<!-- Admin Reset Password Modal -->
 <div id="adminResetModal" class="modal"><div class="modal-content"><h3>🔐 Admin Reset Password</h3><div id="resetUserInfo"></div><div class="form-group"><label>New Password</label><input type="text" id="resetNewPassword" value="welcome123"></div><div style="display:flex; gap:10px;"><button class="btn-primary" onclick="confirmAdminReset()">Reset</button><button class="btn-secondary" onclick="closeAdminResetModal()">Cancel</button></div></div></div>
-
-<!-- Edit Staff Modal -->
 <div id="editStaffModal" class="modal"><div class="modal-content"><h3>✏️ Edit Staff</h3><input type="hidden" id="editStaffEmailOrig"><div class="form-group"><label>Name</label><input type="text" id="editStaffName"></div><div class="form-group"><label>Email</label><input type="email" id="editStaffEmail"></div><div class="form-group"><label>Phone</label><input type="text" id="editStaffPhone"></div><div class="form-group"><label>Role</label><select id="editStaffRole"><option value="NOC Junior Technician">NOC Junior Technician</option><option value="NOC Team Lead">NOC Team Lead</option><option value="NOC Manager">NOC Manager</option><option value="Operation team">Operation team</option></select></div><div class="form-group"><label>Team</label><select id="editStaffTeam"><option value="NOC Team">NOC Team</option><option value="Transmission Team">Transmission Team</option><option value="Wireless Team">Wireless Team</option><option value="Operation Team">Operation Team</option><option value="Power Team">Power Team</option><option value="Tx Team">Tx Team</option><option value="IPRAN Team">IPRAN Team</option><option value="Core Network Team">Core Network Team</option><option value="OCS Team">OCS Team</option></select></div><div class="form-group"><label>New Password (optional)</label><input type="password" id="editStaffPassword"></div><div style="display:flex; gap:10px;"><button class="btn-primary" onclick="saveStaffEdit()">Save</button><button class="btn-secondary" onclick="closeEditStaffModal()">Cancel</button></div></div></div>
 
 <script>
@@ -441,11 +492,15 @@
     const STAGE_NAMES = { 'Open': 'Open', 'Assigned': 'Assigned', 'Handling': 'Handling', 'Processed': 'Processed', 'Closed': 'Closed' };
     const defaultSiteReference = { "Old Yundum 4": { region: "West Coast", team: "HQ" }, "Latriya": { region: "West Coast", team: "HQ" }, "Bwiam": { region: "West Coast", team: "Brikama House" }, "Brufut TAF Estate": { region: "West Coast", team: "HQ" }, "Sukuta 2": { region: "West Coast", team: "HQ" }, "Jalambang": { region: "West Coast", team: "HQ" }, "Kerewan": { region: "North Bank", team: "Barra House" }, "Pirang": { region: "West Coast", team: "Brikama House" } };
     const sampleTickets = [
-        { id: "TT-001", site: "Old Yundum 4", createdAt: new Date().toISOString(), description: "Power failure", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", teamAssigned: "NOC Team", resolution: "Generator started", rca: "NAWEC outage", closedAt: new Date().toISOString(), comments: [] },
-        { id: "TT-002", site: "Latriya", createdAt: new Date(Date.now() - 1*24*60*60*1000).toISOString(), description: "Transmission link down", priority: "Major", rcaCategory: "Transmission Fault", status: "Processed", assignee: "Sarah Lead", teamAssigned: "Tx Team", resolution: "Fiber spliced", rca: "Fiber cut", closedAt: "", comments: [] },
-        { id: "TT-003", site: "Bwiam", createdAt: new Date(Date.now() - 2*24*60*60*1000).toISOString(), description: "NE Is Disconnected", priority: "Major", rcaCategory: "Power Failure", status: "Handling", assignee: "John Engineer", teamAssigned: "Power Team", resolution: "", rca: "", closedAt: "", comments: [] },
-        { id: "TT-004", site: "Sukuta 2", createdAt: new Date(Date.now() - 3*24*60*60*1000).toISOString(), description: "Site Down", priority: "Critical", rcaCategory: "Power Failure", status: "Assigned", assignee: "Sarah Lead", teamAssigned: "Core Network Team", resolution: "", rca: "", closedAt: "", comments: [] }
+        { id: "INC-20231215-143022", site: "Old Yundum 4", createdAt: new Date().toISOString(), description: "Power failure detected", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", teamAssigned: "NOC Team", resolution: "Generator started manually", rca: "NAWEC Mains Failure", closedAt: new Date().toISOString(), comments: [], stageTimestamps: {}, openedBy: "Sanusi", closedBy: "Sanusi" },
+        { id: "INC-20231214-091512", site: "Latriya", createdAt: new Date(Date.now() - 1*24*60*60*1000).toISOString(), description: "NE Is Disconnected - Transmission link down", priority: "Major", rcaCategory: "Transmission Fault", status: "Processed", assignee: "Sarah Lead", teamAssigned: "Tx Team", resolution: "Fiber spliced", rca: "Fiber cut", closedAt: "", comments: [], stageTimestamps: {}, openedBy: "Sanusi", closedBy: "" },
+        { id: "INC-20231213-163045", site: "Bwiam", createdAt: new Date(Date.now() - 2*24*60*60*1000).toISOString(), description: "NE Is Disconnected - Power outage", priority: "Major", rcaCategory: "Power Failure", status: "Handling", assignee: "John Engineer", teamAssigned: "Power Team", resolution: "", rca: "", closedAt: "", comments: [], stageTimestamps: {}, openedBy: "Ma Ansu", closedBy: "" }
     ];
+
+    function generateTicketId() {
+        const now = new Date();
+        return `INC-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+    }
 
     function initializeData() {
         const saved = localStorage.getItem('comium_tickets'); if (saved) tickets = JSON.parse(saved); else tickets = [...sampleTickets];
@@ -460,16 +515,43 @@
             { name: "Tx Engineer", email: "tx@comium.com", phone: "+2207774444", role: "Operation team", team: "Tx Team", password: "tx123" }
         ];
         const savedRef = localStorage.getItem('comium_siteRef'); if (savedRef) siteReference = JSON.parse(savedRef); else siteReference = {...defaultSiteReference};
-        saveData(); updateDropdowns(); updateSiteSelectors(); updateTeamSelector();
+        saveData(); updateDropdowns(); updateSiteSelectors(); updateTeamSelector(); displaySiteReference();
     }
     function saveData() { localStorage.setItem('comium_tickets', JSON.stringify(tickets)); localStorage.setItem('comium_staff', JSON.stringify(staffMembers)); localStorage.setItem('comium_siteRef', JSON.stringify(siteReference)); }
     function xlookup(site, field) { return siteReference[site]?.[field] || "—"; }
     function updateSiteSelectors() { const siteSelect = document.getElementById('ticketSite'); if (siteSelect) siteSelect.innerHTML = '<option value="">Select Site</option>' + Object.keys(siteReference).map(s => `<option value="${s}">${s}</option>`).join(''); displaySiteReference(); }
     function updateSiteDetails() { const site = document.getElementById('ticketSite').value; document.getElementById('ticketRegion').value = xlookup(site, 'region'); document.getElementById('ticketTeamDisplay').value = xlookup(site, 'team'); }
-    function displaySiteReference() { const tbody = document.querySelector('#siteReferenceTable tbody'); if(tbody) tbody.innerHTML = Object.entries(siteReference).slice(0,30).map(([s,d]) => `<tr><td>${s}</td><td>${d.region}</td><td>${d.team}</td></tr>`).join(''); }
+    function displaySiteReference() { const tbody = document.querySelector('#siteReferenceTable tbody'); if(tbody) tbody.innerHTML = Object.entries(siteReference).slice(0,50).map(([s,d]) => `<tr><td>${s}</td><td>${d.region}</td><td>${d.team}</td></tr>`).join(''); }
     function updateTeamSelector() { const teamSelect = document.getElementById('assignTeam'); if(teamSelect) teamSelect.innerHTML = '<option value="">Select Team</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join(''); updateAssigneeList(); }
     function updateAssigneeList() { const selectedTeam = document.getElementById('assignTeam').value; const individualSelect = document.getElementById('assignIndividual'); if(!individualSelect) return; const engineers = staffMembers.filter(s => s.team === selectedTeam && s.role !== 'Admin' && s.role !== 'Viewer'); individualSelect.innerHTML = '<option value="">Select Individual</option>' + engineers.map(e => `<option value="${e.name}">${e.name} (${e.role})</option>`).join(''); }
-    function generateTicketId() { return `TT-${String(tickets.length + 1).padStart(4, '0')}`; }
+
+    function processExcelFile(input) {
+        if (currentUser?.role !== 'Admin') { alert("Only Admin can upload Excel"); return; }
+        const file = input.files[0];
+        if (!file) return;
+        document.getElementById('uploadStatus').innerHTML = '<span style="color:blue;">⏳ Processing Excel...</span>';
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            for (let sheetName of workbook.SheetNames) {
+                const sheet = workbook.Sheets[sheetName];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+                if (sheetName.toLowerCase().includes('site') || (rows[0] && rows[0].includes('Site'))) {
+                    siteReference = {};
+                    for (let i = 1; i < rows.length; i++) {
+                        if (rows[i] && rows[i][0]) {
+                            siteReference[rows[i][0].trim()] = { region: rows[i][2] || rows[i][1] || "—", team: rows[i][5] || rows[i][4] || "—" };
+                        }
+                    }
+                }
+            }
+            saveData(); updateSiteSelectors(); displaySiteReference();
+            document.getElementById('uploadStatus').innerHTML = `<span style="color:green;">✅ Loaded ${Object.keys(siteReference).length} sites</span>`;
+            setTimeout(() => document.getElementById('uploadStatus').innerHTML = '', 3000);
+        };
+        reader.readAsArrayBuffer(file);
+    }
 
     function createTicket() {
         if (currentUser?.role === 'Viewer') { alert("Viewer cannot create tickets."); return; }
@@ -479,11 +561,13 @@
         if (!site || !desc) { alert("Fill site and description"); return; }
         if (!selectedTeam) { alert("Please select a team to assign"); return; }
         if (!selectedIndividual) { alert("Please select an individual assignee"); return; }
+        const now = new Date().toISOString();
         const newTicket = {
-            id: generateTicketId(), site: site, createdAt: new Date().toISOString(), description: desc,
+            id: generateTicketId(), site: site, createdAt: now, occurred: now, description: desc,
             priority: document.getElementById('ticketPriority').value, rcaCategory: document.getElementById('ticketRca').value,
-            status: 'Assigned', assignee: selectedIndividual, teamAssigned: selectedTeam, resolution: '', rca: '', closedAt: '', comments: [],
-            createdBy: currentUser?.name || "System", region: xlookup(site, 'region')
+            status: 'Assigned', assignee: selectedIndividual, teamAssigned: selectedTeam, resolution: '', rca: '', closedAt: '',
+            comments: [], createdBy: currentUser?.name || "System", region: xlookup(site, 'region'), openedBy: currentUser?.name || "System", closedBy: "",
+            impact: "Site Down", rootCause: desc
         };
         tickets.unshift(newTicket); saveData(); renderAll(); navigateTo('home');
         alert(`✅ Ticket ${newTicket.id} created and assigned to ${selectedIndividual} (${selectedTeam})`);
@@ -504,43 +588,17 @@
         return ticket.assignee === currentUser.name && (ticket.status === 'Assigned' || ticket.status === 'Handling');
     }
 
-    function startHandling(ticketId) {
-        const ticket = tickets.find(t => t.id === ticketId);
-        if (!ticket || ticket.status !== 'Assigned') { alert("Must be Assigned"); return; }
-        if (!canEditTicket(ticket)) { alert("Only assignee or NOC management can handle"); return; }
-        ticket.status = 'Handling'; saveData(); renderAll(); alert("Handling started");
-    }
-    function processTicket(ticketId) {
-        const ticket = tickets.find(t => t.id === ticketId);
-        if (!ticket || ticket.status !== 'Handling') { alert("Must be Handling"); return; }
-        if (!canEditTicket(ticket)) { alert("Only assignee or NOC management can process"); return; }
-        const resolution = prompt("Resolution details:"); const rca = prompt("Root Cause Analysis:");
-        if (resolution && rca) { ticket.resolution = resolution; ticket.rca = rca; ticket.status = 'Processed'; saveData(); renderAll(); alert("Ticket Processed"); }
-        else alert("Both required");
-    }
-    function escalateTicket(ticketId) {
-        const ticket = tickets.find(t => t.id === ticketId);
-        if (!ticket || ticket.status !== 'Handling') { alert("Must be Handling to escalate"); return; }
-        if (confirm("Escalate for management review?")) { ticket.status = 'Assigned'; ticket.assignee = "Management - Escalated"; saveData(); renderAll(); alert("Escalated"); }
-    }
-    function closeTicket(ticketId) {
-        const ticket = tickets.find(t => t.id === ticketId);
-        if (!ticket || ticket.status !== 'Processed') { alert("Must be Processed"); return; }
-        if (!canEditTicket(ticket)) { alert("Only assignee or NOC management can close"); return; }
-        if (confirm("Close ticket? No further edits allowed.")) { ticket.status = 'Closed'; ticket.closedAt = new Date().toISOString(); saveData(); renderAll(); alert("Closed"); }
-    }
-    function addComment(ticketId) {
-        const ticket = tickets.find(t => t.id === ticketId);
-        if (!ticket) return;
-        const comment = prompt("Add a comment:");
-        if (comment) { if (!ticket.comments) ticket.comments = []; ticket.comments.push({ user: currentUser.name, text: comment, time: new Date().toLocaleString() }); saveData(); renderAll(); }
-    }
+    function startHandling(ticketId) { const t = tickets.find(t=>t.id===ticketId); if(!t||t.status!=='Assigned'){alert("Must be Assigned");return;} if(!canEditTicket(t)){alert("Cannot handle");return;} t.status='Handling'; saveData(); renderAll(); alert("Handling started"); }
+    function processTicket(ticketId) { const t = tickets.find(t=>t.id===ticketId); if(!t||t.status!=='Handling'){alert("Must be Handling");return;} if(!canEditTicket(t)){alert("Cannot process");return;} const res=prompt("Resolution details:"); const rca=prompt("Root Cause Analysis:"); if(res&&rca){ t.resolution=res; t.rca=rca; t.status='Processed'; saveData(); renderAll(); alert("Ticket Processed"); } else alert("Both required"); }
+    function escalateTicket(ticketId) { const t = tickets.find(t=>t.id===ticketId); if(!t||t.status!=='Handling'){alert("Must be Handling to escalate");return;} if(confirm("Escalate?")){ t.status='Assigned'; t.assignee="Management - Escalated"; saveData(); renderAll(); alert("Escalated"); } }
+    function closeTicket(ticketId) { const t = tickets.find(t=>t.id===ticketId); if(!t||t.status!=='Processed'){alert("Must be Processed");return;} if(!canEditTicket(t)){alert("Cannot close");return;} if(confirm("Close ticket?")){ t.status='Closed'; t.closedAt=new Date().toISOString(); t.closedBy=currentUser?.name; saveData(); renderAll(); alert("Closed"); } }
+    function addComment(ticketId) { const t = tickets.find(t=>t.id===ticketId); if(!t) return; const comment = prompt("Add a comment:"); if(comment){ if(!t.comments) t.comments=[]; t.comments.push({ user: currentUser.name, text: comment, time: new Date().toLocaleString() }); saveData(); renderAll(); } }
 
     function renderDashboard() {
         const stats = { total: tickets.length, open: tickets.filter(t=>t.status==='Open').length, assigned: tickets.filter(t=>t.status==='Assigned').length, handling: tickets.filter(t=>t.status==='Handling').length, processed: tickets.filter(t=>t.status==='Processed').length, closed: tickets.filter(t=>t.status==='Closed').length };
         document.getElementById('statsGrid').innerHTML = `<div class="stat-card" onclick="filterAndGo('Open')"><div class="stat-number">${stats.open}</div><div class="stat-label">🔴 Open</div></div><div class="stat-card" onclick="filterAndGo('Assigned')"><div class="stat-number">${stats.assigned}</div><div class="stat-label">📋 Assigned</div></div><div class="stat-card" onclick="filterAndGo('Handling')"><div class="stat-number">${stats.handling}</div><div class="stat-label">🔧 Handling</div></div><div class="stat-card" onclick="filterAndGo('Processed')"><div class="stat-number">${stats.processed}</div><div class="stat-label">✅ Processed</div></div><div class="stat-card" onclick="filterAndGo('Closed')"><div class="stat-number">${stats.closed}</div><div class="stat-label">🔒 Closed</div></div>`;
         if (statusChart) statusChart.destroy();
-        statusChart = new Chart(document.getElementById('statusChart'), { type: 'doughnut', data: { labels: ['Open','Assigned','Handling','Processed','Closed'], datasets: [{ data: [stats.open,stats.assigned,stats.handling,stats.processed,stats.closed], backgroundColor: ['#dc2626','#3b82f6','#f59e0b','#10b981','#64748b'] }] }, options: { responsive: true, plugins: { legend: { position: 'bottom' } } } });
+        statusChart = new Chart(document.getElementById('statusChart'), { type: 'doughnut', data: { labels: ['Open','Assigned','Handling','Processed','Closed'], datasets: [{ data: [stats.open,stats.assigned,stats.handling,stats.processed,stats.closed], backgroundColor: ['#dc2626','#3b82f6','#f59e0b','#10b981','#64748b'] }] }, options: { responsive: true } });
         const rcaCounts = ["Power Failure","Transmission Fault","Hardware Fault","Environmental"].map(r => tickets.filter(t=>t.rcaCategory===r).length);
         if (rcaChart) rcaChart.destroy();
         rcaChart = new Chart(document.getElementById('rcaChart'), { type: 'bar', data: { labels: ["Power Failure","Transmission Fault","Hardware Fault","Environmental"], datasets: [{ label: 'Incidents', data: rcaCounts, backgroundColor: '#c0392b' }] }, options: { responsive: true } });
@@ -551,26 +609,20 @@
         const container = document.getElementById('ticketGrid'); if (!container) return;
         let filtered = tickets.filter(canUserSeeTicket);
         if (currentTicketFilter !== 'ALL') filtered = filtered.filter(t => t.status === currentTicketFilter);
-        container.innerHTML = filtered.map(ticket => {
-            const idx = WORKFLOW_STAGES.indexOf(ticket.status);
-            const isClosed = ticket.status === 'Closed';
-            return `<div class="ticket-card">
-                <div class="ticket-header"><span class="ticket-id">${ticket.id}</span><span class="ticket-status status-${ticket.status}">${ticket.status}</span></div>
-                <div><strong>📍 ${ticket.site}</strong> | ⚡ ${ticket.priority} | 🏢 ${ticket.teamAssigned}</div>
-                <div>📝 ${ticket.description.substring(0,80)}</div><div>👤 Assignee: ${ticket.assignee || 'Unassigned'}</div>
-                <div class="workflow-bar">${WORKFLOW_STAGES.map((s,i)=>`<div class="workflow-stage ${i<idx?'completed':''} ${ticket.status===s?'active':''}">${s}</div>${i<4?'<span class="workflow-arrow">→</span>':''}`).join('')}</div>
-                ${ticket.rca?`<div><strong>🔍 RCA:</strong> ${ticket.rca}</div>`:''}
-                ${ticket.resolution?`<div><strong>📝 Resolution:</strong> ${ticket.resolution}</div>`:''}
-                <div class="comment-section"><div class="comment-list">${(ticket.comments||[]).map(c=>`<div><strong>${c.user}</strong>: ${c.text}<br><small>${c.time}</small></div>`).join('')}</div>
-                ${!isClosed?`<div class="comment-input"><input type="text" id="comment_${ticket.id}" placeholder="Add comment..."><button class="btn-secondary" onclick="addComment('${ticket.id}')">Post</button></div>`:''}</div>
-                <div class="ticket-actions">
-                    ${ticket.status === 'Assigned' && canEditTicket(ticket) ? `<button class="btn-primary" onclick="startHandling('${ticket.id}')">Handle</button>` : ''}
-                    ${ticket.status === 'Handling' && canEditTicket(ticket) ? `<button class="btn-success" onclick="processTicket('${ticket.id}')">Fix</button><button class="btn-danger" onclick="escalateTicket('${ticket.id}')">Escalate</button>` : ''}
-                    ${ticket.status === 'Processed' && canEditTicket(ticket) ? `<button class="btn-primary" onclick="closeTicket('${ticket.id}')">Close</button>` : ''}
-                </div>
-                ${isClosed?`<div style="margin-top:8px; font-size:11px;">🔒 Closed: ${new Date(ticket.closedAt).toLocaleString()}</div>`:''}
-            </div>`;
-        }).join('');
+        container.innerHTML = filtered.map(ticket => `<div class="ticket-card">
+            <div class="ticket-header"><span class="ticket-id">${ticket.id}</span><span class="ticket-status status-${ticket.status}">${ticket.status}</span></div>
+            <div><strong>📍 ${ticket.site}</strong> | ⚡ ${ticket.priority} | 🏢 ${ticket.teamAssigned}</div>
+            <div>📝 ${ticket.description.substring(0,80)}</div><div>👤 Assignee: ${ticket.assignee || 'Unassigned'}</div><div>📅 Created: ${new Date(ticket.createdAt).toLocaleString()}</div>
+            <div class="workflow-bar">${WORKFLOW_STAGES.map((s,i)=>`<div class="workflow-stage ${i<WORKFLOW_STAGES.indexOf(ticket.status)?'completed':''} ${ticket.status===s?'active':''}">${s}</div>${i<4?'→':''}`).join('')}</div>
+            ${ticket.rca?`<div><strong>🔍 RCA:</strong> ${ticket.rca}</div>`:''}
+            ${ticket.resolution?`<div><strong>📝 Resolution:</strong> ${ticket.resolution}</div>`:''}
+            <div class="comment-section"><div class="comment-list">${(ticket.comments||[]).map(c=>`<div><strong>${c.user}</strong>: ${c.text}<br><small>${c.time}</small></div>`).join('')}</div><div class="comment-input"><input type="text" id="comment_${ticket.id}" placeholder="Add comment..."><button class="btn-secondary" onclick="addComment('${ticket.id}')">Post</button></div></div>
+            <div class="ticket-actions">
+                ${ticket.status === 'Assigned' && canEditTicket(ticket) ? `<button class="btn-primary" onclick="startHandling('${ticket.id}')">Handle</button>` : ''}
+                ${ticket.status === 'Handling' && canEditTicket(ticket) ? `<button class="btn-success" onclick="processTicket('${ticket.id}')">Fix</button><button class="btn-danger" onclick="escalateTicket('${ticket.id}')">Escalate</button>` : ''}
+                ${ticket.status === 'Processed' && canEditTicket(ticket) ? `<button class="btn-primary" onclick="closeTicket('${ticket.id}')">Close</button>` : ''}
+            </div>
+        </div>`).join('');
     }
 
     function renderReport() {
@@ -579,28 +631,60 @@
         if (currentReportFilter.search) filtered = filtered.filter(t=>t.site.toLowerCase().includes(currentReportFilter.search)||t.id.toLowerCase().includes(currentReportFilter.search));
         if (currentReportFilter.team !== 'ALL') filtered = filtered.filter(t=>t.teamAssigned === currentReportFilter.team);
         if (currentReportFilter.status !== 'ALL') filtered = filtered.filter(t=>t.status === currentReportFilter.status);
-        tbody.innerHTML = filtered.map(t=>`<tr><td>${t.id}</td><td>${t.site}</td><td>${t.teamAssigned}</td><td>${t.status}</td><td>${t.assignee||'—'}</td><td>${new Date(t.createdAt).toLocaleDateString()}</td></tr>`).join('');
+        tbody.innerHTML = filtered.map(t => {
+            const outage = t.closedAt ? Math.round((new Date(t.closedAt) - new Date(t.createdAt)) / 60000) : "";
+            return `<tr>
+                <td>${t.id}</td>
+                <td>${t.description}</td>
+                <td>${t.site}</td>
+                <td>${xlookup(t.site, 'region')}</td>
+                <td>${t.createdAt ? new Date(t.createdAt).toLocaleString() : '—'}</td>
+                <td>${t.closedAt ? new Date(t.closedAt).toLocaleString() : '—'}</td>
+                <td>${outage || '—'}</td>
+                <td>${t.impact || 'Site Down'}</td>
+                <td>${t.rootCause || t.rca || '—'}</td>
+                <td>${t.rcaCategory || '—'}</td>
+                <td><span class="status-${t.status}">${t.status}</span></td>
+                <td>${t.priority || 'Medium'}</td>
+                <td>${t.teamAssigned || xlookup(t.site, 'team')}</td>
+                <td>${t.resolution || '—'}</td>
+                <td>${t.openedBy || t.createdBy || '—'}</td>
+                <td>${t.closedBy || '—'}</td>
+            `}).join('');
     }
-    function exportToExcel() { let filtered = tickets.filter(canUserSeeTicket); const ws = XLSX.utils.json_to_sheet(filtered.map(t=>({ID:t.id,Site:t.site,Team:t.teamAssigned,Status:t.status,Assignee:t.assignee,RCA:t.rca,Resolution:t.resolution}))); XLSX.writeFile(XLSX.utils.book_new(XLSX.utils.book_append_sheet(ws,'Report')),`Tickets_${Date.now()}.xlsx`); alert('Exported'); }
+
+    function exportToExcel() { 
+        let filtered = tickets.filter(canUserSeeTicket);
+        const exportData = filtered.map(t => ({
+            'Incident ID': t.id,
+            'Alarm Name (Incident Title)': t.description,
+            'Alarm Source (Service/Network Element)': t.site,
+            'Region/Site': xlookup(t.site, 'region'),
+            'Occurred (NT)': t.createdAt ? new Date(t.createdAt).toLocaleString() : '',
+            'Cleared (NT)': t.closedAt ? new Date(t.closedAt).toLocaleString() : '',
+            'Outage Duration': t.closedAt ? Math.round((new Date(t.closedAt) - new Date(t.createdAt)) / 60000) : '',
+            'Impact (Outage Count)': t.impact || 'Site Down',
+            'Root Cause Analysis': t.rootCause || t.rca || '',
+            'RCA Category': t.rcaCategory || '',
+            'Status': t.status,
+            'Severity / Priority': t.priority || 'Medium',
+            'Responsible Team (region team)': t.teamAssigned || xlookup(t.site, 'team'),
+            'Resolution Notes (Action taken)': t.resolution || '',
+            'OPENED BY': t.openedBy || t.createdBy || '',
+            'CLOSED BY': t.closedBy || ''
+        }));
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        XLSX.writeFile(XLSX.utils.book_new(XLSX.utils.book_append_sheet(ws, 'Incident Report')), `Incident_Report_${Date.now()}.xlsx`);
+        alert('Exported to Excel with Raw Data format!');
+    }
+
     function filterAndGo(s) { currentTicketFilter = s; document.getElementById('filterStatus').value = s; renderTickets(); navigateTo('tickets'); }
     function applyTicketFilter() { currentTicketFilter = document.getElementById('filterStatus').value; renderTickets(); }
     function applyReportFilter() { currentReportFilter.search = document.getElementById('reportSearch').value.toLowerCase(); currentReportFilter.team = document.getElementById('reportTeam').value; currentReportFilter.status = document.getElementById('reportStatus').value; renderReport(); }
     function updateDropdowns() { const teamSelect = document.getElementById('reportTeam'); if(teamSelect) teamSelect.innerHTML = '<option value="ALL">All Teams</option>'+teams.map(t=>`<option value="${t}">${t}</option>`).join(''); updateTeamSelector(); }
     
-    function addStaff() {
-        if(currentUser?.role !== 'Admin'){ alert("Admin only"); return; }
-        const name=document.getElementById('staffName').value.trim(), email=document.getElementById('staffEmail').value.trim(), phone=document.getElementById('staffPhone').value.trim(), role=document.getElementById('staffRole').value, team=document.getElementById('staffTeam').value, password=document.getElementById('staffPassword').value;
-        if(!name||!email){ alert("Fill name and email"); return; }
-        if(staffMembers.find(s=>s.email===email)){ alert("User exists"); return; }
-        staffMembers.push({ name, email, phone, role, team, password });
-        saveData(); renderStaffList(); alert(`Staff ${name} added to team ${team}`);
-        document.getElementById('staffName').value=''; document.getElementById('staffEmail').value=''; updateTeamSelector();
-    }
-    function renderStaffList() { 
-        const container = document.getElementById('staffList'); if(!container) return; 
-        const nonAdmin = staffMembers.filter(s=>!s.isAdmin && !s.isViewer); 
-        container.innerHTML = nonAdmin.map(s=>`<div style="padding:10px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between;"><div><strong>${s.name}</strong><br>${s.email}<br>${s.role} | ${s.team}</div><div><button class="btn-secondary" onclick="openEditStaff('${s.email}')">Edit</button> <button class="btn-danger" onclick="openAdminReset('${s.email}')">Reset PW</button> <button class="btn-danger" onclick="deleteStaff('${s.email}')">Delete</button></div></div>`).join(''); 
-    }
+    function addStaff() { if(currentUser?.role !== 'Admin'){ alert("Admin only"); return; } const name=document.getElementById('staffName').value.trim(), email=document.getElementById('staffEmail').value.trim(), phone=document.getElementById('staffPhone').value.trim(), role=document.getElementById('staffRole').value, team=document.getElementById('staffTeam').value, password=document.getElementById('staffPassword').value; if(!name||!email){ alert("Fill name and email"); return; } if(staffMembers.find(s=>s.email===email)){ alert("User exists"); return; } staffMembers.push({ name, email, phone, role, team, password }); saveData(); renderStaffList(); alert(`Staff ${name} added to team ${team}`); document.getElementById('staffName').value=''; document.getElementById('staffEmail').value=''; updateTeamSelector(); }
+    function renderStaffList() { const container = document.getElementById('staffList'); if(!container) return; const nonAdmin = staffMembers.filter(s=>!s.isAdmin && !s.isViewer); container.innerHTML = nonAdmin.map(s=>`<div style="padding:10px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between;"><div><strong>${s.name}</strong><br>${s.email}<br>${s.role} | ${s.team}</div><div><button class="btn-secondary" onclick="openEditStaff('${s.email}')">Edit</button> <button class="btn-danger" onclick="openAdminReset('${s.email}')">Reset PW</button> <button class="btn-danger" onclick="deleteStaff('${s.email}')">Delete</button></div></div>`).join(''); }
     function openEditStaff(email){ const u=staffMembers.find(s=>s.email===email); if(!u)return; document.getElementById('editStaffEmailOrig').value=email; document.getElementById('editStaffName').value=u.name; document.getElementById('editStaffEmail').value=u.email; document.getElementById('editStaffPhone').value=u.phone||''; document.getElementById('editStaffRole').value=u.role; document.getElementById('editStaffTeam').value=u.team; document.getElementById('editStaffPassword').value=''; document.getElementById('editStaffModal').style.display='flex'; }
     function saveStaffEdit(){ const orig=document.getElementById('editStaffEmailOrig').value; const u=staffMembers.find(s=>s.email===orig); if(!u)return; u.name=document.getElementById('editStaffName').value; u.email=document.getElementById('editStaffEmail').value; u.phone=document.getElementById('editStaffPhone').value; u.role=document.getElementById('editStaffRole').value; u.team=document.getElementById('editStaffTeam').value; const newPw=document.getElementById('editStaffPassword').value; if(newPw) u.password=newPw; saveData(); renderStaffList(); closeEditStaffModal(); alert("Staff updated"); updateTeamSelector(); }
     function deleteStaff(email){ if(email==='admin@comium.com'){ alert("Cannot delete main admin"); return; } if(confirm("Delete?")){ staffMembers=staffMembers.filter(s=>s.email!==email); saveData(); renderStaffList(); updateTeamSelector(); } }
@@ -619,7 +703,7 @@
         if(event?.target) event.target.closest('.nav-item').classList.add('active');
         const titles={home:'📊 Dashboard',tickets:'🎫 My Tickets',create:'➕ Create Ticket',report:'📋 Incident Report',admin:'⚙️ Admin'};
         document.getElementById('pageTitle').innerHTML=titles[page]||'Dashboard';
-        if(page==='home') renderDashboard(); if(page==='tickets') renderTickets(); if(page==='report') renderReport(); if(page==='admin') renderStaffList(); if(page==='create') document.getElementById('ticketDate').value=new Date().toISOString().slice(0,16);
+        if(page==='home') renderDashboard(); if(page==='tickets') renderTickets(); if(page==='report') renderReport(); if(page==='admin') { renderStaffList(); displaySiteReference(); } if(page==='create') document.getElementById('ticketDate').value=new Date().toISOString().slice(0,16);
     }
     function toggleTheme(){ document.body.classList.toggle('dark'); renderAll(); }
     function doLogin() {
