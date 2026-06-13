@@ -3,11 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comium NOC | Advanced Ticket Workflow System</title>
+    <title>Comium NOC | Team-Based Ticket Workflow</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
         .login-container {
             min-height: 100vh;
             display: flex;
@@ -285,7 +291,7 @@
     <div class="login-card">
         <h2>COMIUM OPERATION SERVICE</h2>
         <h1>Comium NOC</h1>
-        <div class="subtitle">Advanced Ticket Workflow System</div>
+        <div class="subtitle">Team-Based Workflow System</div>
         <input type="text" id="loginEmail" placeholder="Account" value="admin@comium.com">
         <input type="password" id="loginPassword" placeholder="Password" value="admin123">
         <div class="forgot-pw"><a href="#" onclick="alert('Contact your system administrator for password reset.')">Forget Password</a></div>
@@ -335,6 +341,7 @@
             <div class="ticket-grid" id="ticketGrid"></div>
         </div>
 
+        <!-- Create Ticket Panel with Team & Assignee Dropdowns -->
         <div id="panelCreate" class="content-panel">
             <div class="form-card">
                 <h3>➕ Create New Incident Ticket</h3>
@@ -351,6 +358,19 @@
                     <div class="form-group"><label>Severity / Priority</label><select id="ticketPriority"><option>Critical</option><option>Major</option><option>Minor</option></select></div>
                     <div class="form-group"><label>RCA Category</label><select id="ticketRca"><option>Power Failure</option><option>Transmission Fault</option><option>Hardware Fault</option><option>Environmental</option></select></div>
                 </div>
+                <!-- Team Selection Dropdown (Manual Override) -->
+                <div class="form-row">
+                    <div class="form-group"><label>Assign to Team *</label>
+                        <select id="assignTeam" onchange="updateAssigneeList()">
+                            <option value="">Select Team</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Assign to Individual *</label>
+                        <select id="assignIndividual">
+                            <option value="">Select Individual</option>
+                        </select>
+                    </div>
+                </div>
                 <button class="btn-primary" onclick="createTicket()">✅ Generate Incident TT</button>
             </div>
         </div>
@@ -366,7 +386,7 @@
                     <button class="btn-success" onclick="exportToExcel()">📊 Export Excel</button>
                 </div>
             </div>
-            <div style="overflow-x:auto;"><table class="data-table" id="reportTable"><thead><tr><th>ID</th><th>Site</th><th>Team</th><th>Status</th><th>Assignee</th><th>Created</th></tr></thead><tbody id="reportTableBody"></tbody></table></div>
+            <div style="overflow-x:auto;"><table class="data-table" id="reportTable"><thead><tr><th>ID</th><th>Site</th><th>Team</th><th>Status</th><th>Assignee</th><th>Created</th></tr></thead><tbody id="reportTableBody"></tbody></tr></div>
         </div>
 
         <div id="panelAdmin" class="content-panel">
@@ -404,8 +424,7 @@
         { id: "TT-001", site: "Old Yundum 4", createdAt: new Date().toISOString(), description: "Power failure", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", teamAssigned: "NOC Team", resolution: "Generator started", rca: "NAWEC outage", closedAt: new Date().toISOString(), comments: [] },
         { id: "TT-002", site: "Latriya", createdAt: new Date(Date.now() - 1*24*60*60*1000).toISOString(), description: "Transmission link down", priority: "Major", rcaCategory: "Transmission Fault", status: "Processed", assignee: "Sarah Lead", teamAssigned: "Tx Team", resolution: "Fiber spliced", rca: "Fiber cut", closedAt: "", comments: [] },
         { id: "TT-003", site: "Bwiam", createdAt: new Date(Date.now() - 2*24*60*60*1000).toISOString(), description: "NE Is Disconnected", priority: "Major", rcaCategory: "Power Failure", status: "Handling", assignee: "John Engineer", teamAssigned: "Power Team", resolution: "", rca: "", closedAt: "", comments: [] },
-        { id: "TT-004", site: "Sukuta 2", createdAt: new Date(Date.now() - 3*24*60*60*1000).toISOString(), description: "Site Down", priority: "Critical", rcaCategory: "Power Failure", status: "Assigned", assignee: "Sarah Lead", teamAssigned: "Core Network Team", resolution: "", rca: "", closedAt: "", comments: [] },
-        { id: "TT-005", site: "Jalambang", createdAt: new Date(Date.now() - 4*24*60*60*1000).toISOString(), description: "No connectivity", priority: "Major", rcaCategory: "Hardware Fault", status: "Open", assignee: "", teamAssigned: "IPRAN Team", resolution: "", rca: "", closedAt: "", comments: [] }
+        { id: "TT-004", site: "Sukuta 2", createdAt: new Date(Date.now() - 3*24*60*60*1000).toISOString(), description: "Site Down", priority: "Critical", rcaCategory: "Power Failure", status: "Assigned", assignee: "Sarah Lead", teamAssigned: "Core Network Team", resolution: "", rca: "", closedAt: "", comments: [] }
     ];
 
     function initializeData() {
@@ -416,34 +435,41 @@
             { name: "Administrator", email: "admin@comium.com", phone: "+2209998888", role: "Admin", team: "Management", password: "admin123", isAdmin: true },
             { name: "Viewer User", email: "viewer@comium.com", phone: "+2209997777", role: "Viewer", team: "View Only", password: "view123", isViewer: true },
             { name: "John Engineer", email: "john@comium.com", phone: "+2207771111", role: "NOC Junior Technician", team: "NOC Team", password: "john123" },
-            { name: "Sarah Lead", email: "sarah@comium.com", phone: "+2207772222", role: "NOC Team Lead", team: "NOC Team", password: "sarah123" }
+            { name: "Sarah Lead", email: "sarah@comium.com", phone: "+2207772222", role: "NOC Team Lead", team: "NOC Team", password: "sarah123" },
+            { name: "Power Specialist", email: "power@comium.com", phone: "+2207773333", role: "Operation team", team: "Power Team", password: "power123" },
+            { name: "Tx Engineer", email: "tx@comium.com", phone: "+2207774444", role: "Operation team", team: "Tx Team", password: "tx123" }
         ];
         const savedRef = localStorage.getItem('comium_siteRef'); if (savedRef) siteReference = JSON.parse(savedRef); else siteReference = {...defaultSiteReference};
-        saveData(); updateDropdowns(); updateSiteSelectors();
+        saveData(); updateDropdowns(); updateSiteSelectors(); updateTeamSelector();
     }
     function saveData() { localStorage.setItem('comium_tickets', JSON.stringify(tickets)); localStorage.setItem('comium_staff', JSON.stringify(staffMembers)); localStorage.setItem('comium_siteRef', JSON.stringify(siteReference)); }
     function xlookup(site, field) { return siteReference[site]?.[field] || "—"; }
     function updateSiteSelectors() { const siteSelect = document.getElementById('ticketSite'); if (siteSelect) siteSelect.innerHTML = '<option value="">Select Site</option>' + Object.keys(siteReference).map(s => `<option value="${s}">${s}</option>`).join(''); displaySiteReference(); }
     function updateSiteDetails() { const site = document.getElementById('ticketSite').value; document.getElementById('ticketRegion').value = xlookup(site, 'region'); document.getElementById('ticketTeamDisplay').value = xlookup(site, 'team'); }
     function displaySiteReference() { const tbody = document.querySelector('#siteReferenceTable tbody'); if(tbody) tbody.innerHTML = Object.entries(siteReference).slice(0,30).map(([s,d]) => `<tr><td>${s}</td><td>${d.region}</td><td>${d.team}</td></tr>`).join(''); }
+    function updateTeamSelector() { const teamSelect = document.getElementById('assignTeam'); if(teamSelect) teamSelect.innerHTML = '<option value="">Select Team</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join(''); updateAssigneeList(); }
+    function updateAssigneeList() { const selectedTeam = document.getElementById('assignTeam').value; const individualSelect = document.getElementById('assignIndividual'); if(!individualSelect) return; const engineers = staffMembers.filter(s => s.team === selectedTeam && s.role !== 'Admin' && s.role !== 'Viewer'); individualSelect.innerHTML = '<option value="">Select Individual</option>' + engineers.map(e => `<option value="${e.name}">${e.name} (${e.role})</option>`).join(''); }
     function generateTicketId() { return `TT-${String(tickets.length + 1).padStart(4, '0')}`; }
 
     function createTicket() {
         if (currentUser?.role === 'Viewer') { alert("Viewer cannot create tickets."); return; }
         const site = document.getElementById('ticketSite').value, desc = document.getElementById('ticketDesc').value;
-        if (!site || !desc) { alert("Fill required fields"); return; }
-        const teamAssigned = document.getElementById('ticketTeamDisplay').value;
-        const finalTeam = (teamAssigned && teamAssigned !== "—" && teamAssigned !== "Auto-filled") ? teamAssigned : "NOC Team";
+        const selectedTeam = document.getElementById('assignTeam').value;
+        const selectedIndividual = document.getElementById('assignIndividual').value;
+        if (!site || !desc) { alert("Fill site and description"); return; }
+        if (!selectedTeam) { alert("Please select a team to assign"); return; }
+        if (!selectedIndividual) { alert("Please select an individual assignee"); return; }
         const newTicket = {
             id: generateTicketId(), site: site, createdAt: new Date().toISOString(), description: desc,
             priority: document.getElementById('ticketPriority').value, rcaCategory: document.getElementById('ticketRca').value,
-            status: 'Open', assignee: '', teamAssigned: finalTeam, resolution: '', rca: '', closedAt: '', comments: [],
+            status: 'Assigned', assignee: selectedIndividual, teamAssigned: selectedTeam, resolution: '', rca: '', closedAt: '', comments: [],
             createdBy: currentUser?.name || "System", region: xlookup(site, 'region')
         };
         tickets.unshift(newTicket); saveData(); renderAll(); navigateTo('home');
-        alert(`✅ Ticket ${newTicket.id} created!`);
+        alert(`✅ Ticket ${newTicket.id} created and assigned to ${selectedIndividual} (${selectedTeam})`);
         document.getElementById('ticketSite').value = ''; document.getElementById('ticketDesc').value = '';
         document.getElementById('ticketRegion').value = ''; document.getElementById('ticketTeamDisplay').value = '';
+        document.getElementById('assignTeam').value = ''; document.getElementById('assignIndividual').innerHTML = '<option value="">Select Individual</option>';
     }
 
     function canUserSeeTicket(ticket) {
@@ -455,19 +481,9 @@
         if (!currentUser) return false;
         if (ticket.status === 'Closed') return false;
         if (currentUser.role === 'Admin' || currentUser.role === 'NOC Manager' || currentUser.role === 'NOC Team Lead') return true;
-        return ticket.assignee === currentUser.name && (ticket.status === 'Open' || ticket.status === 'Assigned' || ticket.status === 'Handling');
+        return ticket.assignee === currentUser.name && (ticket.status === 'Assigned' || ticket.status === 'Handling');
     }
 
-    function assignTicket(ticketId) {
-        const ticket = tickets.find(t => t.id === ticketId);
-        if (!ticket || ticket.status !== 'Open') { alert("Ticket must be Open to assign"); return; }
-        const engineers = staffMembers.filter(s => s.team === ticket.teamAssigned && s.role !== 'Viewer' && s.role !== 'Admin');
-        if (engineers.length === 0) { alert(`No engineers in team ${ticket.teamAssigned}`); return; }
-        const assignee = prompt(`Select assignee from ${ticket.teamAssigned}:\n${engineers.map(e=>e.name).join(', ')}`);
-        if (assignee && staffMembers.find(s=>s.name===assignee && s.team===ticket.teamAssigned)) {
-            ticket.assignee = assignee; ticket.status = 'Assigned'; saveData(); renderAll(); alert(`Assigned to ${assignee}`);
-        } else if(assignee) alert("Invalid engineer");
-    }
     function startHandling(ticketId) {
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket || ticket.status !== 'Assigned') { alert("Must be Assigned"); return; }
@@ -528,7 +544,6 @@
                 <div class="comment-section"><div class="comment-list">${(ticket.comments||[]).map(c=>`<div><strong>${c.user}</strong>: ${c.text}<br><small>${c.time}</small></div>`).join('')}</div>
                 ${!isClosed?`<div class="comment-input"><input type="text" id="comment_${ticket.id}" placeholder="Add comment..."><button class="btn-secondary" onclick="addComment('${ticket.id}')">Post</button></div>`:''}</div>
                 <div class="ticket-actions">
-                    ${ticket.status === 'Open' && canEditTicket(ticket) ? `<button class="btn-primary" onclick="assignTicket('${ticket.id}')">Assign</button>` : ''}
                     ${ticket.status === 'Assigned' && canEditTicket(ticket) ? `<button class="btn-primary" onclick="startHandling('${ticket.id}')">Handle</button>` : ''}
                     ${ticket.status === 'Handling' && canEditTicket(ticket) ? `<button class="btn-success" onclick="processTicket('${ticket.id}')">Fix</button><button class="btn-danger" onclick="escalateTicket('${ticket.id}')">Escalate</button>` : ''}
                     ${ticket.status === 'Processed' && canEditTicket(ticket) ? `<button class="btn-primary" onclick="closeTicket('${ticket.id}')">Close</button>` : ''}
@@ -550,12 +565,12 @@
     function filterAndGo(s) { currentTicketFilter = s; document.getElementById('filterStatus').value = s; renderTickets(); navigateTo('tickets'); }
     function applyTicketFilter() { currentTicketFilter = document.getElementById('filterStatus').value; renderTickets(); }
     function applyReportFilter() { currentReportFilter.search = document.getElementById('reportSearch').value.toLowerCase(); currentReportFilter.team = document.getElementById('reportTeam').value; currentReportFilter.status = document.getElementById('reportStatus').value; renderReport(); }
-    function updateDropdowns() { const teamSelect = document.getElementById('reportTeam'); if(teamSelect) teamSelect.innerHTML = '<option value="ALL">All Teams</option>'+teams.map(t=>`<option value="${t}">${t}</option>`).join(''); }
-    function addStaff() { if(currentUser?.role !== 'Admin'){ alert("Admin only"); return; } const name=document.getElementById('staffName').value.trim(), email=document.getElementById('staffEmail').value.trim(), phone=document.getElementById('staffPhone').value.trim(), role=document.getElementById('staffRole').value, team=document.getElementById('staffTeam').value, password=document.getElementById('staffPassword').value; if(!name||!email){ alert("Fill name and email"); return; } if(staffMembers.find(s=>s.email===email)){ alert("User exists"); return; } staffMembers.push({ name, email, phone, role, team, password }); saveData(); renderStaffList(); alert(`Staff ${name} added`); document.getElementById('staffName').value=''; document.getElementById('staffEmail').value=''; }
+    function updateDropdowns() { const teamSelect = document.getElementById('reportTeam'); if(teamSelect) teamSelect.innerHTML = '<option value="ALL">All Teams</option>'+teams.map(t=>`<option value="${t}">${t}</option>`).join(''); updateTeamSelector(); }
+    function addStaff() { if(currentUser?.role !== 'Admin'){ alert("Admin only"); return; } const name=document.getElementById('staffName').value.trim(), email=document.getElementById('staffEmail').value.trim(), phone=document.getElementById('staffPhone').value.trim(), role=document.getElementById('staffRole').value, team=document.getElementById('staffTeam').value, password=document.getElementById('staffPassword').value; if(!name||!email){ alert("Fill name and email"); return; } if(staffMembers.find(s=>s.email===email)){ alert("User exists"); return; } staffMembers.push({ name, email, phone, role, team, password }); saveData(); renderStaffList(); alert(`Staff ${name} added to team ${team}`); document.getElementById('staffName').value=''; document.getElementById('staffEmail').value=''; updateTeamSelector(); }
     function renderStaffList() { const container = document.getElementById('staffList'); if(!container) return; const nonAdmin = staffMembers.filter(s=>!s.isAdmin && !s.isViewer); container.innerHTML = nonAdmin.map(s=>`<div style="padding:10px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between;"><div><strong>${s.name}</strong><br>${s.email}<br>${s.role} | ${s.team}</div><div><button class="btn-secondary" onclick="openEditStaff('${s.email}')">Edit</button> <button class="btn-danger" onclick="openAdminReset('${s.email}')">Reset PW</button> <button class="btn-danger" onclick="deleteStaff('${s.email}')">Delete</button></div></div>`).join(''); }
     function openEditStaff(email){ const u=staffMembers.find(s=>s.email===email); if(!u)return; document.getElementById('editStaffEmailOrig').value=email; document.getElementById('editStaffName').value=u.name; document.getElementById('editStaffEmail').value=u.email; document.getElementById('editStaffPhone').value=u.phone||''; document.getElementById('editStaffRole').value=u.role; document.getElementById('editStaffTeam').value=u.team; document.getElementById('editStaffPassword').value=''; document.getElementById('editStaffModal').style.display='flex'; }
-    function saveStaffEdit(){ const orig=document.getElementById('editStaffEmailOrig').value; const u=staffMembers.find(s=>s.email===orig); if(!u)return; u.name=document.getElementById('editStaffName').value; u.email=document.getElementById('editStaffEmail').value; u.phone=document.getElementById('editStaffPhone').value; u.role=document.getElementById('editStaffRole').value; u.team=document.getElementById('editStaffTeam').value; const newPw=document.getElementById('editStaffPassword').value; if(newPw) u.password=newPw; saveData(); renderStaffList(); closeEditStaffModal(); alert("Staff updated"); }
-    function deleteStaff(email){ if(email==='admin@comium.com'){ alert("Cannot delete main admin"); return; } if(confirm("Delete?")){ staffMembers=staffMembers.filter(s=>s.email!==email); saveData(); renderStaffList(); } }
+    function saveStaffEdit(){ const orig=document.getElementById('editStaffEmailOrig').value; const u=staffMembers.find(s=>s.email===orig); if(!u)return; u.name=document.getElementById('editStaffName').value; u.email=document.getElementById('editStaffEmail').value; u.phone=document.getElementById('editStaffPhone').value; u.role=document.getElementById('editStaffRole').value; u.team=document.getElementById('editStaffTeam').value; const newPw=document.getElementById('editStaffPassword').value; if(newPw) u.password=newPw; saveData(); renderStaffList(); closeEditStaffModal(); alert("Staff updated"); updateTeamSelector(); }
+    function deleteStaff(email){ if(email==='admin@comium.com'){ alert("Cannot delete main admin"); return; } if(confirm("Delete?")){ staffMembers=staffMembers.filter(s=>s.email!==email); saveData(); renderStaffList(); updateTeamSelector(); } }
     function openAdminReset(email){ pendingResetEmail=email; const u=staffMembers.find(s=>s.email===email); document.getElementById('resetUserInfo').innerHTML=`<strong>${u?.name}</strong> (${email})`; document.getElementById('resetNewPassword').value='welcome123'; document.getElementById('adminResetModal').style.display='flex'; }
     function confirmAdminReset(){ if(pendingResetEmail){ const u=staffMembers.find(s=>s.email===pendingResetEmail); if(u){ u.password=document.getElementById('resetNewPassword').value; saveData(); alert(`Password reset for ${u.name}`); renderStaffList(); } } closeAdminResetModal(); }
     function closeAdminResetModal(){ document.getElementById('adminResetModal').style.display='none'; pendingResetEmail=null; }
