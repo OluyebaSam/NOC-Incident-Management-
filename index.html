@@ -343,22 +343,30 @@
             <div class="ticket-grid" id="ticketGrid"></div>
         </div>
 
-        <!-- Create Ticket Panel -->
+        <!-- Create Ticket Panel - Full Excel Raw Data Format -->
         <div id="panelCreate" class="content-panel">
             <div class="form-card">
-                <h3>➕ Create New Incident Ticket</h3>
+                <h3>➕ Create New Incident Ticket (Excel Raw Data Format)</h3>
                 <div class="form-row">
                     <div class="form-group"><label>Site Name *</label><select id="ticketSite" onchange="updateSiteDetails()"><option value="">Select Site</option></select></div>
                     <div class="form-group"><label>Region (Auto)</label><input type="text" id="ticketRegion" readonly placeholder="Auto-filled"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Team (Auto)</label><input type="text" id="ticketTeamDisplay" readonly placeholder="Auto-filled"></div>
-                    <div class="form-group"><label>Incident Date</label><input type="datetime-local" id="ticketDate"></div>
+                    <div class="form-group"><label>Incident Date / Occurred (NT)</label><input type="datetime-local" id="ticketDate"></div>
                 </div>
-                <div class="form-group"><label>Alarm Name / Description *</label><textarea id="ticketDesc" rows="3" placeholder="e.g., NE Is Disconnected, Power failure detected..."></textarea></div>
+                <div class="form-group"><label>Alarm Name (Incident Title) *</label><textarea id="ticketDesc" rows="2" placeholder="e.g., NE Is Disconnected, Power failure detected..."></textarea></div>
                 <div class="form-row">
+                    <div class="form-group"><label>Impact (Outage Count)</label><input type="text" id="ticketImpact" placeholder="e.g., Site Down, Impacting: XX sites"></div>
+                    <div class="form-group"><label>Root Cause Analysis</label><input type="text" id="ticketRootCause" placeholder="e.g., NAWEC Mains Failure"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>RCA Category</label><select id="ticketRcaCategory"><option>Power Failure</option><option>Transmission Fault</option><option>Hardware Fault</option><option>Environmental</option></select></div>
                     <div class="form-group"><label>Severity / Priority</label><select id="ticketPriority"><option>Critical</option><option>Major</option><option>Minor</option></select></div>
-                    <div class="form-group"><label>RCA Category</label><select id="ticketRca"><option>Power Failure</option><option>Transmission Fault</option><option>Hardware Fault</option><option>Environmental</option></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Resolution Notes (Action taken)</label><input type="text" id="ticketResolution" placeholder="Action taken to resolve"></div>
+                    <div class="form-group"><label>Status</label><select id="ticketStatus"><option>Open</option><option>Assigned</option><option>Handling</option><option>Processed</option><option>Closed</option></select></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label>Assign to Team *</label>
@@ -415,7 +423,7 @@
             </div>
         </div>
 
-        <!-- Admin Panel with Excel Upload -->
+        <!-- Admin Panel -->
         <div id="panelAdmin" class="content-panel">
             <div class="form-card">
                 <h3>📎 Upload Excel Template <span class="admin-badge">Admin Only</span></h3>
@@ -431,7 +439,7 @@
                 <h3>📍 Site Reference Data (XLOOKUP Source)</h3>
                 <div style="overflow-x:auto; max-height:300px;">
                     <table class="data-table" id="siteReferenceTable">
-                        <thead><tr><th>Site Name</th><th>Region</th><th>Team</th></tr></thead>
+                        <thead><tr><th>Site Name</th><th>Region</th><th>Team</th></td></thead>
                         <tbody><tr><td colspan="3">Upload Excel to load site reference data</td></tr></tbody>
                     </table>
                 </div>
@@ -477,7 +485,7 @@
 </div>
 </div>
 
-<!-- Modals (unchanged) -->
+<!-- Modals -->
 <div id="changePwModal" class="modal"><div class="modal-content"><h3>🔑 Change Your Password</h3><div class="form-group"><label>Current Password</label><input type="password" id="currentPassword"></div><div class="form-group"><label>New Password</label><input type="password" id="newPassword"></div><div class="form-group"><label>Confirm Password</label><input type="password" id="confirmPassword"></div><div id="pwMessage" style="color:red; margin-bottom:10px;"></div><div style="display:flex; gap:10px;"><button class="btn-primary" onclick="changeOwnPassword()">Update</button><button class="btn-secondary" onclick="closeChangePasswordModal()">Cancel</button></div></div></div>
 <div id="adminResetModal" class="modal"><div class="modal-content"><h3>🔐 Admin Reset Password</h3><div id="resetUserInfo"></div><div class="form-group"><label>New Password</label><input type="text" id="resetNewPassword" value="welcome123"></div><div style="display:flex; gap:10px;"><button class="btn-primary" onclick="confirmAdminReset()">Reset</button><button class="btn-secondary" onclick="closeAdminResetModal()">Cancel</button></div></div></div>
 <div id="editStaffModal" class="modal"><div class="modal-content"><h3>✏️ Edit Staff</h3><input type="hidden" id="editStaffEmailOrig"><div class="form-group"><label>Name</label><input type="text" id="editStaffName"></div><div class="form-group"><label>Email</label><input type="email" id="editStaffEmail"></div><div class="form-group"><label>Phone</label><input type="text" id="editStaffPhone"></div><div class="form-group"><label>Role</label><select id="editStaffRole"><option value="NOC Junior Technician">NOC Junior Technician</option><option value="NOC Team Lead">NOC Team Lead</option><option value="NOC Manager">NOC Manager</option><option value="Operation team">Operation team</option></select></div><div class="form-group"><label>Team</label><select id="editStaffTeam"><option value="NOC Team">NOC Team</option><option value="Transmission Team">Transmission Team</option><option value="Wireless Team">Wireless Team</option><option value="Operation Team">Operation Team</option><option value="Power Team">Power Team</option><option value="Tx Team">Tx Team</option><option value="IPRAN Team">IPRAN Team</option><option value="Core Network Team">Core Network Team</option><option value="OCS Team">OCS Team</option></select></div><div class="form-group"><label>New Password (optional)</label><input type="password" id="editStaffPassword"></div><div style="display:flex; gap:10px;"><button class="btn-primary" onclick="saveStaffEdit()">Save</button><button class="btn-secondary" onclick="closeEditStaffModal()">Cancel</button></div></div></div>
@@ -489,32 +497,45 @@
     let pendingResetEmail = null;
 
     const WORKFLOW_STAGES = ['Open', 'Assigned', 'Handling', 'Processed', 'Closed'];
-    const STAGE_NAMES = { 'Open': 'Open', 'Assigned': 'Assigned', 'Handling': 'Handling', 'Processed': 'Processed', 'Closed': 'Closed' };
-    const defaultSiteReference = { "Old Yundum 4": { region: "West Coast", team: "HQ" }, "Latriya": { region: "West Coast", team: "HQ" }, "Bwiam": { region: "West Coast", team: "Brikama House" }, "Brufut TAF Estate": { region: "West Coast", team: "HQ" }, "Sukuta 2": { region: "West Coast", team: "HQ" }, "Jalambang": { region: "West Coast", team: "HQ" }, "Kerewan": { region: "North Bank", team: "Barra House" }, "Pirang": { region: "West Coast", team: "Brikama House" } };
-    const sampleTickets = [
-        { id: "INC-20231215-143022", site: "Old Yundum 4", createdAt: new Date().toISOString(), description: "Power failure detected", priority: "Critical", rcaCategory: "Power Failure", status: "Closed", assignee: "John Engineer", teamAssigned: "NOC Team", resolution: "Generator started manually", rca: "NAWEC Mains Failure", closedAt: new Date().toISOString(), comments: [], stageTimestamps: {}, openedBy: "Sanusi", closedBy: "Sanusi" },
-        { id: "INC-20231214-091512", site: "Latriya", createdAt: new Date(Date.now() - 1*24*60*60*1000).toISOString(), description: "NE Is Disconnected - Transmission link down", priority: "Major", rcaCategory: "Transmission Fault", status: "Processed", assignee: "Sarah Lead", teamAssigned: "Tx Team", resolution: "Fiber spliced", rca: "Fiber cut", closedAt: "", comments: [], stageTimestamps: {}, openedBy: "Sanusi", closedBy: "" },
-        { id: "INC-20231213-163045", site: "Bwiam", createdAt: new Date(Date.now() - 2*24*60*60*1000).toISOString(), description: "NE Is Disconnected - Power outage", priority: "Major", rcaCategory: "Power Failure", status: "Handling", assignee: "John Engineer", teamAssigned: "Power Team", resolution: "", rca: "", closedAt: "", comments: [], stageTimestamps: {}, openedBy: "Ma Ansu", closedBy: "" }
-    ];
+
+    const defaultSiteReference = { 
+        "Old Yundum 4": { region: "West Coast", team: "HQ" }, "Latriya": { region: "West Coast", team: "HQ" }, 
+        "Bwiam": { region: "West Coast", team: "Brikama House" }, "Brufut TAF Estate": { region: "West Coast", team: "HQ" }, 
+        "Sukuta 2": { region: "West Coast", team: "HQ" }, "Jalambang": { region: "West Coast", team: "HQ" }, 
+        "Kerewan": { region: "North Bank", team: "Barra House" }, "Pirang": { region: "West Coast", team: "Brikama House" } 
+    };
 
     function generateTicketId() {
         const now = new Date();
         return `INC-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
     }
 
+    function calculateOutage(occurred, cleared) {
+        if (!occurred || !cleared) return "";
+        const minutes = Math.round((new Date(cleared) - new Date(occurred)) / 60000);
+        return minutes > 0 ? minutes : "";
+    }
+
     function initializeData() {
-        const saved = localStorage.getItem('comium_tickets'); if (saved) tickets = JSON.parse(saved); else tickets = [...sampleTickets];
+        const saved = localStorage.getItem('comium_tickets'); 
+        if (saved) tickets = JSON.parse(saved); 
+        else {
+            tickets = [
+                { id: "INC-20231215-143022", site: "Old Yundum 4", createdAt: new Date().toISOString(), clearedAt: new Date().toISOString(), description: "Power failure detected", impact: "Impacting : Jabang Estate II", rootCause: "(NAWEC) Mains Failure.", rcaCategory: "Power Failure", status: "Closed", priority: "Critical", teamAssigned: "HQ", resolution: "(NAWEC) Mains is back at the site.", openedBy: "Sanusi", closedBy: "Sanusi" },
+                { id: "INC-20231214-091512", site: "Latriya", createdAt: new Date(Date.now() - 1*24*60*60*1000).toISOString(), clearedAt: "", description: "NE Is Disconnected - Transmission link down", impact: "Site Down", rootCause: "(NAWEC) Mains Failure.", rcaCategory: "Power Failure", status: "Open", priority: "High", teamAssigned: "HQ", resolution: "", openedBy: "Sanusi", closedBy: "" }
+            ];
+        }
         const savedStaff = localStorage.getItem('comium_staff'); 
         if (savedStaff) staffMembers = JSON.parse(savedStaff);
         else staffMembers = [
             { name: "Administrator", email: "admin@comium.com", phone: "+2209998888", role: "Admin", team: "Management", password: "admin123", isAdmin: true },
             { name: "Viewer User", email: "viewer@comium.com", phone: "+2209997777", role: "Viewer", team: "View Only", password: "view123", isViewer: true },
             { name: "John Engineer", email: "john@comium.com", phone: "+2207771111", role: "NOC Junior Technician", team: "NOC Team", password: "john123" },
-            { name: "Sarah Lead", email: "sarah@comium.com", phone: "+2207772222", role: "NOC Team Lead", team: "NOC Team", password: "sarah123" },
-            { name: "Power Specialist", email: "power@comium.com", phone: "+2207773333", role: "Operation team", team: "Power Team", password: "power123" },
-            { name: "Tx Engineer", email: "tx@comium.com", phone: "+2207774444", role: "Operation team", team: "Tx Team", password: "tx123" }
+            { name: "Sarah Lead", email: "sarah@comium.com", phone: "+2207772222", role: "NOC Team Lead", team: "NOC Team", password: "sarah123" }
         ];
-        const savedRef = localStorage.getItem('comium_siteRef'); if (savedRef) siteReference = JSON.parse(savedRef); else siteReference = {...defaultSiteReference};
+        const savedRef = localStorage.getItem('comium_siteRef'); 
+        if (savedRef) siteReference = JSON.parse(savedRef); 
+        else siteReference = {...defaultSiteReference};
         saveData(); updateDropdowns(); updateSiteSelectors(); updateTeamSelector(); displaySiteReference();
     }
     function saveData() { localStorage.setItem('comium_tickets', JSON.stringify(tickets)); localStorage.setItem('comium_staff', JSON.stringify(staffMembers)); localStorage.setItem('comium_siteRef', JSON.stringify(siteReference)); }
@@ -555,25 +576,51 @@
 
     function createTicket() {
         if (currentUser?.role === 'Viewer') { alert("Viewer cannot create tickets."); return; }
-        const site = document.getElementById('ticketSite').value, desc = document.getElementById('ticketDesc').value;
+        const site = document.getElementById('ticketSite').value;
+        const desc = document.getElementById('ticketDesc').value;
         const selectedTeam = document.getElementById('assignTeam').value;
         const selectedIndividual = document.getElementById('assignIndividual').value;
         if (!site || !desc) { alert("Fill site and description"); return; }
         if (!selectedTeam) { alert("Please select a team to assign"); return; }
         if (!selectedIndividual) { alert("Please select an individual assignee"); return; }
+        
         const now = new Date().toISOString();
+        const status = document.getElementById('ticketStatus').value;
+        
         const newTicket = {
-            id: generateTicketId(), site: site, createdAt: now, occurred: now, description: desc,
-            priority: document.getElementById('ticketPriority').value, rcaCategory: document.getElementById('ticketRca').value,
-            status: 'Assigned', assignee: selectedIndividual, teamAssigned: selectedTeam, resolution: '', rca: '', closedAt: '',
-            comments: [], createdBy: currentUser?.name || "System", region: xlookup(site, 'region'), openedBy: currentUser?.name || "System", closedBy: "",
-            impact: "Site Down", rootCause: desc
+            id: generateTicketId(),
+            site: site,
+            createdAt: now,
+            clearedAt: status === 'Closed' ? now : "",
+            description: desc,
+            impact: document.getElementById('ticketImpact').value || "Site Down",
+            rootCause: document.getElementById('ticketRootCause').value || "Under investigation",
+            rcaCategory: document.getElementById('ticketRcaCategory').value,
+            status: status,
+            priority: document.getElementById('ticketPriority').value,
+            teamAssigned: selectedTeam,
+            resolution: document.getElementById('ticketResolution').value || "",
+            openedBy: currentUser?.name || "System",
+            closedBy: status === 'Closed' ? currentUser?.name || "System" : "",
+            assignee: selectedIndividual,
+            comments: []
         };
-        tickets.unshift(newTicket); saveData(); renderAll(); navigateTo('home');
+        tickets.unshift(newTicket); 
+        saveData(); 
+        renderAll(); 
+        navigateTo('home');
         alert(`✅ Ticket ${newTicket.id} created and assigned to ${selectedIndividual} (${selectedTeam})`);
-        document.getElementById('ticketSite').value = ''; document.getElementById('ticketDesc').value = '';
-        document.getElementById('ticketRegion').value = ''; document.getElementById('ticketTeamDisplay').value = '';
-        document.getElementById('assignTeam').value = ''; document.getElementById('assignIndividual').innerHTML = '<option value="">Select Individual</option>';
+        
+        // Reset form
+        document.getElementById('ticketSite').value = '';
+        document.getElementById('ticketDesc').value = '';
+        document.getElementById('ticketImpact').value = '';
+        document.getElementById('ticketRootCause').value = '';
+        document.getElementById('ticketResolution').value = '';
+        document.getElementById('ticketRegion').value = '';
+        document.getElementById('ticketTeamDisplay').value = '';
+        document.getElementById('assignTeam').value = '';
+        document.getElementById('assignIndividual').innerHTML = '<option value="">Select Individual</option>';
     }
 
     function canUserSeeTicket(ticket) {
@@ -589,7 +636,7 @@
     }
 
     function startHandling(ticketId) { const t = tickets.find(t=>t.id===ticketId); if(!t||t.status!=='Assigned'){alert("Must be Assigned");return;} if(!canEditTicket(t)){alert("Cannot handle");return;} t.status='Handling'; saveData(); renderAll(); alert("Handling started"); }
-    function processTicket(ticketId) { const t = tickets.find(t=>t.id===ticketId); if(!t||t.status!=='Handling'){alert("Must be Handling");return;} if(!canEditTicket(t)){alert("Cannot process");return;} const res=prompt("Resolution details:"); const rca=prompt("Root Cause Analysis:"); if(res&&rca){ t.resolution=res; t.rca=rca; t.status='Processed'; saveData(); renderAll(); alert("Ticket Processed"); } else alert("Both required"); }
+    function processTicket(ticketId) { const t = tickets.find(t=>t.id===ticketId); if(!t||t.status!=='Handling'){alert("Must be Handling");return;} if(!canEditTicket(t)){alert("Cannot process");return;} const res=prompt("Resolution details:"); const rca=prompt("Root Cause Analysis:"); if(res&&rca){ t.resolution=res; t.rootCause=rca; t.status='Processed'; saveData(); renderAll(); alert("Ticket Processed"); } else alert("Both required"); }
     function escalateTicket(ticketId) { const t = tickets.find(t=>t.id===ticketId); if(!t||t.status!=='Handling'){alert("Must be Handling to escalate");return;} if(confirm("Escalate?")){ t.status='Assigned'; t.assignee="Management - Escalated"; saveData(); renderAll(); alert("Escalated"); } }
     function closeTicket(ticketId) { const t = tickets.find(t=>t.id===ticketId); if(!t||t.status!=='Processed'){alert("Must be Processed");return;} if(!canEditTicket(t)){alert("Cannot close");return;} if(confirm("Close ticket?")){ t.status='Closed'; t.closedAt=new Date().toISOString(); t.closedBy=currentUser?.name; saveData(); renderAll(); alert("Closed"); } }
     function addComment(ticketId) { const t = tickets.find(t=>t.id===ticketId); if(!t) return; const comment = prompt("Add a comment:"); if(comment){ if(!t.comments) t.comments=[]; t.comments.push({ user: currentUser.name, text: comment, time: new Date().toLocaleString() }); saveData(); renderAll(); } }
@@ -614,7 +661,7 @@
             <div><strong>📍 ${ticket.site}</strong> | ⚡ ${ticket.priority} | 🏢 ${ticket.teamAssigned}</div>
             <div>📝 ${ticket.description.substring(0,80)}</div><div>👤 Assignee: ${ticket.assignee || 'Unassigned'}</div><div>📅 Created: ${new Date(ticket.createdAt).toLocaleString()}</div>
             <div class="workflow-bar">${WORKFLOW_STAGES.map((s,i)=>`<div class="workflow-stage ${i<WORKFLOW_STAGES.indexOf(ticket.status)?'completed':''} ${ticket.status===s?'active':''}">${s}</div>${i<4?'→':''}`).join('')}</div>
-            ${ticket.rca?`<div><strong>🔍 RCA:</strong> ${ticket.rca}</div>`:''}
+            ${ticket.rootCause?`<div><strong>🔍 RCA:</strong> ${ticket.rootCause}</div>`:''}
             ${ticket.resolution?`<div><strong>📝 Resolution:</strong> ${ticket.resolution}</div>`:''}
             <div class="comment-section"><div class="comment-list">${(ticket.comments||[]).map(c=>`<div><strong>${c.user}</strong>: ${c.text}<br><small>${c.time}</small></div>`).join('')}</div><div class="comment-input"><input type="text" id="comment_${ticket.id}" placeholder="Add comment..."><button class="btn-secondary" onclick="addComment('${ticket.id}')">Post</button></div></div>
             <div class="ticket-actions">
@@ -632,25 +679,26 @@
         if (currentReportFilter.team !== 'ALL') filtered = filtered.filter(t=>t.teamAssigned === currentReportFilter.team);
         if (currentReportFilter.status !== 'ALL') filtered = filtered.filter(t=>t.status === currentReportFilter.status);
         tbody.innerHTML = filtered.map(t => {
-            const outage = t.closedAt ? Math.round((new Date(t.closedAt) - new Date(t.createdAt)) / 60000) : "";
+            const outage = calculateOutage(t.createdAt, t.clearedAt);
             return `<tr>
                 <td>${t.id}</td>
                 <td>${t.description}</td>
                 <td>${t.site}</td>
                 <td>${xlookup(t.site, 'region')}</td>
                 <td>${t.createdAt ? new Date(t.createdAt).toLocaleString() : '—'}</td>
-                <td>${t.closedAt ? new Date(t.closedAt).toLocaleString() : '—'}</td>
+                <td>${t.clearedAt ? new Date(t.clearedAt).toLocaleString() : '—'}</td>
                 <td>${outage || '—'}</td>
-                <td>${t.impact || 'Site Down'}</td>
-                <td>${t.rootCause || t.rca || '—'}</td>
+                <td>${t.impact || '—'}</td>
+                <td>${t.rootCause || '—'}</td>
                 <td>${t.rcaCategory || '—'}</td>
                 <td><span class="status-${t.status}">${t.status}</span></td>
-                <td>${t.priority || 'Medium'}</td>
+                <td>${t.priority || '—'}</td>
                 <td>${t.teamAssigned || xlookup(t.site, 'team')}</td>
                 <td>${t.resolution || '—'}</td>
-                <td>${t.openedBy || t.createdBy || '—'}</td>
+                <td>${t.openedBy || '—'}</td>
                 <td>${t.closedBy || '—'}</td>
-            `}).join('');
+            </tr>`;
+        }).join('');
     }
 
     function exportToExcel() { 
@@ -661,16 +709,16 @@
             'Alarm Source (Service/Network Element)': t.site,
             'Region/Site': xlookup(t.site, 'region'),
             'Occurred (NT)': t.createdAt ? new Date(t.createdAt).toLocaleString() : '',
-            'Cleared (NT)': t.closedAt ? new Date(t.closedAt).toLocaleString() : '',
-            'Outage Duration': t.closedAt ? Math.round((new Date(t.closedAt) - new Date(t.createdAt)) / 60000) : '',
-            'Impact (Outage Count)': t.impact || 'Site Down',
-            'Root Cause Analysis': t.rootCause || t.rca || '',
+            'Cleared (NT)': t.clearedAt ? new Date(t.clearedAt).toLocaleString() : '',
+            'Outage Duration': calculateOutage(t.createdAt, t.clearedAt),
+            'Impact (Outage Count)': t.impact || '',
+            'Root Cause Analysis': t.rootCause || '',
             'RCA Category': t.rcaCategory || '',
             'Status': t.status,
-            'Severity / Priority': t.priority || 'Medium',
+            'Severity / Priority': t.priority || '',
             'Responsible Team (region team)': t.teamAssigned || xlookup(t.site, 'team'),
             'Resolution Notes (Action taken)': t.resolution || '',
-            'OPENED BY': t.openedBy || t.createdBy || '',
+            'OPENED BY': t.openedBy || '',
             'CLOSED BY': t.closedBy || ''
         }));
         const ws = XLSX.utils.json_to_sheet(exportData);
