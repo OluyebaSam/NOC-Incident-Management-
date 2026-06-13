@@ -313,7 +313,7 @@
             <div class="nav-item" onclick="navigateTo('create')"><span>➕</span> <span>Create Ticket</span></div>
             <div class="nav-item" onclick="navigateTo('report')"><span>📋</span> <span>Incident Report</span></div>
             <div class="nav-item shift-report-nav" id="shiftReportNav" onclick="navigateTo('shiftReport')"><span>📋</span> <span>End of Shift Report</span></div>
-            <div class="nav-item" id="adminNav" onclick="navigateTo('admin')"><span>⚙️</span> <span>Admin Panel</span></div>
+            <div class="nav-item admin-only" id="adminNav" onclick="navigateTo('admin')" style="display:none;"><span>⚙️</span> <span>Admin Panel</span></div>
         </div>
     </div>
 
@@ -458,7 +458,7 @@
             </div>
             <div class="form-card">
                 <h3>📍 Site Reference Data</h3>
-                <div style="overflow-x:auto;"><table class="data-table" id="siteReferenceTable"><thead><tr><th>Site Name</th><th>Region</th><th>Team</th></tr></thead><tbody><tr><td colspan="3">Upload Excel to load data</tbody></table></div>
+                <div style="overflow-x:auto;"><table class="data-table" id="siteReferenceTable"><thead><tr><th>Site Name</th><th>Region</th><th>Team</th><tr></thead><tbody><tr><td colspan="3">Upload Excel to load data</tbody>}</div>
             </div>
             <div class="form-card">
                 <h3>👥 Staff Management <span class="admin-badge">Admin Only</span></h3>
@@ -707,6 +707,9 @@
             document.getElementById('userDisplay').innerHTML = `👤 ${user.name}${isAdmin ? ' <span class="admin-badge">Admin</span>' : ''}`;
             const shiftNav = document.getElementById('shiftReportNav');
             if(shiftNav) shiftNav.style.display = showShiftReport ? 'flex' : 'none';
+            // Admin Panel - ONLY visible to Admin role
+            const adminNav = document.getElementById('adminNav');
+            if(adminNav) adminNav.style.display = isAdmin ? 'flex' : 'none';
             updateDropdowns(); updateSiteSelectors(); renderAll();
         } else { document.getElementById('loginError').innerHTML = '❌ Invalid credentials'; document.getElementById('loginError').style.display = 'block'; setTimeout(()=>document.getElementById('loginError').style.display='none',3000); }
     }
