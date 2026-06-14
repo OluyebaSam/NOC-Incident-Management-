@@ -1,248 +1,138 @@
+Here is an HTML document that implements a complete NOC Operations Dashboard with BI analytics, ticket management, shift reporting, and data persistence.
+```html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Comium NOC - Supabase Version</title>
-
-/npm/@supabase/supabase-js@2"></script>
-
-<style>
-body { font-family: Arial; background:#f5f7fa; }
-.login { text-align:center; margin-top:150px; }
-input,button { padding:10px; margin:8px; }
-.container { display:none; }
-.card { background:white; padding:15px; margin:10px; border-radius:8px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Comium NOC | BI Analytics Dashboard</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        .login-container { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #0b1120 0%, #1a2639 100%); }
+        .login-card { background: rgba(255,255,255,0.96); border-radius: 32px; padding: 40px 35px; width: 440px; text-align: center; box-shadow: 0 30px 45px -12px black; backdrop-filter: blur(2px); }
+        .login-card h2 { color: #2c3e50; font-size: 13px; letter-spacing: 2px; } .login-card h1 { color: #b91c1c; font-size: 28px; }
+        .login-card input { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ccc; border-radius: 20px; background: #fefefe; }
+        .login-card button { width: 100%; padding: 14px; background: #b91c1c; color: white; border: none; border-radius: 40px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .app-container { display: flex; min-height: 100vh; } .sidebar { width: 270px; background: #0f172a; color: #cbd5e6; position: fixed; height: 100vh; overflow-y: auto; }
+        .sidebar-header { padding: 25px 0; text-align: center; border-bottom: 1px solid #334155; } .sidebar-header h2 { color: #e11d48; }
+        .nav-item { padding: 12px 24px; display: flex; align-items: center; gap: 14px; cursor: pointer; border-radius: 14px; margin: 6px 12px; transition: 0.2s; }
+        .nav-item:hover, .nav-item.active { background: #b91c1c; color: white; }
+        .main-content { flex: 1; margin-left: 270px; background: #f1f5f9; min-height: 100vh; }
+        .dark .main-content { background: #0f172a; } .dark .analytics-card, .dark .chart-card, .dark .form-card, .dark .stat-card, .dark .ticket-card { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+        .top-bar { background: white; padding: 14px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; position: sticky; top:0; z-index:99; }
+        .content-panel { display: none; padding: 30px; } .content-panel.active { display: block; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px,1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 24px; text-align: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s; }
+        .stat-number { font-size: 34px; font-weight: 800; color: #b91c1c; } .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px,1fr)); gap: 25px; margin-bottom: 30px; }
+        .chart-card { background: white; border-radius: 24px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; }
+        .ticket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px,1fr)); gap: 22px; margin-top: 20px; }
+        .ticket-card { background: white; border-radius: 20px; padding: 18px; border-left: 5px solid #b91c1c; }
+        .workflow-bar { display: flex; align-items: center; justify-content: space-between; margin: 15px 0; flex-wrap: wrap; gap: 8px; background: #f1f5f9; border-radius: 40px; padding: 8px 12px; }
+        .workflow-stage { font-size: 11px; padding: 6px 12px; border-radius: 30px; background: #cbd5e1; color: #1e293b; font-weight: bold; }
+        .workflow-stage.active { background: #b91c1c; color: white; } .workflow-stage.completed { background: #15803d; color: white; }
+        .btn-primary { background: #b91c1c; color: white; border: none; padding: 8px 18px; border-radius: 30px; cursor: pointer; font-weight: 600; }
+        .btn-success { background: #15803d; color: white; border: none; padding: 8px 18px; border-radius: 30px; cursor: pointer; }
+        .filter-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+        .data-table { width: 100%; background: white; border-radius: 20px; overflow: auto; border-collapse: collapse; } 
+        .data-table th, .data-table td { padding: 12px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 13px; }
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; border-radius: 32px; padding: 28px; width: 460px; max-width: 90%; } .dark .modal-content { background: #1e293b; }
+        .upload-area { border: 2px dashed #b91c1c; border-radius: 24px; padding: 30px; text-align: center; cursor: pointer; margin-bottom: 20px; }
+        .shift-summary { background: #fef9c3; padding: 15px; border-radius: 18px; }
+        @media (max-width: 760px) { .sidebar { width: 75px; } .main-content { margin-left: 75px; } .nav-item span:last-child { display: none; } }
+    </style>
 </head>
-
 <body>
 
-<!-- LOGIN -->
-<div id="loginPage" class="login">
-    <h2>Comium NOC</h2>
-    <input id="loginEmail" placeholder="Email"><br>
-    <input id="loginPassword" type="password" placeholder="Password"><br>
-    <button onclick="doLogin()">Login</button>
+<div id="loginPage" class="login-container">
+    <div class="login-card">
+        <h2>COMIUM OPERATION SERVICE</h2><h1>Comium NOC</h1><div class="subtitle">BI Analytics Dashboard</div>
+        <input type="text" id="loginEmail" placeholder="Email" value="admin@comium.com">
+        <input type="password" id="loginPassword" placeholder="Password" value="admin123">
+        <button onclick="doLogin()">Login</button>
+        <div id="loginError" class="error-msg" style="color:red; margin-top:12px;"></div>
+        <div style="margin-top: 16px; font-size: 11px;"><span id="syncIndicator" class="sync-status sync-online" style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10b981;"></span> Local DB Mode</div>
+    </div>
 </div>
 
-<!-- APP -->
-<div class="container" id="app">
-
-<h3 id="userDisplay"></h3>
-
-<button onclick="doLogout()">Logout</button>
-
-<hr>
-
-<!-- CREATE -->
-<div class="card">
-    <h3>Create Ticket</h3>
-    <input id="site" placeholder="Site"><br>
-    <input id="desc" placeholder="Description"><br>
-
-    <select id="status">
-        <option>Open</option>
-        <option>Assigned</option>
-        <option>Handling</option>
-        <option>Processed</option>
-        <option>Closed</option>
-    </select><br>
-
-    <select id="priority">
-        <option>Critical</option>
-        <option>Major</option>
-        <option>Minor</option>
-    </select><br>
-
-    <input id="team" placeholder="Team"><br>
-    <input id="assignee" placeholder="Assignee"><br>
-
-    <button onclick="createTicket()">Create</button>
+<div id="appContainer" style="display:none;">
+<div class="app-container">
+    <div class="sidebar"><div class="sidebar-header"><h2>🔴 Comium NOC</h2></div>
+    <div class="sidebar-nav">
+        <div class="nav-item active" onclick="navigateTo('home')"><span>🏠</span><span>Dashboard</span></div>
+        <div class="nav-item" onclick="navigateTo('analytics')"><span>📊</span><span>BI Analytics</span></div>
+        <div class="nav-item" onclick="navigateTo('tickets')"><span>🎫</span><span>My Tickets</span></div>
+        <div class="nav-item" onclick="navigateTo('create')"><span>➕</span><span>Create Ticket</span></div>
+        <div class="nav-item" onclick="navigateTo('report')"><span>📋</span><span>Incident Report</span></div>
+        <div class="nav-item" onclick="navigateTo('shiftReport')"><span>📋</span><span>End of Shift Report</span></div>
+        <div class="nav-item admin-only" id="adminNav" onclick="navigateTo('admin')" style="display:none;"><span>⚙️</span><span>Admin Panel</span></div>
+    </div></div>
+    <div class="main-content"><div class="top-bar"><div class="page-title" id="pageTitle">Dashboard</div><div class="user-info"><button class="btn-primary" onclick="toggleTheme()">🌓 Theme</button><button class="btn-primary" onclick="openChangePasswordModal()">🔑 Change PW</button><span id="userDisplay" style="font-weight:600;"></span><button class="logout-btn btn-primary" onclick="doLogout()">Logout</button></div></div>
+        <div id="panelHome" class="content-panel active"><div class="stats-grid" id="statsGrid"></div><div class="charts-row"><div class="chart-card"><h3>📊 Ticket Status</h3><canvas id="statusChart"></canvas></div><div class="chart-card"><h3>📈 RCA Categories</h3><canvas id="rcaChart"></canvas></div></div><div class="form-card"><h3>Recent Tickets</h3><div id="recentList"></div></div></div>
+        <div id="panelAnalytics" class="content-panel"><div class="analytics-grid"><div class="analytics-card"><h4>🔍 Filters</h4><select id="analyticsDateRange"><option value="7">Last 7d</option><option value="30" selected>30d</option><option value="90">90d</option><option value="all">All</option></select><select id="analyticsTeam"></select><select id="analyticsStatus"><option value="ALL">All</option><option>Open</option><option>Assigned</option><option>Handling</option><option>Closed</option></select><button class="btn-primary" onclick="applyAnalyticsFilter()">Apply</button></div><div class="analytics-card"><h4>KPI Metrics</h4><div>Total Incidents: <span id="kpiTotal" class="kpi-value" style="font-size:26px;">0</span></div><div>Avg Resolution: <span id="kpiAvgResolution">0</span> min</div><div>SLA %: <span id="kpiSLA">0</span>%</div><div>Open: <span id="kpiOpen">0</span></div></div><div class="analytics-card"><h4>Trend (weekly)</h4><canvas id="trendChart" height="100"></canvas></div></div><div class="charts-row"><div class="chart-card"><h3>By Team</h3><canvas id="teamChart"></canvas></div><div class="chart-card"><h3>MTTR (min)</h3><canvas id="mttrChart"></canvas></div></div><div class="form-card"><h3>Analytics Table</h3><div style="overflow-x:auto;"><table class="data-table" id="analyticsTable"><thead><tr><th>Team</th><th>Total</th><th>Open</th><th>Closed</th><th>Avg Res(min)</th><th>SLA%</th></tr></thead><tbody></tbody></table></div></div></div>
+        <div id="panelTickets" class="content-panel"><div class="filter-bar"><select id="filterStatus"><option value="ALL">All</option><option>Open</option><option>Assigned</option><option>Handling</option><option>Processed</option><option>Closed</option></select><button class="btn-primary" onclick="applyTicketFilter()">Filter</button></div><div id="ticketGrid" class="ticket-grid"></div></div>
+        <div id="panelCreate" class="content-panel"><div class="form-card"><h3>Create Incident Ticket</h3><div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"><div><label>Site</label><select id="ticketSite"></select></div><div><label>Region</label><input id="ticketRegion" readonly></div><div><label>Team(auto)</label><input id="ticketTeamDisplay" readonly></div><div><label>Date</label><input type="datetime-local" id="ticketDate"></div></div><div><label>Description</label><textarea id="ticketDesc" rows="2"></textarea></div><div class="form-row" style="display:grid; grid-template-columns:1fr 1fr;"><div><label>Impact</label><input id="ticketImpact"></div><div><label>Root Cause</label><input id="ticketRootCause"></div><div><label>RCA Category</label><select id="ticketRcaCategory"><option>Power Failure</option><option>Transmission Fault</option><option>Hardware Fault</option><option>Environmental</option></select></div><div><label>Severity</label><select id="ticketPriority"><option>Critical</option><option>Major</option><option>Minor</option></select></div><div><label>Status</label><select id="ticketStatus"><option>Open</option><option>Assigned</option><option>Handling</option><option>Processed</option><option>Closed</option></select></div><div><label>Resolution</label><input id="ticketResolution"></div></div><div class="form-row"><div><label>Assign Team</label><select id="assignTeam"></select></div><div><label>Assign Individual</label><select id="assignIndividual"></select></div></div><button class="btn-primary" onclick="createTicket()">✅ Create Ticket</button></div></div>
+        <div id="panelReport" class="content-panel"><div class="form-card"><div class="filter-bar"><input id="reportSearch" placeholder="Search"><select id="reportTeam"></select><select id="reportStatus"></select><button class="btn-primary" onclick="applyReportFilter()">Apply</button><button class="btn-success" onclick="exportToExcel()">📎 Export Excel</button></div><div style="overflow-x:auto;"><table class="data-table" id="reportTable"><thead><tr><th>ID</th><th>Site</th><th>Team</th><th>Status</th><th>Priority</th><th>Created</th></tr></thead><tbody id="reportTableBody"></tbody></table></div></div></div>
+        <div id="panelShiftReport" class="content-panel"><div class="form-card"><h3>End of Shift Handover Report</h3><form id="shiftReportForm" style="display:grid; gap:12px;"><div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"><input type="text" id="shiftEmployeeName" readonly placeholder="Employee"><input type="date" id="shiftDate"></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"><input type="number" id="shiftInherited" placeholder="Inherited tickets"><input type="number" id="shiftOpened" placeholder="Opened"></div><div><textarea id="shiftSummary" rows="2" placeholder="Shift summary / pending issues"></textarea></div><div><input type="text" id="shiftIncomingEngineer" placeholder="Incoming Engineer"></div><div><input type="email" id="shiftSendToEmail" placeholder="Send to email (next shift)"></div><div><input type="text" id="shiftCcEmails" placeholder="CC emails"></div><button type="button" class="btn-primary" onclick="submitShiftReport()">📧 Submit & Send Report</button></form></div><div class="form-card"><h3>Previous Reports</h3><div id="shiftReportsList"></div></div></div>
+        <div id="panelAdmin" class="content-panel"><div class="form-card"><h3>📎 Upload Site Reference Excel</h3><div class="upload-area" onclick="document.getElementById('excelFile').click()">📂 Click to upload Site Master</div><input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none;" onchange="processExcelFile(this)"><div id="uploadStatus"></div><table class="data-table" id="siteReferenceTable"><thead><tr><th>Site</th><th>Region</th><th>Team</th></tr></thead><tbody></tbody></table></div><div class="form-card"><h3>👥 Staff Management</h3><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"><input id="staffName" placeholder="Name"><input id="staffEmail" placeholder="Email"><input id="staffPhone" placeholder="Phone"><select id="staffRole"><option>NOC Junior Technician</option><option>NOC Team Lead</option><option>NOC Manager</option></select><select id="staffTeam"></select><input id="staffPassword" placeholder="Password" value="welcome123"></div><button class="btn-primary" onclick="addStaff()">Add Staff</button><div id="staffList" style="margin-top:20px;"></div><button class="btn-secondary" onclick="exportAllData()">📥 Backup JSON</button><button class="btn-secondary" onclick="importDataPrompt()">📤 Restore Backup</button></div></div>
+    </div>
 </div>
-
-<!-- STATS -->
-<div class="card">
-    <h3>Dashboard</h3>
-    Total: <span id="total"></span><br>
-    Open: <span id="open"></span><br>
 </div>
-
-<!-- TICKETS -->
-<div class="card">
-    <h3>Tickets</h3>
-    <div id="tickets"></div>
-</div>
-
-</div>
-
+<div id="changePwModal" class="modal"><div class="modal-content"><h3>Change Password</h3><input type="password" id="currentPassword" placeholder="Current"><input type="password" id="newPassword" placeholder="New"><button class="btn-primary" onclick="changePassword()">Update</button><button onclick="closeModal()">Cancel</button></div></div>
 <script>
-
-/* =========================
-   ✅ SUPABASE CONFIG
-========================= */
-
-const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
-const SUPABASE_KEY = "YOUR_ANON_KEY";
-
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-let currentUser = null;
-let tickets = [];
-
-/* =========================
-   ✅ LOGIN
-========================= */
-
-async function doLogin() {
-    const email = loginEmail.value;
-    const password = loginPassword.value;
-
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-
-    if (error) return alert(error.message);
-
-    currentUser = data.user;
-
-    loginPage.style.display = 'none';
-    app.style.display = 'block';
-
-    loadProfile();
-    loadTickets();
-}
-
-async function doLogout() {
-    await sb.auth.signOut();
-    location.reload();
-}
-
-/* =========================
-   ✅ PROFILE
-========================= */
-
-async function loadProfile() {
-    const { data } = await sb
-        .from('users')
-        .select('*')
-        .eq('email', currentUser.email)
-        .single();
-
-    userDisplay.innerText = "👤 " + (data?.name || currentUser.email);
-}
-
-/* =========================
-   ✅ CREATE TICKET
-========================= */
-
-function genID() {
-    return "INC-" + Date.now();
-}
-
-async function createTicket() {
-    const { error } = await sb.from('tickets').insert([{
-        ticket_id: genID(),
-        site: site.value,
-        description: desc.value,
-        status: status.value,
-        priority: priority.value,
-        team_assigned: team.value,
-        assignee: assignee.value
-    }]);
-
-    if (error) return alert(error.message);
-
-    alert("✅ Created");
-    loadTickets();
-}
-
-/* =========================
-   ✅ LOAD TICKETS
-========================= */
-
-async function loadTickets() {
-    const { data, error } = await sb
-        .from('tickets')
-        .select('*')
-        .order('created_at', { ascending:false });
-
-    if (error) return;
-
-    tickets = data;
-    renderTickets();
-    renderStats();
-}
-
-/* =========================
-   ✅ UPDATE
-========================= */
-
-async function updateStatus(id, status) {
-    await sb.from('tickets')
-        .update({ status: status })
-        .eq('id', id);
-
-    loadTickets();
-}
-
-/* =========================
-   ✅ RENDER
-========================= */
-
-function renderStats() {
-    total.innerText = tickets.length;
-    open.innerText = tickets.filter(t=>t.status==='Open').length;
-}
-
-function renderTickets() {
-    ticketsDiv = document.getElementById('tickets');
-
-    ticketsDiv.innerHTML = tickets.map(t => `
-        <div class="card">
-            <b>${t.ticket_id}</b><br>
-            ${t.site}<br>
-            ${t.description}<br>
-
-            Status: ${t.status}<br>
-
-            ${t.status === 'Assigned' ? 
-                `<button onclick="updateStatus('${t.id}','Handling')">Handle</button>` : ''}
-
-            ${t.status === 'Handling' ? 
-                `<button onclick="updateStatus('${t.id}','Processed')">Process</button>` : ''}
-
-            ${t.status === 'Processed' ? 
-                `<button onclick="updateStatus('${t.id}','Closed')">Close</button>` : ''}
-        </div>
-    `).join('');
-}
-
-/* =========================
-   ✅ REALTIME
-========================= */
-
-sb.channel('live')
-.on('postgres_changes',
-    { event:'*', schema:'public', table:'tickets' },
-    payload => loadTickets()
-).subscribe();
-
-/* =========================
-   ✅ AUTO LOGIN
-========================= */
-
-window.onload = async () => {
-    const { data } = await sb.auth.getSession();
-
-    if (data.session) {
-        currentUser = data.session.user;
-        loginPage.style.display = 'none';
-        app.style.display = 'block';
-        loadProfile();
-        loadTickets();
-    }
-};
-
+    // ---------- DATA LAYER ----------
+    let tickets = JSON.parse(localStorage.getItem('comium_tickets')) || [];
+    let sites = JSON.parse(localStorage.getItem('comium_sites')) || [];
+    let staffs = JSON.parse(localStorage.getItem('comium_staffs')) || [];
+    let shiftReports = JSON.parse(localStorage.getItem('comium_shiftReports')) || [];
+    let currentUser = JSON.parse(sessionStorage.getItem('comium_user')) || null;
+    let statusChart, rcaChart, trendChart, teamChart, mttrChart;
+    
+    function saveAll() { localStorage.setItem('comium_tickets', JSON.stringify(tickets)); localStorage.setItem('comium_sites', JSON.stringify(sites)); localStorage.setItem('comium_staffs', JSON.stringify(staffs)); localStorage.setItem('comium_shiftReports', JSON.stringify(shiftReports)); }
+    function defaultSiteData() { if(sites.length===0){ sites=[{site:"Banjul HQ", region:"Banjul", team:"Core NOC"},{site:"Serrekunda Hub", region:"West", team:"Transmission"},{site:"Brikama Site", region:"West", team:"Power"}]; saveAll(); } }
+    function defaultStaff() { if(staffs.length===0){ staffs=[{name:"Admin User", email:"admin@comium.com", phone:"", role:"NOC Manager", team:"Management", password:"admin123", isAdmin:true},{name:"John Tech", email:"john@comium.com", phone:"", role:"NOC Junior Technician", team:"Core NOC", password:"1234"}]; saveAll(); } }
+    function defaultTickets() { if(tickets.length===0){ tickets.push({id:"INC-001", site:"Banjul HQ", region:"Banjul", team:"Core NOC", description:"Power outage", impact:"Site Down", rootCause:"Gen failure", rcaCategory:"Power Failure", priority:"Critical", status:"Open", created:new Date().toISOString(), resolution:"", assignedTo:"john@comium.com", assignedTeam:"Core NOC", slaMet:true, resolvedAt:null}); saveAll(); } }
+    
+    function getTeamFromSite(siteName){ let s=sites.find(x=>x.site===siteName); return s?s.team:""; }
+    function updateSiteDetails(){ let siteSel=document.getElementById('ticketSite').value; let siteData=sites.find(s=>s.site===siteSel); if(siteData){ document.getElementById('ticketRegion').value=siteData.region; document.getElementById('ticketTeamDisplay').value=siteData.team; document.getElementById('assignTeam').value=siteData.team; updateAssigneeList(); } }
+    function updateAssigneeList(){ let team=document.getElementById('assignTeam').value; let filtered=staffs.filter(s=>s.team===team); let selInd=document.getElementById('assignIndividual'); selInd.innerHTML='<option value="">Select</option>'; filtered.forEach(s=>{let opt=document.createElement('option'); opt.value=s.email; opt.innerText=s.name; selInd.appendChild(opt);});}
+    function populateStaffTeams(){ let teams=[...new Set(sites.map(s=>s.team).filter(t=>t))]; teams.push("Management"); let teamSel=document.getElementById('staffTeam'); teamSel.innerHTML='<option>Select Team</option>'; teams.forEach(t=>{let opt=document.createElement('option'); opt.value=t; opt.innerText=t; teamSel.appendChild(opt);}); let assignTeamSel=document.getElementById('assignTeam'); assignTeamSel.innerHTML='<option value="">Select Team</option>'; teams.forEach(t=>{let opt=document.createElement('option'); opt.value=t; opt.innerText=t; assignTeamSel.appendChild(opt);}); }
+    function populateSites() { let siteSel=document.getElementById('ticketSite'); siteSel.innerHTML='<option value="">Select Site</option>'; sites.forEach(s=>{let opt=document.createElement('option'); opt.value=s.site; opt.innerText=s.site; siteSel.appendChild(opt);}); }
+    
+    function createTicket(){ let site=document.getElementById('ticketSite').value; if(!site) {alert("Select site");return;} let region=document.getElementById('ticketRegion').value; let team=document.getElementById('ticketTeamDisplay').value; let desc=document.getElementById('ticketDesc').value; let impact=document.getElementById('ticketImpact').value; let rootCause=document.getElementById('ticketRootCause').value; let rcaCat=document.getElementById('ticketRcaCategory').value; let priority=document.getElementById('ticketPriority').value; let status=document.getElementById('ticketStatus').value; let resolution=document.getElementById('ticketResolution').value; let assignInd=document.getElementById('assignIndividual').value; let id="INC-"+Math.floor(Math.random()*9000+1000); let newTicket={id, site, region, team, description:desc, impact, rootCause, rcaCategory:rcaCat, priority, status, created:new Date().toISOString(), resolution, assignedTo:assignInd, assignedTeam:team, slaMet:false, resolvedAt:status==='Closed'?new Date().toISOString():null}; tickets.push(newTicket); saveAll(); alert("Ticket "+id+" created"); document.getElementById('ticketDesc').value=""; navigateTo('tickets'); renderAll(); }
+    function renderTickets(filterStatus="ALL"){ let container=document.getElementById('ticketGrid'); if(!container)return; let filtered=tickets.filter(t=>!filterStatus||filterStatus==='ALL'||t.status===filterStatus); if(currentUser && !staffs.find(s=>s.email===currentUser.email)?.isAdmin) filtered=filtered.filter(t=>t.assignedTo===currentUser.email); container.innerHTML=filtered.map(t=>`<div class="ticket-card"><div class="ticket-header"><strong>${t.id}</strong> <span class="ticket-status">${t.status}</span></div><div><b>Site:</b> ${t.site} | <b>Team:</b> ${t.team}<br><b>Desc:</b> ${t.description.substring(0,60)}</div><div class="workflow-bar">${['Open','Assigned','Handling','Processed','Closed'].map(st=>`<span class="workflow-stage ${getStatusStage(t.status,st)}">${st}</span>`).join('<span>→</span>')}</div><div><button class="btn-secondary" onclick="updateTicketStatus('${t.id}','Handling')">Handling</button> <button class="btn-success" onclick="updateTicketStatus('${t.id}','Closed')">Close</button> <button class="btn-warning" onclick="editTicketPopup('${t.id}')">Edit</button></div></div>`).join(''); }
+    function getStatusStage(current, stage){ if(current===stage) return 'active'; let order=['Open','Assigned','Handling','Processed','Closed']; if(order.indexOf(current)>order.indexOf(stage)) return 'completed'; return ''; }
+    function updateTicketStatus(id, newStatus){ let t=tickets.find(t=>t.id===id); if(t){ t.status=newStatus; if(newStatus==='Closed') t.resolvedAt=new Date().toISOString(); saveAll(); renderAll(); alert(`Ticket ${id} updated to ${newStatus}`); } }
+    function editTicketPopup(id){ let t=tickets.find(t=>t.id===id); if(t){ let newDesc=prompt("Edit Description", t.description); if(newDesc) t.description=newDesc; saveAll(); renderAll(); } }
+    function renderStats(){ let total=tickets.length; let open=tickets.filter(t=>t.status!=='Closed').length; let closed=tickets.filter(t=>t.status==='Closed').length; document.getElementById('statsGrid').innerHTML=`<div class="stat-card"><div class="stat-number">${total}</div><div>Total Incidents</div></div><div class="stat-card"><div class="stat-number">${open}</div><div>Open</div></div><div class="stat-card"><div class="stat-number">${closed}</div><div>Closed</div></div>`; }
+    function renderCharts(){ if(statusChart) statusChart.destroy(); let ctx=document.getElementById('statusChart').getContext('2d'); let statusCounts={Open:0,Assigned:0,Handling:0,Processed:0,Closed:0}; tickets.forEach(t=>statusCounts[t.status]++); statusChart=new Chart(ctx,{type:'doughnut',data:{labels:Object.keys(statusCounts),datasets:[{data:Object.values(statusCounts),backgroundColor:['#ef4444','#f97316','#facc15','#3b82f6','#10b981']}]}}); let rcaMap={}; tickets.forEach(t=>{if(t.rcaCategory) rcaMap[t.rcaCategory]=(rcaMap[t.rcaCategory]||0)+1;}); if(rcaChart) rcaChart.destroy(); let rcaCtx=document.getElementById('rcaChart').getContext('2d'); rcaChart=new Chart(rcaCtx,{type:'bar',data:{labels:Object.keys(rcaMap),datasets:[{label:'Incidents',data:Object.values(rcaMap),backgroundColor:'#b91c1c'}]}}); }
+    function renderRecent(){ let recent=tickets.slice(-5).reverse(); document.getElementById('recentList').innerHTML=recent.map(t=>`<div style="border-bottom:1px solid #ddd; padding:8px;"><b>${t.id}</b> ${t.site} - ${t.status} <span style="float:right">${new Date(t.created).toLocaleDateString()}</span></div>`).join(''); }
+    function applyAnalyticsFilter(){ let range=document.getElementById('analyticsDateRange').value; let teamFilter=document.getElementById('analyticsTeam').value; let statusFilter=document.getElementById('analyticsStatus').value; let filtered=tickets.filter(t=>{ if(teamFilter!=='ALL' && t.team!==teamFilter) return false; if(statusFilter!=='ALL' && t.status!==statusFilter) return false; if(range!=='all'){ let days=parseInt(range); let limit=new Date(); limit.setDate(limit.getDate()-days); if(new Date(t.created)<limit) return false; } return true; }); let total=filtered.length; let open=filtered.filter(t=>t.status!=='Closed').length; let closedResolved=filtered.filter(t=>t.status==='Closed' && t.resolvedAt && t.created); let avgRes=0; if(closedResolved.length){ let totalMin=closedResolved.reduce((sum,t)=>{ let created=new Date(t.created); let resolved=new Date(t.resolvedAt); let diff=(resolved-created)/(1000*60); return sum+diff; },0); avgRes=Math.round(totalMin/closedResolved.length); } let slaMet=filtered.filter(t=>t.status==='Closed').length; let slaPerc=filtered.length?Math.round((slaMet/filtered.length)*100):0; document.getElementById('kpiTotal').innerText=total; document.getElementById('kpiAvgResolution').innerText=avgRes; document.getElementById('kpiSLA').innerText=slaPerc; document.getElementById('kpiOpen').innerText=open; let teamMap={}; filtered.forEach(t=>{teamMap[t.team]=teamMap[t.team]||{total:0,open:0,closed:0,resTimeSum:0,closedCount:0}; let rec=teamMap[t.team]; rec.total++; if(t.status!=='Closed') rec.open++; if(t.status==='Closed'){ rec.closed++; if(t.resolvedAt && t.created){ let mins=(new Date(t.resolvedAt)-new Date(t.created))/(1000*60); rec.resTimeSum+=mins; rec.closedCount++; } } }); let teamLabels=Object.keys(teamMap); let totalVals=teamLabels.map(l=>teamMap[l].total); if(teamChart) teamChart.destroy(); teamChart=new Chart(document.getElementById('teamChart'),{type:'bar',data:{labels:teamLabels,datasets:[{label:'Incidents',data:totalVals,backgroundColor:'#b91c1c'}]}}); let mttrData=teamLabels.map(l=>teamMap[l].closedCount?Math.round(teamMap[l].resTimeSum/teamMap[l].closedCount):0); if(mttrChart) mttrChart.destroy(); mttrChart=new Chart(document.getElementById('mttrChart'),{type:'line',data:{labels:teamLabels,datasets:[{label:'MTTR (min)',data:mttrData,borderColor:'#f97316'}]}}); let weekly=Array(7).fill(0); filtered.forEach(t=>{let daysAgo=Math.floor((new Date()-new Date(t.created))/(86400000)); if(daysAgo<7) weekly[6-daysAgo]++;}); if(trendChart) trendChart.destroy(); trendChart=new Chart(document.getElementById('trendChart'),{type:'line',data:{labels:['D-6','D-5','D-4','D-3','D-2','Yesterday','Today'],datasets:[{label:'Tickets',data:weekly}]}}); let tableBody=document.querySelector('#analyticsTable tbody'); tableBody.innerHTML=teamLabels.map(l=>`<tr><td>${l}</td><td>${teamMap[l].total}</td><td>${teamMap[l].open}</td><td>${teamMap[l].closed}</td><td>${mttrData[teamLabels.indexOf(l)]}</td><td>-</td></tr>`).join(''); }
+    function renderAll(){ if(!currentUser) return; renderStats(); renderCharts(); renderRecent(); renderTickets(document.getElementById('filterStatus')?.value||"ALL"); populateSites(); populateStaffTeams(); updateSiteDetails(); applyAnalyticsFilter(); renderReportTable(); renderShiftReportList(); if(document.getElementById('staffList')) renderStaffList(); }
+    function renderReportTable(){ let search=document.getElementById('reportSearch')?.value||''; let teamFilter=document.getElementById('reportTeam')?.value||'ALL'; let statusFilter=document.getElementById('reportStatus')?.value||'ALL'; let filtered=tickets.filter(t=>(t.id.includes(search)||t.site.includes(search))&&(teamFilter==='ALL'||t.team===teamFilter)&&(statusFilter==='ALL'||t.status===statusFilter)); document.getElementById('reportTableBody').innerHTML=filtered.map(t=>`<tr><td>${t.id}</td><td>${t.site}</td><td>${t.team}</td><td>${t.status}</td><td>${t.priority}</td><td>${new Date(t.created).toLocaleDateString()}</td></tr>`).join(''); }
+    function exportToExcel(){ let wsData=[["ID","Site","Team","Status","Priority","Created","Description"]]; tickets.forEach(t=>wsData.push([t.id,t.site,t.team,t.status,t.priority,t.created,t.description])); let ws=XLSX.utils.aoa_to_sheet(wsData); let wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Incidents"); XLSX.writeFile(wb,"Comium_Incidents.xlsx"); }
+    function submitShiftReport(){ let report={id:Date.now(), employee:currentUser.name, date:document.getElementById('shiftDate').value||new Date().toISOString().slice(0,10), inherited:document.getElementById('shiftInherited').value, opened:document.getElementById('shiftOpened').value, summary:document.getElementById('shiftSummary').value, incomingEngineer:document.getElementById('shiftIncomingEngineer').value, sendTo:document.getElementById('shiftSendToEmail').value, cc:document.getElementById('shiftCcEmails').value}; shiftReports.unshift(report); saveAll(); alert("Shift report saved (simulated email)"); renderShiftReportList(); }
+    function renderShiftReportList(){ let listDiv=document.getElementById('shiftReportsList'); if(listDiv) listDiv.innerHTML=shiftReports.map(r=>`<div style="background:#f1f5f9; margin:6px; padding:10px; border-radius:12px;"><b>${r.date}</b> - ${r.employee}<br>Summary: ${r.summary.substring(0,60)}<br>→ Incoming: ${r.incomingEngineer}</div>`).join(''); }
+    function processExcelFile(input){ let file=input.files[0]; let reader=new FileReader(); reader.onload=function(e){ let data=new Uint8Array(e.target.result); let workbook=XLSX.read(data,{type:'array'}); let sheet=workbook.Sheets[workbook.SheetNames[0]]; let rows=XLSX.utils.sheet_to_json(sheet); sites=rows.map(r=>({site:r['Site Name']||r['Site'], region:r['Region']||'', team:r['Team']||''})).filter(s=>s.site); saveAll(); populateSites(); populateStaffTeams(); alert("Sites updated!"); renderSiteTable(); }; reader.readAsArrayBuffer(file);}
+    function renderSiteTable(){ let tbody=document.querySelector('#siteReferenceTable tbody'); if(tbody) tbody.innerHTML=sites.map(s=>`<tr><td>${s.site}</td><td>${s.region}</td><td>${s.team}</td></tr>`).join(''); }
+    function addStaff(){ let name=document.getElementById('staffName').value; let email=document.getElementById('staffEmail').value; let phone=document.getElementById('staffPhone').value; let role=document.getElementById('staffRole').value; let team=document.getElementById('staffTeam').value; let pwd=document.getElementById('staffPassword').value; if(!name||!email){alert("Name/Email required");return;} staffs.push({name,email,phone,role,team,password:pwd,isAdmin:false}); saveAll(); renderStaffList(); alert("Staff added"); }
+    function renderStaffList(){ let html=staffs.map(s=>`<div>${s.name} (${s.email}) - ${s.role} <button class="btn-danger" onclick="deleteStaff('${s.email}')">Del</button></div>`).join(''); document.getElementById('staffList').innerHTML=html; }
+    function deleteStaff(email){ staffs=staffs.filter(s=>s.email!==email); saveAll(); renderStaffList(); }
+    function exportAllData(){ let dump={tickets,sites,staffs,shiftReports}; let dataStr=JSON.stringify(dump); let blob=new Blob([dataStr],{type:"application/json"}); let url=URL.createObjectURL(blob); let a=document.createElement('a'); a.href=url; a.download="comium_backup.json"; a.click(); }
+    function importDataPrompt(){ let input=document.createElement('input'); input.type='file'; input.accept='application/json'; input.onchange=e=>{ let file=e.target.files[0]; let reader=new FileReader(); reader.onload=ev=>{ let data=JSON.parse(ev.target.result); if(data.tickets) tickets=data.tickets; if(data.sites) sites=data.sites; if(data.staffs) staffs=data.staffs; if(data.shiftReports) shiftReports=data.shiftReports; saveAll(); alert("Restored"); location.reload(); }; reader.readAsText(file); }; input.click(); }
+    function doLogin(){ let email=document.getElementById('loginEmail').value; let pwd=document.getElementById('loginPassword').value; let user=staffs.find(s=>s.email===email && s.password===pwd); if(user){ currentUser=user; sessionStorage.setItem('comium_user',JSON.stringify(user)); document.getElementById('loginPage').style.display='none'; document.getElementById('appContainer').style.display='block'; document.getElementById('userDisplay').innerText=user.name; if(user.isAdmin||user.role==='NOC Manager') document.getElementById('adminNav').style.display='flex'; else document.getElementById('adminNav').style.display='none'; defaultSiteData(); defaultStaff(); defaultTickets(); renderAll(); renderSiteTable(); } else { document.getElementById('loginError').innerText="Invalid credentials"; } }
+    function doLogout(){ sessionStorage.removeItem('comium_user'); currentUser=null; document.getElementById('loginPage').style.display='flex'; document.getElementById('appContainer').style.display='none'; }
+    function navigateTo(page){ document.querySelectorAll('.content-panel').forEach(p=>p.classList.remove('active')); document.getElementById(`panel${page.charAt(0).toUpperCase()+page.slice(1)}`).classList.add('active'); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); event?.target?.closest('.nav-item')?.classList.add('active'); if(page==='analytics') applyAnalyticsFilter(); if(page==='tickets') renderTickets(document.getElementById('filterStatus')?.value); if(page==='report') renderReportTable(); if(page==='shiftReport') renderShiftReportList(); }
+    function toggleTheme(){ document.body.classList.toggle('dark'); }
+    function openChangePasswordModal(){ document.getElementById('changePwModal').style.display='flex'; }
+    function closeModal(){ document.getElementById('changePwModal').style.display='none'; }
+    function changePassword(){ let cur=document.getElementById('currentPassword').value; let newpw=document.getElementById('newPassword').value; if(cur===currentUser.password){ currentUser.password=newpw; let idx=staffs.findIndex(s=>s.email===currentUser.email); if(idx!==-1) staffs[idx].password=newpw; saveAll(); alert("Password changed"); closeModal(); } else alert("Wrong current password"); }
+    window.updateTicketStatus=updateTicketStatus; window.editTicketPopup=editTicketPopup; window.applyTicketFilter=()=>{ renderTickets(document.getElementById('filterStatus').value); };
+    window.applyReportFilter=renderReportTable;
+    window.onload=()=>{ let savedUser=sessionStorage.getItem('comium_user'); if(savedUser){ currentUser=JSON.parse(savedUser); document.getElementById('loginPage').style.display='none'; document.getElementById('appContainer').style.display='block'; document.getElementById('userDisplay').innerText=currentUser.name; defaultSiteData(); defaultStaff(); defaultTickets(); renderAll(); renderSiteTable(); if(currentUser.isAdmin||currentUser.role==='NOC Manager') document.getElementById('adminNav').style.display='flex'; } else { document.getElementById('loginPage').style.display='flex'; document.getElementById('appContainer').style.display='none'; } };
 </script>
-
 </body>
 </html>
+```
